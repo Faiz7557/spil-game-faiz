@@ -3,6 +3,7 @@ import {
   validateGridPhysics,
   calculateRestows,
   processSailingTransition,
+  getBayConfig,
   PORTS
 } from './utils/gameEngine.js';
 
@@ -27,21 +28,37 @@ const assert = (condition, message) => {
 // Test 1: Grid Initialization
 const testGridInitialization = () => {
   console.log('--- Test 1: Grid Initialization ---');
-  const grid = createEmptyGrid();
   
+  // Default (5 bays)
+  let grid = createEmptyGrid();
   assert(grid !== null, 'Grid should not be null');
-  assert(Object.keys(grid).length === 5, 'Grid should have exactly 5 bays');
+  assert(Object.keys(grid).length === 5, 'Grid should have exactly 5 bays by default');
+  
+  // Small Vessel (3 bays)
+  grid = createEmptyGrid(['10', '06', '02']);
+  assert(Object.keys(grid).length === 3, 'Grid should have exactly 3 bays for Small Vessel');
+  
+  // Large Vessel (7 bays)
+  grid = createEmptyGrid(['26', '22', '18', '14', '10', '06', '02']);
+  assert(Object.keys(grid).length === 7, 'Grid should have exactly 7 bays for Large Vessel');
+
+  // Check Bay 26 layout (DRY, 4 rows, 3 tiers)
+  const config26 = getBayConfig('26');
+  assert(config26.containerType === 'DRY', 'Bay 26 should be DRY');
+  assert(config26.rows.length === 4, 'Bay 26 should have 4 rows');
+  assert(config26.tiers.length === 3, 'Bay 26 should have 3 tiers (4x3)');
   
   // Check Bay 18 size
-  const bay18Rows = Object.keys(grid['18']);
+  const grid5 = createEmptyGrid();
+  const bay18Rows = Object.keys(grid5['18']);
   assert(bay18Rows.length === 3, 'Bay 18 should have 3 rows');
-  assert(Object.keys(grid['18']['01']).length === 2, 'Bay 18 rows should only have 2 tiers (84, 82)');
-  assert(grid['18']['01']['02'] === undefined, 'Bay 18 should not have underdeck Tier 02');
+  assert(Object.keys(grid5['18']['01']).length === 2, 'Bay 18 rows should only have 2 tiers (84, 82)');
+  assert(grid5['18']['01']['02'] === undefined, 'Bay 18 should not have underdeck Tier 02');
 
   // Check Bay 14 size
-  const bay14Rows = Object.keys(grid['14']);
+  const bay14Rows = Object.keys(grid5['14']);
   assert(bay14Rows.length === 4, 'Bay 14 should have 4 rows');
-  assert(Object.keys(grid['14']['01']).length === 3, 'Bay 14 rows should have 3 tiers (84, 82, 02)');
+  assert(Object.keys(grid5['14']['01']).length === 3, 'Bay 14 rows should have 3 tiers (84, 82, 02)');
   
   console.log('Test 1 Passed successfully!\n');
 };

@@ -12,16 +12,16 @@ export const getBayConfig = (bay) => {
   return {
     rows: isBay18 ? ['01', '00', '02'] : ['03', '01', '02', '04'],
     tiers: isBay18 ? ['84', '82'] : ['84', '82', '02'],
-    containerType: (bay === '14' || bay === '10') ? 'REEFER' : 'DRY'
+    containerType: (bay === '14' || bay === '10' || bay === '22') ? 'REEFER' : 'DRY'
   };
 };
 
 /**
  * Creates a clean, empty vessel grid
  */
-export const createEmptyGrid = () => {
+export const createEmptyGrid = (bays = BAYS) => {
   const grid = {};
-  BAYS.forEach(bay => {
+  bays.forEach(bay => {
     grid[bay] = {};
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
@@ -34,12 +34,36 @@ export const createEmptyGrid = () => {
   return grid;
 };
 
+// Official Tariff Table (Informasi Tarif Muatan PT. SPIL)
+const TARIFF_TABLE = {
+  SBY: {
+    MKS: { DRY: 18000000, REEFER: 30000000 },
+    MDN: { DRY: 6000000, REEFER: 11000000 },
+    JYP: { DRY: 16200000, REEFER: 24000000 }
+  },
+  MKS: {
+    SBY: { DRY: 10000000, REEFER: 18000000 },
+    MDN: { DRY: 12000000, REEFER: 20000000 },
+    JYP: { DRY: 16000000, REEFER: 24000000 }
+  },
+  JYP: {
+    SBY: { DRY: 13000000, REEFER: 19000000 },
+    MKS: { DRY: 13000000, REEFER: 23000000 },
+    MDN: { DRY: 11000000, REEFER: 17000000 }
+  },
+  MDN: {
+    SBY: { DRY: 13000000, REEFER: 22000000 },
+    MKS: { DRY: 14000000, REEFER: 24000000 },
+    JYP: { DRY: 14000000, REEFER: 22000000 }
+  }
+};
+
 /**
  * Generates random sales call orders at a given port
  */
-export const generateOrders = (port, week) => {
-  const nextPortIndex = (PORTS.indexOf(port) + 1) % PORTS.length;
-  const destinations = PORTS.filter(p => p !== port);
+export const generateOrders = (port, week, activePorts = PORTS) => {
+  const nextPortIndex = (activePorts.indexOf(port) + 1) % activePorts.length;
+  const destinations = activePorts.filter(p => p !== port);
   
   const customerNames = [
     'PT Pelayaran Harapan', 'CV Sinar Abadi', 'PT Borneo Logistics',
@@ -61,12 +85,16 @@ export const generateOrders = (port, week) => {
     // Quantity: 1 to 3 containers
     const quantity = Math.floor(Math.random() * 3) + 1;
     
-    // Tariff calculation: DRY = Rp 10-14m, REEFER = Rp 16-22m
+    // Calculate tariff using official sheet, fall back to randomized logic for new unlocked ports
     let tariff = 0;
-    if (containerType === 'DRY') {
-      tariff = 10000000 + Math.floor(Math.random() * 5) * 1000000;
+    if (TARIFF_TABLE[port] && TARIFF_TABLE[port][destination] && TARIFF_TABLE[port][destination][containerType]) {
+      tariff = TARIFF_TABLE[port][destination][containerType];
     } else {
-      tariff = 16000000 + Math.floor(Math.random() * 7) * 1000000;
+      if (containerType === 'DRY') {
+        tariff = 10000000 + Math.floor(Math.random() * 5) * 1000000;
+      } else {
+        tariff = 16000000 + Math.floor(Math.random() * 7) * 1000000;
+      }
     }
     
     orders.push({
@@ -90,20 +118,21 @@ export const generateOrders = (port, week) => {
  * Next Port containers are destined for the port immediately following the current port.
  * Returns: { restowContainersCount, restowMovementsCount, restowedList }
  */
-export const calculateRestows = (grid, currentPort) => {
-  const currentPortIndex = PORTS.indexOf(currentPort);
-  const nextPort = PORTS[(currentPortIndex + 1) % PORTS.length];
+export const calculateRestows = (grid, currentPort, activePorts = PORTS) => {
+  const currentPortIndex = activePorts.indexOf(currentPort);
+  const nextPort = activePorts[(currentPortIndex + 1) % activePorts.length];
   
   let restowContainersCount = 0;
   const restowedList = []; // Array of { bay, row, tier } for frontend visualization
+  const bays = Object.keys(grid);
   
-  BAYS.forEach(bay => {
+  bays.forEach(bay => {
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
       const stack = grid[bay][row];
       // Tiers ordered bottom to top: '02' (underdeck) -> '82' (on-deck lower) -> '84' (on-deck upper)
-      // For Bay 18: '82' -> '84'
-      const activeTiers = isBay18(bay) ? ['82', '84'] : ['02', '82', '84'];
+      // Check which tiers exist dynamically
+      const activeTiers = config.tiers.includes('02') ? ['02', '82', '84'] : ['82', '84'];
       
       let nextPortFound = false;
       
@@ -136,11 +165,6 @@ export const calculateRestows = (grid, currentPort) => {
 };
 
 /**
- * Helper to check if a bay is Bay 18
- */
-const isBay18 = (bay) => bay === '18';
-
-/**
  * Validates slot type restrictions and support structures.
  * Underdeck (02) is supported by tanktop.
  * On-deck (82) sits on hatch cover, supported without 02.
@@ -148,8 +172,9 @@ const isBay18 = (bay) => bay === '18';
  */
 export const validateGridPhysics = (grid) => {
   const errors = [];
+  const bays = Object.keys(grid);
   
-  BAYS.forEach(bay => {
+  bays.forEach(bay => {
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
       const stack = grid[bay][row];
@@ -190,8 +215,9 @@ export const calculateRollingPenalties = (orders, grid, currentPort) => {
   
   // Count how many containers are loaded on the grid for each order
   const orderPlacementCounts = {};
+  const bays = Object.keys(grid);
   
-  BAYS.forEach(bay => {
+  bays.forEach(bay => {
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
       config.tiers.forEach(tier => {
@@ -253,7 +279,8 @@ export const calculateRollingPenalties = (orders, grid, currentPort) => {
  */
 export const calculateGrossRevenue = (grid, currentPort) => {
   let grossRevenue = 0;
-  BAYS.forEach(bay => {
+  const bays = Object.keys(grid);
+  bays.forEach(bay => {
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
       config.tiers.forEach(tier => {
@@ -274,8 +301,9 @@ export const calculateGrossRevenue = (grid, currentPort) => {
 export const processSailingTransition = (grid, nextPort) => {
   // Create a deep copy of the grid
   const newGrid = JSON.parse(JSON.stringify(grid));
+  const bays = Object.keys(newGrid);
   
-  BAYS.forEach(bay => {
+  bays.forEach(bay => {
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
       const stack = newGrid[bay][row];

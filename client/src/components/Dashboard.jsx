@@ -2,8 +2,8 @@ import React from 'react';
 import { formatRupiah, PORT_NAMES, getNextPort } from '../utils/gameHelpers';
 import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, Users, CheckCircle2, Trophy, Navigation } from 'lucide-react';
 
-export default function Dashboard({ week, currentPort, cash, accumulatedPenalties, roomCode, players, socketId }) {
-  const nextPort = getNextPort(currentPort);
+export default function Dashboard({ week, currentPort, cash, accumulatedPenalties, roomCode, players, socketId, activePorts }) {
+  const nextPort = getNextPort(currentPort, activePorts);
   const playersList = players ? Object.values(players).sort((a, b) => b.cash - a.cash) : [];
   
   return (

@@ -180,7 +180,7 @@ io.on('connection', (socket) => {
     broadcastRoomState(roomCode);
   });
 
-  // 5. Player Ready (Sends current grid configuration & pending shelf leftovers)
+  // 5. Player Ready (Sends current grid configuration & pending buffer leftovers)
   socket.on('player_ready', ({ grid, pendingContainers }) => {
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -272,7 +272,7 @@ const executeSailingTransition = (roomCode) => {
     const restowPenaltyTotal = restowCheck.restowMovementsCount * 3000000;
 
     // 2. Compute Rolling Penalties
-    // Unloaded client shelf containers trigger rolling penalty.
+    // Unloaded client buffer containers trigger rolling penalty.
     // Also, committed orders that weren't accepted by ANYONE in this port
     // will trigger a penalty divided or applied?
     // In Konsep A: Committed orders are global. If a committed order is left behind in the global pool,
@@ -292,7 +292,7 @@ const executeSailingTransition = (roomCode) => {
     const personalAcceptedOrders = [];
     
     // Find matching order configurations that this player accepted
-    // Since global pool orders were spliced out, we look at the player's pending shelf
+    // Since global pool orders were spliced out, we look at the player's pending buffer
     // and grid containers origin.
     // We can reconstruct the order list based on what was claimed.
     // Let's calculate rolling penalties directly:
@@ -395,7 +395,7 @@ const executeSailingTransition = (roomCode) => {
 
     player.performanceLog.push(weeklyEvaluation);
     player.lastWeeklyEvaluation = weeklyEvaluation;
-    player.pendingContainers = []; // Clear pending shelf
+    player.pendingContainers = []; // Clear pending buffer
   });
 
   // Advance Room State
@@ -456,7 +456,7 @@ app.post('/api/game/start', (req, res) => {
  */
 app.post('/api/game/depart-offline', (req, res) => {
   try {
-    const { week, currentPort, players, sharedGrid } = req.body;
+    const { week, currentPort, players, sharedGrid, activePorts } = req.body;
     
     if (!players || !Array.isArray(players) || players.length === 0 || !sharedGrid) {
       return res.status(400).json({ success: false, message: 'Data permainan tidak valid.' });
@@ -471,17 +471,18 @@ app.post('/api/game/depart-offline', (req, res) => {
       });
     }
 
-    const currentPortIndex = PORTS.indexOf(currentPort);
-    const nextPort = PORTS[(currentPortIndex + 1) % PORTS.length];
+    const currentActivePorts = activePorts || PORTS;
+    const currentPortIndex = currentActivePorts.indexOf(currentPort);
+    const nextPort = currentActivePorts[(currentPortIndex + 1) % currentActivePorts.length];
     const nextWeek = week + 1;
     const isGameOver = nextWeek > 8;
-    const nextOrders = isGameOver ? [] : generateOrders(nextPort, nextWeek);
+    const nextOrders = isGameOver ? [] : generateOrders(nextPort, nextWeek, currentActivePorts);
 
-    const activePlayerIndex = currentPortIndex; // 0 for SBY, 1 for MKS, etc.
+    const activePlayerIndex = currentPortIndex % players.length; // Surabaya is 0, Makassar is 1, etc.
     const activePlayer = players[activePlayerIndex];
 
     // 1. Compute Restows on the shared grid
-    const restowCheck = calculateRestows(sharedGrid, currentPort);
+    const restowCheck = calculateRestows(sharedGrid, currentPort, currentActivePorts);
     const restowPenaltyTotal = restowCheck.restowMovementsCount * 3000000;
 
     // 2. Compute Personal Rolling Penalties for the active player
@@ -549,16 +550,17 @@ app.post('/api/game/depart-offline', (req, res) => {
     const totalWeeklyPenalties = restowPenaltyTotal + totalRollingPenalty;
 
     // 4. Calculate earned revenue for ALL players from unloaded containers destined for nextPort
-    const revenueByPlayer = [0, 0, 0, 0];
-    BAYS.forEach(bay => {
+    const revenueByPlayer = Array(players.length).fill(0);
+    const bays = Object.keys(sharedGrid);
+    bays.forEach(bay => {
       const config = getBayConfig(bay);
       config.rows.forEach(row => {
         config.tiers.forEach(tier => {
           const container = sharedGrid[bay][row][tier];
           if (container && container.destination === nextPort) {
             const originPort = container.origin;
-            const originPlayerIndex = PORTS.indexOf(originPort);
-            if (originPlayerIndex !== -1) {
+            const originPlayerIndex = currentActivePorts.indexOf(originPort) % players.length;
+            if (originPlayerIndex !== -1 && originPlayerIndex < players.length) {
               revenueByPlayer[originPlayerIndex] += container.tariff;
             }
           }
@@ -566,7 +568,8 @@ app.post('/api/game/depart-offline', (req, res) => {
       });
     });
 
-    // 5. Update cash & penalties for all players
+    // 5. Update cash & penalties & cumulative gross revenue for all players
+    const nextActivePlayerIndex = currentActivePorts.indexOf(nextPort) % players.length;
     const updatedPlayers = players.map((player, idx) => {
       const isCurrentActive = idx === activePlayerIndex;
       const earnedRevenue = revenueByPlayer[idx];
@@ -578,6 +581,7 @@ app.post('/api/game/depart-offline', (req, res) => {
 
       const newCash = player.cash + netIncome;
       const newAccumulatedPenalties = player.accumulatedPenalties + (isCurrentActive ? totalWeeklyPenalties : 0);
+      const newCumulativeGrossRevenue = (player.cumulativeGrossRevenue || 0) + earnedRevenue;
 
       // Record Weekly Evaluation ONLY for the active player
       let weeklyEvaluation = player.lastWeeklyEvaluation;
@@ -605,14 +609,54 @@ app.post('/api/game/depart-offline', (req, res) => {
         ...player,
         cash: newCash,
         accumulatedPenalties: newAccumulatedPenalties,
+        cumulativeGrossRevenue: newCumulativeGrossRevenue,
         ready: false,
         pendingContainers: isCurrentActive ? [] : player.pendingContainers, // Clear pending containers only for active player
         performanceLog: updatedHistory,
         lastWeeklyEvaluation: weeklyEvaluation,
         // If it is next player's turn, initialize their cargoPool for the next port
-        cargoPool: (idx === (activePlayerIndex + 1) % players.length) ? JSON.parse(JSON.stringify(nextOrders)) : player.cargoPool
+        cargoPool: (idx === nextActivePlayerIndex) ? JSON.parse(JSON.stringify(nextOrders)) : player.cargoPool
       };
     });
+
+    // Check for route unlocks based on player cumulative revenue
+    const updatedActivePorts = [...currentActivePorts];
+    const unlockedPortMessages = [];
+    
+    // Check Banjarmasin (BJM) - unlocks at Rp 200,000,000 cumulative revenue
+    if (!updatedActivePorts.includes('BJM')) {
+      const anyQualified = updatedPlayers.some(p => (p.cumulativeGrossRevenue || 0) >= 200000000);
+      if (anyQualified) {
+        updatedActivePorts.push('BJM');
+        unlockedPortMessages.push('Pelabuhan Banjarmasin (BJM) telah berhasil dibuka untuk pelayaran!');
+      }
+    }
+    // Check Jakarta (JKT) - unlocks at Rp 350,000,000 cumulative revenue
+    if (!updatedActivePorts.includes('JKT') && updatedActivePorts.includes('BJM')) {
+      const anyQualified = updatedPlayers.some(p => (p.cumulativeGrossRevenue || 0) >= 350000000);
+      if (anyQualified) {
+        updatedActivePorts.push('JKT');
+        unlockedPortMessages.push('Pelabuhan Jakarta (JKT) telah berhasil dibuka untuk pelayaran!');
+      }
+    }
+    // Check Bali (BLI) - unlocks at Rp 500,000,000 cumulative revenue
+    if (!updatedActivePorts.includes('BLI') && updatedActivePorts.includes('JKT')) {
+      const anyQualified = updatedPlayers.some(p => (p.cumulativeGrossRevenue || 0) >= 500000000);
+      if (anyQualified) {
+        updatedActivePorts.push('BLI');
+        unlockedPortMessages.push('Pelabuhan Bali (BLI) telah berhasil dibuka untuk pelayaran!');
+      }
+    }
+
+    // Regenerate nextOrders if a new port was unlocked just now so it is included in destinations
+    const finalNextOrders = (isGameOver || unlockedPortMessages.length === 0) 
+      ? nextOrders 
+      : generateOrders(nextPort, nextWeek, updatedActivePorts);
+
+    // Update next player's cargo pool again if we regenerated it with the new port destinations
+    if (unlockedPortMessages.length > 0 && !isGameOver) {
+      updatedPlayers[nextActivePlayerIndex].cargoPool = JSON.parse(JSON.stringify(finalNextOrders));
+    }
 
     // 6. Unload next port containers and slide-down on the shared grid
     const transitionedGrid = processSailingTransition(sharedGrid, nextPort);
@@ -643,10 +687,12 @@ app.post('/api/game/depart-offline', (req, res) => {
       data: {
         week: nextWeek,
         currentPort: nextPort,
-        globalCargoPool: nextOrders,
+        globalCargoPool: finalNextOrders,
         isGameOver,
         players: finalPlayers,
-        sharedGrid: transitionedGrid
+        sharedGrid: transitionedGrid,
+        activePorts: updatedActivePorts,
+        unlockMessages: unlockedPortMessages
       }
     });
 

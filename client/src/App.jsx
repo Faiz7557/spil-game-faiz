@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import Dashboard from './components/Dashboard';
-import SalesCall from './components/SalesCall';
 import BayplanSimulator from './components/BayplanSimulator';
 import PerformanceModal from './components/PerformanceModal';
 import GameOverModal from './components/GameOverModal';
@@ -43,6 +42,9 @@ export default function App() {
   const [offlineIsGameOver, setOfflineIsGameOver] = useState(false);
   const [isOfflineGameStarted, setIsOfflineGameStarted] = useState(false);
   const [offlineSharedGrid, setOfflineSharedGrid] = useState(null);
+  const [offlineBays, setOfflineBays] = useState(['10', '06', '02']);
+  const [offlinePorts, setOfflinePorts] = useState(['SBY', 'MKS', 'JYP', 'MDN']);
+  const [offlineVesselLevel, setOfflineVesselLevel] = useState(1);
 
   // Connect socket for Online Mode
   const connectSocket = () => {
@@ -179,13 +181,13 @@ export default function App() {
       if (resData.success) {
         setOfflineCargoPool(resData.data.orders);
         
-        // Initialize 4 offline players. Only SBY (idx === 0) gets the initial cargo pool.
         const initializedPlayers = offlinePlayersNames.map((name, idx) => ({
           id: idx,
           name: name || `Kapten ${idx + 1}`,
           cash: 150000000,
           accumulatedPenalties: 0,
-          grid: createEmptyGrid(),
+          cumulativeGrossRevenue: 0,
+          grid: createEmptyGrid(['10', '06', '02']),
           pendingContainers: [],
           ready: false,
           performanceLog: [],
@@ -195,7 +197,10 @@ export default function App() {
         }));
 
         setOfflinePlayers(initializedPlayers);
-        setOfflineSharedGrid(createEmptyGrid());
+        setOfflineSharedGrid(createEmptyGrid(['10', '06', '02']));
+        setOfflineBays(['10', '06', '02']);
+        setOfflinePorts(['SBY', 'MKS', 'JYP', 'MDN']);
+        setOfflineVesselLevel(1);
         setOfflineWeek(1);
         setOfflineCurrentPort('SBY');
         setActivePlayerIndex(0);
@@ -236,7 +241,7 @@ export default function App() {
     }
 
     const updatedPlayers = [...offlinePlayers];
-    // Update player pending shelf
+    // Update player buffer
     updatedPlayers[activePlayerIndex].pendingContainers = [
       ...updatedPlayers[activePlayerIndex].pendingContainers,
       ...newContainers
@@ -284,6 +289,63 @@ export default function App() {
     setOfflinePlayers(updatedPlayers);
   };
 
+  const handleUpgradeVesselOffline = () => {
+    if (offlineIsGameOver) return;
+    
+    const nextLevel = offlineVesselLevel + 1;
+    if (nextLevel > 3) {
+      showTemporaryAlert('Kapal Anda sudah mencapai ukuran maksimal (Besar)!');
+      return;
+    }
+
+    const upgradeCosts = {
+      2: 50000000,   // Level 2: Rp 50M
+      3: 100000000   // Level 3: Rp 100M
+    };
+    const cost = upgradeCosts[nextLevel];
+    
+    // The active player pays for the upgrade
+    const player = offlinePlayers[activePlayerIndex];
+    if (player.cash < cost) {
+      showTemporaryAlert(`Saldo tidak cukup! Biaya upgrade ke Kapal Level ${nextLevel} adalah ${formatRupiah(cost)}.`);
+      return;
+    }
+
+    // Deduct cash and upgrade
+    const updatedPlayers = offlinePlayers.map((p, idx) => {
+      if (idx === activePlayerIndex) {
+        return {
+          ...p,
+          cash: p.cash - cost
+        };
+      }
+      return p;
+    });
+
+    // Bays mapping for each level
+    const levelBays = {
+      2: ['18', '14', '10', '06', '02'],
+      3: ['26', '22', '18', '14', '10', '06', '02']
+    };
+    const nextBays = levelBays[nextLevel];
+
+    // Expand shared grid
+    const newGrid = createEmptyGrid(nextBays);
+    // Copy old grid slots over
+    Object.keys(offlineSharedGrid).forEach(bay => {
+      if (newGrid[bay]) {
+        newGrid[bay] = offlineSharedGrid[bay];
+      }
+    });
+
+    setOfflinePlayers(updatedPlayers);
+    setOfflineSharedGrid(newGrid);
+    setOfflineBays(nextBays);
+    setOfflineVesselLevel(nextLevel);
+
+    showTemporaryAlert(`🚢 Kapal berhasil di-upgrade ke Level ${nextLevel} (${nextBays.length} Bay)! Saldo Anda dipotong ${formatRupiah(cost)}.`);
+  };
+
   // Submit and Sail (Offline)
   const handleDepartOffline = async () => {
     if (loading) return;
@@ -304,7 +366,8 @@ export default function App() {
           week: offlineWeek,
           currentPort: offlineCurrentPort,
           players: offlinePlayers,
-          sharedGrid: offlineSharedGrid
+          sharedGrid: offlineSharedGrid,
+          activePorts: offlinePorts
         })
       });
 
@@ -318,14 +381,24 @@ export default function App() {
         setOfflinePlayers(result.players);
         setOfflineSharedGrid(result.sharedGrid);
         
+        if (result.activePorts) {
+          setOfflinePorts(result.activePorts);
+        }
+
         // Show weekly performance sheet for current active player
         if (result.players[activePlayerIndex]) {
           setLastWeeklyEvaluation(result.players[activePlayerIndex].lastWeeklyEvaluation);
           setShowWeeklyModal(true);
         }
 
-        // Update active player index to match the new current port
-        const nextActiveIndex = ['SBY', 'MKS', 'JYP', 'MDN'].indexOf(result.currentPort);
+        // Show alerts if a new port was unlocked
+        if (result.unlockMessages && result.unlockMessages.length > 0) {
+          showTemporaryAlert(`🔓 UNLOCK RUTE BARU: ${result.unlockMessages.join('\n')}`);
+        }
+
+        // Update active player index to match the new current port using round-robin on active ports
+        const currentActivePorts = result.activePorts || offlinePorts;
+        const nextActiveIndex = currentActivePorts.indexOf(result.currentPort) % result.players.length;
         if (nextActiveIndex !== -1) {
           setActivePlayerIndex(nextActiveIndex);
         }
@@ -376,6 +449,10 @@ export default function App() {
       showTemporaryAlert(`Slot sudah terisi.`);
       return;
     }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      showTemporaryAlert(`Gagal Memuat: Tidak dapat mengakses underdeck (Tier 02) karena hatch cover terhalang kontainer di atas dek (Tier 82/84).`);
+      return;
+    }
     if (tier === '84' && stack['82'] === null) {
       showTemporaryAlert(`Kontainer melayang! Anda harus memuat Tier 82 terlebih dahulu.`);
       return;
@@ -393,6 +470,14 @@ export default function App() {
     const container = stack[tier];
     if (!container) return;
 
+    if (container.origin !== currentPort) {
+      showTemporaryAlert(`Gagal: Kontainer transit dari ${container.origin} dikunci di kapal.`);
+      return;
+    }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      showTemporaryAlert(`Tidak dapat membongkar underdeck (Tier 02) saat hatch cover terhalang kontainer di atas dek (Tier 82/84).`);
+      return;
+    }
     if (tier === '82' && stack['84'] !== null) {
       showTemporaryAlert(`Tidak dapat membongkar Tier 82 saat Tier 84 menampung kontainer di atasnya.`);
       return;
@@ -426,6 +511,10 @@ export default function App() {
       showTemporaryAlert(`Slot sudah terisi.`);
       return;
     }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      showTemporaryAlert(`Gagal Memuat: Tidak dapat mengakses underdeck (Tier 02) karena hatch cover terhalang kontainer di atas dek (Tier 82/84).`);
+      return;
+    }
     if (tier === '84' && stack['82'] === null) {
       showTemporaryAlert(`Kontainer melayang! Anda harus memuat Tier 82 terlebih dahulu.`);
       return;
@@ -446,6 +535,14 @@ export default function App() {
     const container = stack[tier];
     if (!container) return;
 
+    if (container.origin !== offlineCurrentPort) {
+      showTemporaryAlert(`Gagal: Kontainer transit dari ${container.origin} dikunci di kapal.`);
+      return;
+    }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      showTemporaryAlert(`Tidak dapat membongkar underdeck (Tier 02) saat hatch cover terhalang kontainer di atas dek (Tier 82/84).`);
+      return;
+    }
     if (tier === '82' && stack['84'] !== null) {
       showTemporaryAlert(`Tidak dapat membongkar Tier 82 saat Tier 84 menampung kontainer di atasnya.`);
       return;
@@ -699,9 +796,10 @@ export default function App() {
         currentPort={currentPort}
         cash={activePlayerCash}
         accumulatedPenalties={activePlayerPenalties}
-        roomCode={gameMode === 'ONLINE' ? roomCode : null}
+        roomCode={gameMode === 'ONLINE' ? roomCode : 'LOCAL PLAY'}
         players={formattedPlayersList}
         socketId={currentSocketOrIndexId}
+        activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
       />
 
       {/* 3. Bar Status Giliran Kapten (Hanya muncul di Mode Offline) */}
@@ -714,7 +812,8 @@ export default function App() {
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
             {offlinePlayers.map((player, idx) => {
               const isActive = idx === activePlayerIndex;
-              const portCode = ['SBY', 'MKS', 'JYP', 'MDN'][idx];
+              // Map dynamic starting ports dynamically based on activePorts
+              const portCode = offlinePorts[idx] || ['SBY', 'MKS', 'JYP', 'MDN'][idx];
               return (
                 <div
                   key={player.id}
@@ -733,14 +832,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 4. Sales Call Panel (Shared Pool) */}
-      <SalesCall 
-        orders={cargoPool || []}
-        onAccept={gameMode === 'ONLINE' ? handleClaimCargoOnline : handleClaimCargoOffline}
-        onDecline={gameMode === 'ONLINE' ? handleDeclineCargoOnline : handleDeclineCargoOffline}
-      />
-
-      {/* 5. Main Simulator workspace grid */}
+      {/* 4. Main Simulator workspace grid */}
       <div className="w-full flex-1">
         <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
@@ -749,43 +841,15 @@ export default function App() {
             </h2>
             <p className="text-xs text-emerald-100/90 font-bold mt-0.5">
               {gameMode === 'ONLINE' 
-                ? 'Tata kargo klaiman Anda. Pelayaran akan diproses serentak setelah seluruh kapten menekan tombol siap.'
+                ? 'Tata kargo klaiman Anda. Pelayaran akan diproses setelah seluruh kapten menekan tombol Siap Berlayar.'
                 : 'Susun kontainer pada kapal bersama. Pelayaran ke pelabuhan berikutnya akan memicu bongkar muat dan giliran otomatis.'}
             </p>
           </div>
           
           <div className="flex gap-2 w-full sm:w-auto">
-            {/* Ready state button (Online Only) */}
-            {gameMode === 'ONLINE' && (
-              <button
-                onClick={handleToggleReadyOnline}
-                disabled={loading || isGameOver}
-                className={`flex-1 sm:flex-initial flex items-center gap-2 disabled:opacity-50 text-white border-transparent font-extrabold text-xs px-6 py-2.5 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.02] active:scale-95 transition-all justify-center ${
-                  isReadyCurrent 
-                    ? 'bg-spil-red hover:bg-spil-red-hover' 
-                    : 'bg-spil-green hover:bg-spil-green-hover'
-                }`}
-              >
-                <Play className="w-4 h-4 fill-white" />
-                {loading ? 'Mengirim...' : (isReadyCurrent ? 'Batal Siap (Cancel)' : 'Siap Berlayar (Ready)')}
-              </button>
-            )}
-
-            {/* Depart button (Offline Only) */}
-            {gameMode === 'OFFLINE' && (
-              <button
-                onClick={handleDepartOffline}
-                disabled={loading || isGameOver}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-spil-green hover:bg-spil-green-hover disabled:opacity-40 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl uppercase tracking-wider shadow-md active:scale-95 transition-all"
-              >
-                <Play className="w-4 h-4 fill-white" />
-                Berangkat (Sailing)
-              </button>
-            )}
-            
             <button
               onClick={handleLeaveRoom}
-              className="bg-slate-100 hover:bg-slate-200 border border-slate-350 text-slate-700 font-extrabold text-xs px-4 py-2.5 rounded-xl uppercase tracking-wider shadow-sm hover:scale-[1.02]"
+              className="bg-slate-100 hover:bg-slate-200 border border-slate-350 text-slate-700 font-extrabold text-xs px-4 py-2.5 rounded-xl uppercase tracking-wider shadow-sm hover:scale-[1.02] ml-auto animate-fade-in"
             >
               Keluar
             </button>
@@ -798,6 +862,21 @@ export default function App() {
           pendingContainers={activePendingList}
           onPlaceContainer={gameMode === 'ONLINE' ? handlePlaceContainer : handlePlaceContainerOffline}
           onRemoveContainer={gameMode === 'ONLINE' ? handleRemoveContainer : handleRemoveContainerOffline}
+          activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
+          // Sidebar Overhaul Props:
+          gameMode={gameMode}
+          cargoPool={cargoPool}
+          onAcceptCargo={gameMode === 'ONLINE' ? handleClaimCargoOnline : handleClaimCargoOffline}
+          onDeclineCargo={gameMode === 'ONLINE' ? handleDeclineCargoOnline : handleDeclineCargoOffline}
+          vesselLevel={offlineVesselLevel}
+          onUpgradeVessel={handleUpgradeVesselOffline}
+          cumulativeGrossRevenue={offlinePlayers[activePlayerIndex]?.cumulativeGrossRevenue || 0}
+          activeOfflinePlayerName={activePlayerName}
+          onDepart={handleDepartOffline}
+          loading={loading}
+          isGameOver={isGameOver}
+          isReadyCurrent={isReadyCurrent}
+          onToggleReadyOnline={handleToggleReadyOnline}
         />
       </div>
 
