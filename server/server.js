@@ -14,6 +14,9 @@ import {
   calculateGrossRevenue,
   processSailingTransition
 } from './utils/gameEngine.js';
+import { query } from './utils/db.js';
+import { initializeDatabase } from './utils/initDb.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -42,7 +45,97 @@ const broadcastRoomState = (roomCode) => {
   const room = ROOMS[roomCode];
   if (!room) return;
   io.to(roomCode).emit('room_state', room);
+  upsertRoomToDb(roomCode);
 };
+
+// Database CRUD Helpers for Multiplayer Rooms & Sessions
+const loadRoomsFromDb = async () => {
+  try {
+    const res = await query(`SELECT * FROM rooms WHERE is_game_over = FALSE`);
+    res.rows.forEach(row => {
+      ROOMS[row.room_code] = {
+        roomCode: row.room_code,
+        week: row.week,
+        currentPort: row.current_port,
+        globalCargoPool: typeof row.global_cargo_pool === 'string' ? JSON.parse(row.global_cargo_pool) : row.global_cargo_pool,
+        isGameOver: row.is_game_over,
+        players: typeof row.players === 'string' ? JSON.parse(row.players) : row.players
+      };
+    });
+    console.log(`[Database] Loaded ${res.rows.length} active room(s) from PostgreSQL into memory.`);
+  } catch (err) {
+    console.error('[Database] Failed loading active rooms from DB:', err.message || err);
+  }
+};
+
+const upsertRoomToDb = async (roomCode) => {
+  const room = ROOMS[roomCode];
+  if (!room) return;
+  try {
+    const sql = `
+      INSERT INTO rooms (room_code, week, current_port, global_cargo_pool, is_game_over, players, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+      ON CONFLICT (room_code) DO UPDATE SET
+        week = EXCLUDED.week,
+        current_port = EXCLUDED.current_port,
+        global_cargo_pool = EXCLUDED.global_cargo_pool,
+        is_game_over = EXCLUDED.is_game_over,
+        players = EXCLUDED.players,
+        updated_at = CURRENT_TIMESTAMP;
+    `;
+    await query(sql, [
+      room.roomCode,
+      room.week,
+      room.currentPort,
+      JSON.stringify(room.globalCargoPool),
+      room.isGameOver,
+      JSON.stringify(room.players)
+    ]);
+  } catch (err) {
+    console.error(`[Database] Error saving room ${roomCode}:`, err.message || err);
+  }
+};
+
+const deleteRoomFromDb = async (roomCode) => {
+  try {
+    await query(`DELETE FROM rooms WHERE room_code = $1`, [roomCode]);
+  } catch (err) {
+    console.error(`[Database] Error deleting room ${roomCode}:`, err.message || err);
+  }
+};
+
+const upsertSessionToDb = async (sessionId, sessionData) => {
+  try {
+    const sql = `
+      INSERT INTO sessions (session_id, week, current_port, active_ports, vessel_level, shared_grid, global_cargo_pool, players, is_game_over, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+      ON CONFLICT (session_id) DO UPDATE SET
+        week = EXCLUDED.week,
+        current_port = EXCLUDED.current_port,
+        active_ports = EXCLUDED.active_ports,
+        vessel_level = EXCLUDED.vessel_level,
+        shared_grid = EXCLUDED.shared_grid,
+        global_cargo_pool = EXCLUDED.global_cargo_pool,
+        players = EXCLUDED.players,
+        is_game_over = EXCLUDED.is_game_over,
+        updated_at = CURRENT_TIMESTAMP;
+    `;
+    await query(sql, [
+      sessionId,
+      sessionData.week || 1,
+      sessionData.currentPort || 'SBY',
+      JSON.stringify(sessionData.activePorts || ['SBY', 'MKS', 'JYP', 'MDN']),
+      sessionData.vesselLevel || 1,
+      JSON.stringify(sessionData.sharedGrid || {}),
+      JSON.stringify(sessionData.globalCargoPool || []),
+      JSON.stringify(sessionData.players || []),
+      sessionData.isGameOver || false
+    ]);
+  } catch (err) {
+    console.error(`[Database] Error saving session ${sessionId}:`, err.message || err);
+  }
+};
+
 
 // Express REST API fallback (optional health checks)
 app.get('/api/health', (req, res) => {
@@ -84,7 +177,9 @@ io.on('connection', (socket) => {
       socket.roomCode = roomCode;
       
       console.log(`[Room Created] Code: ${roomCode} by ${playerName}`);
+      upsertRoomToDb(roomCode);
       socket.emit('room_created', { roomCode, state: ROOMS[roomCode] });
+
     } catch (err) {
       console.error('Error creating room:', err);
       socket.emit('error_message', 'Gagal membuat kamar baru.');
@@ -238,8 +333,10 @@ io.on('connection', (socket) => {
       // If room is empty, clean it up
       if (Object.keys(room.players).length === 0) {
         delete ROOMS[roomCode];
+        deleteRoomFromDb(roomCode);
         console.log(`[Room Cleaned] Deleted empty Room ${roomCode}`);
       } else {
+
         // Check if remaining players are all ready
         const allPlayers = Object.values(room.players);
         const allReady = allPlayers.every(p => p.ready);
@@ -428,8 +525,10 @@ const executeSailingTransition = (roomCode) => {
   }
 
   // Broadcast the fresh room state & tell clients sailing is complete
+  upsertRoomToDb(roomCode);
   io.to(roomCode).emit('sailing_completed', room);
 };
+
 
 /**
  * REST API Endpoint to initialize/start an offline session.
@@ -682,6 +781,18 @@ app.post('/api/game/depart-offline', (req, res) => {
       });
     }
 
+    // Persist offline session to PostgreSQL database
+    upsertSessionToDb('OFFLINE_SESSION', {
+      week: nextWeek,
+      currentPort: nextPort,
+      activePorts: updatedActivePorts,
+      vesselLevel: 1,
+      sharedGrid: transitionedGrid,
+      globalCargoPool: finalNextOrders,
+      players: finalPlayers,
+      isGameOver
+    });
+
     res.json({
       success: true,
       data: {
@@ -703,8 +814,11 @@ app.post('/api/game/depart-offline', (req, res) => {
 });
 
 // Start listening
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log(`===================================================`);
   console.log(`  SPIL Multiplayer Server running on port ${PORT} `);
   console.log(`===================================================`);
+  await initializeDatabase();
+  await loadRoomsFromDb();
 });
+

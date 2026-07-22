@@ -1,7 +1,12 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Parse PostgreSQL BIGINT (INT8) as JavaScript Number
 pg.types.setTypeParser(pg.types.builtins.INT8, (value) => parseInt(value, 10));
