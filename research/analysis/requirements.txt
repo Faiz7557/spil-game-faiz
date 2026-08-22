@@ -1,0 +1,9 @@
+# Analysis pipeline for the agent comparison.
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11
+
+# Added when agent A5 (deep RL) lands:
+# gymnasium>=0.29
+# stable-baselines3>=2.3
+# sb3-contrib>=2.3        # MaskablePPO

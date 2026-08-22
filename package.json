@@ -6,7 +6,8 @@
     "install-all": "npm install && npm install --prefix server && npm install --prefix client",
     "server": "npm start --prefix server",
     "client": "npm run dev --prefix client",
-    "dev": "npx concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+    "dev": "npx concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "pilot": "node research/run-pilot.mjs"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

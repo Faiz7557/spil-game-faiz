@@ -1,14 +1,18 @@
-export const PORTS = ['SBY', 'MKS', 'JYP', 'MDN'];
-export const BAYS = ['18', '14', '10', '06', '02'];
-
-export const getBayConfig = (bay) => {
-  const isBay18 = bay === '18';
-  return {
-    rows: isBay18 ? ['01', '00', '02'] : ['03', '01', '02', '04'],
-    tiers: isBay18 ? ['84', '82'] : ['84', '82', '02'],
-    containerType: (bay === '14' || bay === '10' || bay === '22') ? 'REEFER' : 'DRY'
-  };
-};
+// Vessel layout, bay config, empty-grid, and physics validation now live in
+// shared/gameConstants.js (single source of truth for client + server +
+// research) - re-exported here so nothing importing from gameHelpers has to
+// change. This is also what fixed the client/server REEFER_BAYS drift.
+export {
+  PORTS,
+  BAYS,
+  REEFER_BAYS,
+  getBayConfig,
+  createEmptyGrid,
+  validateGridPhysics
+} from '../../../shared/gameConstants.js';
+// `export ... from` re-exports but does not bind PORTS locally, and
+// getNextPort/getLaterPorts below need the local binding.
+import { PORTS } from '../../../shared/gameConstants.js';
 
 export const formatRupiah = (value) => {
   if (value === undefined || value === null) return 'Rp 0';
@@ -73,52 +77,3 @@ export const getLaterPorts = (port, activePorts) => {
   return later;
 };
 
-export const createEmptyGrid = (bays = BAYS) => {
-  const grid = {};
-  bays.forEach(bay => {
-    grid[bay] = {};
-    const config = getBayConfig(bay);
-    config.rows.forEach(row => {
-      grid[bay][row] = {};
-      config.tiers.forEach(tier => {
-        grid[bay][row][tier] = null;
-      });
-    });
-  });
-  return grid;
-};
-
-export const validateGridPhysics = (grid) => {
-  const errors = [];
-  const bays = Object.keys(grid);
-  
-  bays.forEach(bay => {
-    const config = getBayConfig(bay);
-    config.rows.forEach(row => {
-      const stack = grid[bay][row];
-      
-      // 1. Container Type matching Bay slot type
-      config.tiers.forEach(tier => {
-        const container = stack[tier];
-        if (container) {
-          if (config.containerType === 'REEFER' && container.containerType !== 'REEFER') {
-            errors.push(`Slot Bay ${bay}, Row ${row}, Tier ${tier} hanya menerima kontainer REEFER, tetapi berisi DRY.`);
-          }
-          if (config.containerType === 'DRY' && container.containerType !== 'DRY') {
-            errors.push(`Slot Bay ${bay}, Row ${row}, Tier ${tier} hanya menerima kontainer DRY, tetapi berisi REEFER.`);
-          }
-        }
-      });
-      
-      // 2. Stacking rule: Tier 84 requires Tier 82 in the same row
-      if (stack['84'] && !stack['82']) {
-        errors.push(`Kesalahan Fisika Kapal: Kontainer di Bay ${bay}, Row ${row}, Tier 84 melayang. Dibutuhkan Tier 82.`);
-      }
-    });
-  });
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-};

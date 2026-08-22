@@ -29,6 +29,22 @@
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
 }
 
+/* Mobile legibility floor. Several arbitrary text-[Npx] sizes in the
+   bayplan/dashboard were tuned for desktop density and render unreadably
+   small (7-9.5px) on phones. Only raise the ones below a comfortable
+   minimum, and only on small viewports - desktop/tablet keep the original
+   tuned density since that isn't where the problem is. */
+@media (max-width: 640px) {
+  .text-\[7px\],
+  .text-\[7\.5px\],
+  .text-\[8px\],
+  .text-\[8\.5px\],
+  .text-\[9px\],
+  .text-\[9\.5px\] {
+    font-size: 10.5px !important;
+  }
+}
+
 /* Custom light-theme scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

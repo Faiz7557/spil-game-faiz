@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -11,11 +12,15 @@ import {
   calculateRestows,
   validateGridPhysics,
   calculateRollingPenalties,
-  calculateGrossRevenue,
-  processSailingTransition
+  calculateDischargeRevenue,
+  processSailingTransition,
+  rngForPortCall
 } from './utils/gameEngine.js';
 import { query } from './utils/db.js';
 import { initializeDatabase } from './utils/initDb.js';
+import { processBotTurn, DEFAULT_BOT_PROFILES } from './utils/botEngine.js';
+import { hashPassword, verifyPassword, signToken, resolveIdentity, tokenWasRejected } from './utils/auth.js';
+
 
 
 const app = express();
@@ -35,9 +40,32 @@ const io = new Server(httpServer, {
 // In-memory multiplayer room store
 const ROOMS = {};
 
-// Helper to generate a unique 4-character room code
+// In-memory offline (pass-and-play vs bots) session store, keyed by the
+// browser's persistent client id (see CLIENT_ID in client/src/App.jsx). The
+// server owns cash/grid/cargo state entirely from here on - the client only
+// sends discrete actions (claim/decline/place/remove/upgrade/depart) and
+// renders whatever state the server hands back. Nothing about a player's
+// economy is read from the request body anymore.
+const OFFLINE_SESSIONS = {};
+
+const OFFLINE_START_CASH = 150000000;
+const OFFLINE_BAYS_BY_LEVEL = {
+  1: ['10', '06', '02'],
+  2: ['18', '14', '10', '06', '02'],
+  3: ['26', '22', '18', '14', '10', '06', '02']
+};
+const OFFLINE_UPGRADE_COST = { 2: 50000000, 3: 100000000 };
+
+// Helper to generate a unique 4-character room code.
+// Math.random().toString(36) can yield fewer than 4 chars (e.g. leading zero
+// digits get dropped), so pad before truncating. Retries against the live
+// ROOMS map to avoid silently overwriting an active room on collision.
 const generateRoomCode = () => {
-  return Math.random().toString(36).substring(2, 6).toUpperCase();
+  let code;
+  do {
+    code = Math.random().toString(36).substring(2, 6).toUpperCase().padEnd(4, '0');
+  } while (ROOMS[code]);
+  return code;
 };
 
 // Helper to clean up empty rooms or send status updates
@@ -53,18 +81,95 @@ const loadRoomsFromDb = async () => {
   try {
     const res = await query(`SELECT * FROM rooms WHERE is_game_over = FALSE`);
     res.rows.forEach(row => {
+      const players = typeof row.players === 'string' ? JSON.parse(row.players) : row.players;
+      // No socket is actually connected to any of these players right after
+      // a restart, whatever `connected` said when the row was last saved.
+      // Force it false so allReady-style checks correctly wait for a real
+      // join_room reconnect instead of trusting stale state.
+      Object.values(players).forEach(p => { p.connected = false; });
+
       ROOMS[row.room_code] = {
         roomCode: row.room_code,
         week: row.week,
         currentPort: row.current_port,
         globalCargoPool: typeof row.global_cargo_pool === 'string' ? JSON.parse(row.global_cargo_pool) : row.global_cargo_pool,
         isGameOver: row.is_game_over,
-        players: typeof row.players === 'string' ? JSON.parse(row.players) : row.players
+        players
       };
     });
     console.log(`[Database] Loaded ${res.rows.length} active room(s) from PostgreSQL into memory.`);
   } catch (err) {
     console.error('[Database] Failed loading active rooms from DB:', err.message || err);
+  }
+};
+
+const loadSessionsFromDb = async () => {
+  try {
+    const res = await query(`SELECT * FROM sessions WHERE is_game_over = FALSE`);
+    let loaded = 0;
+    res.rows.forEach(row => {
+      const players = typeof row.players === 'string' ? JSON.parse(row.players) : row.players;
+      // Rows saved before the sessions-table migration (see initDb.js) have
+      // no usable players/shared_grid - skip rather than resurrect a
+      // half-shaped session that would crash the first action against it.
+      if (!Array.isArray(players) || players.length === 0 || !row.shared_grid) return;
+
+      OFFLINE_SESSIONS[row.session_id] = {
+        sessionId: row.session_id,
+        week: row.week,
+        currentPort: row.current_port,
+        activePorts: typeof row.active_ports === 'string' ? JSON.parse(row.active_ports) : row.active_ports,
+        vesselLevel: row.vessel_level || 1,
+        sharedGrid: typeof row.shared_grid === 'string' ? JSON.parse(row.shared_grid) : row.shared_grid,
+        players,
+        isGameOver: row.is_game_over,
+        seed: null
+      };
+      loaded++;
+    });
+    console.log(`[Database] Loaded ${loaded} active offline session(s) from PostgreSQL into memory.`);
+  } catch (err) {
+    console.error('[Database] Failed loading offline sessions from DB:', err.message || err);
+  }
+};
+
+const persistOfflineSession = (session) => {
+  upsertSessionToDb(session.sessionId, {
+    week: session.week,
+    currentPort: session.currentPort,
+    activePorts: session.activePorts,
+    vesselLevel: session.vesselLevel,
+    sharedGrid: session.sharedGrid,
+    globalCargoPool: [],
+    players: session.players,
+    isGameOver: session.isGameOver
+  });
+};
+
+const getOfflineActivePlayerIndex = (session) => {
+  const portIndex = session.activePorts.indexOf(session.currentPort);
+  return portIndex % session.players.length;
+};
+
+const computePlayerRating = (cash) => {
+  if (cash >= 300000000) return 'VP Operasi Logistik & Stowage';
+  if (cash >= 200000000) return 'Spesialis Stowage Pelabuhan Senior';
+  if (cash >= 100000000) return 'Koordinator Logistik Standar';
+  if (cash < 0) return 'Supervisor Terminal Bangkrut';
+  return 'Perwira Logistik Junior';
+};
+
+// Writes one row per completed game. Called only at game-over, from the
+// server's own final state - never from a client-submitted value.
+const recordLeaderboardEntry = async (playerName, cash, accumulatedPenalties, playerRating, mode) => {
+  try {
+    await query(
+      `INSERT INTO leaderboard_entries (player_name, cash, accumulated_penalties, player_rating, mode)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [playerName || 'Kapten Anonim', cash, accumulatedPenalties || 0, playerRating, mode]
+    );
+  } catch (err) {
+    console.error('[Leaderboard] Failed recording entry:', err.message || err);
   }
 };
 
@@ -142,16 +247,111 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, status: 'healthy', roomsConnected: Object.keys(ROOMS).length });
 });
 
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+
+// Login/register have no other protection against brute-forcing a password
+// or spamming account creation - cap attempts per IP rather than leaving
+// them uncapped.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Terlalu banyak percobaan. Silakan coba lagi dalam beberapa menit.' }
+});
+
+app.post('/api/auth/register', authLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (typeof username !== 'string' || !USERNAME_RE.test(username)) {
+      return res.status(400).json({ success: false, message: 'Nama pengguna harus 3-20 karakter (huruf, angka, underscore).' });
+    }
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Kata sandi minimal 6 karakter.' });
+    }
+
+    const existing = await query('SELECT id FROM users WHERE username = $1', [username]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ success: false, message: 'Nama pengguna sudah dipakai.' });
+    }
+
+    const passwordHash = await hashPassword(password);
+    const inserted = await query(
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id',
+      [username, passwordHash]
+    );
+    const userId = inserted.rows[0].id;
+    const token = signToken(userId, username);
+    res.json({ success: true, data: { token, userId, username } });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ success: false, message: 'Internal server error registering user.' });
+  }
+});
+
+app.post('/api/auth/login', authLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ success: false, message: 'Nama pengguna dan kata sandi wajib diisi.' });
+    }
+
+    const result = await query('SELECT id, username, password_hash FROM users WHERE username = $1', [username]);
+    const user = result.rows[0];
+    // Same generic message whether the username doesn't exist or the
+    // password is wrong, so a login attempt can't be used to enumerate
+    // which usernames are registered.
+    if (!user || !(await verifyPassword(password, user.password_hash))) {
+      return res.status(401).json({ success: false, message: 'Nama pengguna atau kata sandi salah.' });
+    }
+
+    const token = signToken(user.id, user.username);
+    res.json({ success: true, data: { token, userId: user.id, username: user.username } });
+  } catch (error) {
+    console.error('Error logging in user:', error);
+    res.status(500).json({ success: false, message: 'Internal server error logging in.' });
+  }
+});
+
+// Top captains by final cash across all completed games (offline + online).
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const result = await query(
+      `SELECT player_name, cash, accumulated_penalties, player_rating, mode, completed_at
+       FROM leaderboard_entries
+       ORDER BY cash DESC
+       LIMIT $1`,
+      [limit]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({ success: false, message: 'Internal server error fetching leaderboard.' });
+  }
+});
+
 // WebSocket Real-time controllers
 io.on('connection', (socket) => {
   console.log(`[Socket Connected] ID: ${socket.id}`);
 
   // 1. Create Room (Host)
-  socket.on('create_room', ({ playerName }) => {
+  socket.on('create_room', ({ playerName, playerId, authToken }) => {
     try {
+      if (tokenWasRejected(authToken)) {
+        return socket.emit('error_message', 'auth_expired:Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
+      }
       const roomCode = generateRoomCode();
       const initialPort = 'SBY';
-      
+      // Players are keyed by a persistent client id (from the browser's
+      // localStorage), not socket.id - socket.id changes on every reconnect,
+      // which used to make the server forget who a player was on refresh or
+      // after a server restart. Fall back to a random id defensively if an
+      // older client doesn't send one, rather than crashing the room. A
+      // verified authToken always wins over the claimed playerId - same
+      // reasoning as resolveOfflineSessionId above.
+      const id = resolveIdentity(authToken, playerId, () => crypto.randomUUID());
+
       ROOMS[roomCode] = {
         roomCode,
         week: 1,
@@ -159,13 +359,15 @@ io.on('connection', (socket) => {
         globalCargoPool: generateOrders(initialPort, 1),
         isGameOver: false,
         players: {
-          [socket.id]: {
-            id: socket.id,
+          [id]: {
+            id,
             name: playerName || 'Host',
             cash: 150000000,
             accumulatedPenalties: 0,
             grid: createEmptyGrid(),
+            pendingContainers: [],
             ready: false,
+            connected: true,
             performanceLog: [],
             playerRating: null,
             lastWeeklyEvaluation: null
@@ -175,7 +377,8 @@ io.on('connection', (socket) => {
 
       socket.join(roomCode);
       socket.roomCode = roomCode;
-      
+      socket.playerId = id;
+
       console.log(`[Room Created] Code: ${roomCode} by ${playerName}`);
       upsertRoomToDb(roomCode);
       socket.emit('room_created', { roomCode, state: ROOMS[roomCode] });
@@ -186,39 +389,61 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 2. Join Room (Players)
-  socket.on('join_room', ({ roomCode, playerName }) => {
+  // 2. Join Room (Players) - also handles reconnects: if this playerId
+  // already has a seat in the room (page refresh, dropped connection,
+  // server restart that reloaded the room from the database), restore it
+  // instead of creating a second player.
+  socket.on('join_room', ({ roomCode, playerName, playerId, authToken }) => {
     try {
+      if (tokenWasRejected(authToken)) {
+        return socket.emit('error_message', 'auth_expired:Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
+      }
       const code = roomCode.toUpperCase();
       const room = ROOMS[code];
-      
+      const id = resolveIdentity(authToken, playerId, () => crypto.randomUUID());
+
       if (!room) {
         return socket.emit('error_message', 'Kamar tidak ditemukan. Silakan periksa kembali kode kamar.');
       }
       if (room.isGameOver) {
         return socket.emit('error_message', 'Kamar ini telah menyelesaikan permainan.');
       }
-      if (Object.keys(room.players).length >= 8) {
-        return socket.emit('error_message', 'Kamar sudah penuh (maksimal 8 pemain).');
-      }
-
-      // Add player to the room state
-      room.players[socket.id] = {
-        id: socket.id,
-        name: playerName || `Pemain_${socket.id.substring(0, 4)}`,
-        cash: 150000000,
-        accumulatedPenalties: 0,
-        grid: createEmptyGrid(),
-        ready: false,
-        performanceLog: [],
-        playerRating: null,
-        lastWeeklyEvaluation: null
-      };
 
       socket.join(code);
       socket.roomCode = code;
+      socket.playerId = id;
 
-      console.log(`[Player Joined] ${playerName} joined Room ${code}`);
+      if (room.players[id]) {
+        // Reconnect: same player slot, don't touch their cash/grid/progress.
+        room.players[id].connected = true;
+        console.log(`[Player Reconnected] ${room.players[id].name} rejoined Room ${code}`);
+        upsertRoomToDb(code);
+      } else {
+        if (Object.keys(room.players).length >= 8) {
+          return socket.emit('error_message', 'Kamar sudah penuh (maksimal 8 pemain).');
+        }
+        // New player joining for the first time
+        room.players[id] = {
+          id,
+          name: playerName || `Pemain_${id.substring(0, 4)}`,
+          cash: 150000000,
+          accumulatedPenalties: 0,
+          grid: createEmptyGrid(),
+          pendingContainers: [],
+          ready: false,
+          connected: true,
+          performanceLog: [],
+          playerRating: null,
+          lastWeeklyEvaluation: null
+        };
+        console.log(`[Player Joined] ${playerName} joined Room ${code}`);
+      }
+
+      // Tell the joining/reconnecting socket its own state directly (so it
+      // can seed localGrid from `me.grid`, same as create_room's flow) -
+      // the room-wide 'room_state' broadcast below carries the full room but
+      // doesn't imply "this is you" to the client.
+      socket.emit('room_joined', { roomCode: code, state: room });
       broadcastRoomState(code);
     } catch (err) {
       console.error('Error joining room:', err);
@@ -231,6 +456,8 @@ io.on('connection', (socket) => {
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
+    const player = room.players[socket.playerId];
+    if (!player) return;
 
     const orderIndex = room.globalCargoPool.findIndex(o => o.id === orderId);
     if (orderIndex === -1) {
@@ -244,15 +471,31 @@ io.on('connection', (socket) => {
 
     // Assign kargo to this player (Mark accepted)
     order.accepted = true;
-    order.claimedBy = socket.id;
+    order.claimedBy = socket.playerId;
 
     // Remove from shared pool
     room.globalCargoPool.splice(orderIndex, 1);
 
-    console.log(`[Cargo Claimed] Room: ${roomCode}, Player: ${room.players[socket.id].name}, Order: ${orderId}`);
-    
-    // Notify claimant and update others
-    socket.emit('cargo_claimed_success', order);
+    // Unpack into containers server-side, from the server's own order data -
+    // never trust a client to hand back tariff/type/destination later. This
+    // is the same reasoning as the offline claim-cargo endpoint.
+    const newContainers = [];
+    for (let q = 0; q < order.quantity; q++) {
+      newContainers.push({
+        id: `${order.id}_cont_${q}`,
+        orderId: order.id,
+        containerType: order.containerType,
+        origin: order.origin,
+        destination: order.destination,
+        tariff: order.tariff,
+        customerType: order.customerType,
+        customerName: order.customerName
+      });
+    }
+    player.pendingContainers.push(...newContainers);
+
+    console.log(`[Cargo Claimed] Room: ${roomCode}, Player: ${player.name}, Order: ${orderId}`);
+
     broadcastRoomState(roomCode);
   });
 
@@ -275,31 +518,107 @@ io.on('connection', (socket) => {
     broadcastRoomState(roomCode);
   });
 
-  // 5. Player Ready (Sends current grid configuration & pending buffer leftovers)
-  socket.on('player_ready', ({ grid, pendingContainers }) => {
+  // 5. Place a claimed container into the acting player's own grid. Mirrors
+  // /api/game/offline/place-container's validation exactly - the server
+  // owns each player's grid end to end, the client only ever says "place
+  // this one container here" and re-renders from the broadcast that follows.
+  socket.on('place_container', ({ containerId, bay, row, tier }) => {
+    const roomCode = socket.roomCode;
+    const room = ROOMS[roomCode];
+    if (!room) return;
+    const player = room.players[socket.playerId];
+    if (!player) return;
+
+    const container = player.pendingContainers.find(c => c.id === containerId);
+    if (!container) {
+      return socket.emit('error_message', 'Kontainer tidak ditemukan di buffer Anda.');
+    }
+    if (!player.grid[bay] || !player.grid[bay][row] || !(tier in player.grid[bay][row])) {
+      return socket.emit('error_message', 'Slot tidak valid.');
+    }
+
+    const bayConfig = getBayConfig(bay);
+    const stack = player.grid[bay][row];
+
+    if (bayConfig.containerType === 'REEFER' && container.containerType !== 'REEFER') {
+      return socket.emit('error_message', `Gagal Memuat: Bay ${bay} khusus slot REEFER.`);
+    }
+    if (bayConfig.containerType === 'DRY' && container.containerType !== 'DRY') {
+      return socket.emit('error_message', `Gagal Memuat: Bay ${bay} khusus slot DRY.`);
+    }
+    if (stack[tier] !== null) {
+      return socket.emit('error_message', 'Slot sudah terisi.');
+    }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      return socket.emit('error_message', 'Gagal Memuat: Tidak dapat mengakses underdeck (Tier 02) karena hatch cover terhalang kontainer di atas dek (Tier 82/84).');
+    }
+    if (tier === '84' && stack['82'] === null) {
+      return socket.emit('error_message', 'Kontainer melayang! Anda harus memuat Tier 82 terlebih dahulu.');
+    }
+
+    stack[tier] = container;
+    player.pendingContainers = player.pendingContainers.filter(c => c.id !== containerId);
+    broadcastRoomState(roomCode);
+  });
+
+  // 6. Remove a container from the acting player's own grid back into the buffer
+  socket.on('remove_container', ({ bay, row, tier }) => {
+    const roomCode = socket.roomCode;
+    const room = ROOMS[roomCode];
+    if (!room) return;
+    const player = room.players[socket.playerId];
+    if (!player) return;
+    if (!player.grid[bay] || !player.grid[bay][row]) {
+      return socket.emit('error_message', 'Slot tidak valid.');
+    }
+
+    const stack = player.grid[bay][row];
+    const container = stack[tier];
+    if (!container) return;
+
+    if (container.origin !== room.currentPort) {
+      return socket.emit('error_message', `Gagal: Kontainer transit dari ${container.origin} dikunci di kapal.`);
+    }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      return socket.emit('error_message', 'Tidak dapat membongkar underdeck (Tier 02) saat hatch cover terhalang kontainer di atas dek (Tier 82/84).');
+    }
+    if (tier === '82' && stack['84'] !== null) {
+      return socket.emit('error_message', 'Tidak dapat membongkar Tier 82 saat Tier 84 menampung kontainer di atasnya.');
+    }
+
+    stack[tier] = null;
+    player.pendingContainers.push(container);
+    broadcastRoomState(roomCode);
+  });
+
+  // 7. Player Ready - the client sends no grid/pendingContainers anymore;
+  // both already live server-side from place_container/remove_container/
+  // claim_cargo, so there is nothing left to trust from the request body.
+  socket.on('player_ready', () => {
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
 
-    const player = room.players[socket.id];
+    const player = room.players[socket.playerId];
     if (!player) return;
 
-    // Validate physical constraints first
-    const physicsCheck = validateGridPhysics(grid);
+    // Defensive final check - every individual placement was already
+    // validated, so this should always pass; kept as a safety net.
+    const physicsCheck = validateGridPhysics(player.grid);
     if (!physicsCheck.valid) {
       return socket.emit('error_message', `Gagal Berangkat: ${physicsCheck.errors[0]}`);
     }
 
-    // Commit state
-    player.grid = grid;
-    player.pendingContainers = pendingContainers; // Kept in memory to compute rolling penalties
     player.ready = true;
 
     console.log(`[Player Ready] ${player.name} in Room ${roomCode}`);
 
-    // Check if ALL players are ready to sail
-    const allPlayers = Object.values(room.players);
-    const allReady = allPlayers.every(p => p.ready);
+    // Check if all CONNECTED players are ready to sail. A disconnected
+    // player no longer gets deleted (see the disconnect handler), so
+    // excluding them here is what keeps the room from blocking forever on
+    // someone who dropped without leaving.
+    const connectedPlayers = Object.values(room.players).filter(p => p.connected);
+    const allReady = connectedPlayers.length > 0 && connectedPlayers.every(p => p.ready);
 
     if (allReady) {
       executeSailingTransition(roomCode);
@@ -308,43 +627,76 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 6. Player Unready (Cancels ready state)
+  // 8. Player Unready (Cancels ready state)
   socket.on('player_unready', () => {
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
 
-    const player = room.players[socket.id];
+    const player = room.players[socket.playerId];
     if (player) {
       player.ready = false;
       broadcastRoomState(roomCode);
     }
   });
 
-  // 7. Disconnection handler
+  // 9. Leave Room (explicit exit - permanently removes the player, unlike a
+  // bare disconnect which keeps their seat for a possible reconnect). Takes
+  // an ack callback: emitting this and immediately calling socket.disconnect()
+  // can close the transport before the packet is flushed, silently dropping
+  // the leave and leaving a "ghost" occupied seat - the client must wait for
+  // this ack before disconnecting.
+  socket.on('leave_room', (ack) => {
+    const roomCode = socket.roomCode;
+    const room = ROOMS[roomCode];
+    if (!room || !socket.playerId) {
+      if (typeof ack === 'function') ack();
+      return;
+    }
+
+    delete room.players[socket.playerId];
+    socket.leave(roomCode);
+    socket.roomCode = null;
+
+    if (Object.keys(room.players).length === 0) {
+      delete ROOMS[roomCode];
+      deleteRoomFromDb(roomCode);
+      console.log(`[Room Cleaned] Deleted empty Room ${roomCode}`);
+    } else {
+      const connectedPlayers = Object.values(room.players).filter(p => p.connected);
+      if (connectedPlayers.length > 0 && connectedPlayers.every(p => p.ready)) {
+        executeSailingTransition(roomCode);
+      } else {
+        broadcastRoomState(roomCode);
+      }
+    }
+    if (typeof ack === 'function') ack();
+  });
+
+  // 10. Disconnection handler - a dropped connection (network blip, tab
+  // close, refresh) is NOT the same as leaving: it only marks the player
+  // disconnected so their cash/grid/progress survive a reconnect (see
+  // join_room). Intentional exits go through leave_room instead, which does
+  // the actual removal.
   socket.on('disconnect', () => {
     console.log(`[Socket Disconnected] ID: ${socket.id}`);
     const roomCode = socket.roomCode;
-    if (roomCode && ROOMS[roomCode]) {
+    if (roomCode && ROOMS[roomCode] && socket.playerId) {
       const room = ROOMS[roomCode];
-      delete room.players[socket.id];
-      console.log(`[Player Left] Removed player from Room ${roomCode}`);
+      const player = room.players[socket.playerId];
+      if (!player) return;
 
-      // If room is empty, clean it up
-      if (Object.keys(room.players).length === 0) {
-        delete ROOMS[roomCode];
-        deleteRoomFromDb(roomCode);
-        console.log(`[Room Cleaned] Deleted empty Room ${roomCode}`);
+      player.connected = false;
+      console.log(`[Player Disconnected] ${player.name} in Room ${roomCode} (seat kept for reconnect)`);
+      upsertRoomToDb(roomCode);
+
+      // A disconnected player no longer blocks sailing on their own
+      // unreadiness, matching the old "removed on disconnect" behaviour.
+      const connectedPlayers = Object.values(room.players).filter(p => p.connected);
+      if (connectedPlayers.length > 0 && connectedPlayers.every(p => p.ready)) {
+        executeSailingTransition(roomCode);
       } else {
-
-        // Check if remaining players are all ready
-        const allPlayers = Object.values(room.players);
-        const allReady = allPlayers.every(p => p.ready);
-        if (allReady) {
-          executeSailingTransition(roomCode);
-        } else {
-          broadcastRoomState(roomCode);
-        }
+        broadcastRoomState(roomCode);
       }
     }
   });
@@ -354,6 +706,11 @@ io.on('connection', (socket) => {
 const executeSailingTransition = (roomCode) => {
   const room = ROOMS[roomCode];
   if (!room) return;
+  // Every caller (player_ready, leave_room, disconnect) only checks "are all
+  // connected players ready", not whether the room already finished - a
+  // stray ready/reconnect after game-over could otherwise re-run this,
+  // advancing week past 8 again and writing duplicate leaderboard entries.
+  if (room.isGameOver) return;
 
   const currentPort = room.currentPort;
   const currentWeek = room.week;
@@ -461,8 +818,9 @@ const executeSailingTransition = (roomCode) => {
     const totalRollingPenalty = personalRollingPenalty + sharedCommittedPenalty;
     const totalWeeklyPenalties = restowPenaltyTotal + totalRollingPenalty;
 
-    // 3. Compute Gross Revenue
-    const grossRevenue = calculateGrossRevenue(player.grid, currentPort);
+    // 3. Compute Gross Revenue (discharge recognition - paid when a container
+    // reaches its destination, matching the offline path; see gameEngine.js)
+    const grossRevenue = calculateDischargeRevenue(player.grid, nextPort);
     const netIncome = grossRevenue - totalWeeklyPenalties;
 
     // 4. Update player state
@@ -503,21 +861,14 @@ const executeSailingTransition = (roomCode) => {
   if (room.week > 8) {
     room.isGameOver = true;
     
-    // Evaluate rating for all players
+    // Evaluate rating for all players and record each on the leaderboard -
+    // online has no bots, so every player here is a real captain.
     Object.values(room.players).forEach(player => {
-      let rating = 'Perwira Logistik Junior';
-      if (player.cash >= 300000000) {
-        rating = 'VP Operasi Logistik & Stowage';
-      } else if (player.cash >= 200000000) {
-        rating = 'Spesialis Stowage Pelabuhan Senior';
-      } else if (player.cash >= 100000000) {
-        rating = 'Koordinator Logistik Standar';
-      } else if (player.cash < 0) {
-        rating = 'Supervisor Terminal Bangkrut';
-      }
+      const rating = computePlayerRating(player.cash);
       player.playerRating = rating;
+      recordLeaderboardEntry(player.name, player.cash, player.accumulatedPenalties, rating, 'ONLINE');
     });
-    
+
     console.log(`[Game Over Room ${roomCode}] Closed sirkuit.`);
   } else {
     // Generate new shared orders for the room
@@ -531,38 +882,392 @@ const executeSailingTransition = (roomCode) => {
 
 
 /**
- * REST API Endpoint to initialize/start an offline session.
- * Generates and returns the initial cargo orders for SBY Week 1.
+ * REST API Endpoints for Mabar Offline (Pass-and-Play vs Bots).
+ *
+ * The server owns the session end to end: cash, grid, cargo pools and
+ * pending buffers all live in OFFLINE_SESSIONS, keyed by the browser's
+ * persistent client id. Every route below reads and mutates that server-side
+ * copy - none of them accept cash, tariffs, or grid contents from the
+ * client. The client only ever sends "do this one action" and renders
+ * whatever session state comes back.
  */
-app.post('/api/game/start', (req, res) => {
+
+const getBearerToken = (req) => {
+  const header = req.headers.authorization || '';
+  return header.startsWith('Bearer ') ? header.slice(7) : null;
+};
+
+// Distinguishes "a token was sent but is expired/tampered" from "no token at
+// all" (a guest). The former means the client THINKS it's logged in and
+// will otherwise just see confusing "session not found" errors on every
+// action forever - this lets it detect the real cause and prompt a
+// re-login instead. Returns true once it has already sent the response.
+const rejectIfAuthExpired = (req, res) => {
+  if (tokenWasRejected(getBearerToken(req))) {
+    res.status(401).json({ success: false, authExpired: true, message: 'Sesi login Anda telah kedaluwarsa. Silakan login kembali.' });
+    return true;
+  }
+  return false;
+};
+
+// A logged-in user's Authorization: Bearer token always determines the
+// session id (as `user_<id>`), overriding whatever sessionId the client body
+// claims - otherwise anyone could act as "user_5"'s saved game by simply
+// sending that string, no password required. Guests fall back to their
+// client-generated anonymous id, exactly as before accounts existed.
+const resolveOfflineSessionId = (req) => resolveIdentity(getBearerToken(req), req.body?.sessionId || null);
+
+const findOfflineSession = (req, res) => {
+  if (rejectIfAuthExpired(req, res)) return null;
+  const sessionId = resolveOfflineSessionId(req);
+  const session = sessionId ? OFFLINE_SESSIONS[sessionId] : null;
+  if (!session) {
+    res.status(404).json({ success: false, message: 'Sesi permainan tidak ditemukan. Silakan mulai permainan baru.' });
+    return null;
+  }
+  return session;
+};
+
+// 0. Resume check - looks up an in-progress session without creating one.
+// "Keluar" only resets the client's local view; it never deletes the
+// server-side session, so leaving mid-game and coming back finds it here.
+app.post('/api/game/offline/resume', (req, res) => {
   try {
-    const orders = generateOrders('SBY', 1);
-    res.json({
-      success: true,
-      data: {
-        orders
-      }
-    });
+    if (rejectIfAuthExpired(req, res)) return;
+    const sessionId = resolveOfflineSessionId(req);
+    const session = sessionId ? OFFLINE_SESSIONS[sessionId] : null;
+    if (!session || session.isGameOver) {
+      return res.json({ success: true, data: null });
+    }
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error checking offline resume:', error);
+    res.status(500).json({ success: false, message: 'Internal server error checking session.' });
+  }
+});
+
+// 1. Start - always creates a fresh session under this sessionId, overwriting
+// any in-progress one. This is the deliberate "Mulai Baru" action; resuming
+// an abandoned session goes through /resume above instead.
+app.post('/api/game/offline/start', (req, res) => {
+  try {
+    if (rejectIfAuthExpired(req, res)) return;
+    const { playerName, seed } = req.body || {};
+    const sessionId = resolveOfflineSessionId(req);
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId wajib dikirim.' });
+    }
+
+    const bays = OFFLINE_BAYS_BY_LEVEL[1];
+    const orders = generateOrders('SBY', 1, PORTS, rngForPortCall(seed, 1, 'SBY'));
+
+    const players = [
+      {
+        id: 0,
+        name: playerName || 'Kapten User',
+        isBot: false,
+        cash: OFFLINE_START_CASH,
+        accumulatedPenalties: 0,
+        cumulativeGrossRevenue: 0,
+        pendingContainers: [],
+        ready: false,
+        performanceLog: [],
+        playerRating: null,
+        lastWeeklyEvaluation: null,
+        cargoPool: orders
+      },
+      ...DEFAULT_BOT_PROFILES.map((bot, idx) => ({
+        id: idx + 1,
+        name: bot.name,
+        isBot: true,
+        personality: bot.personality,
+        cash: OFFLINE_START_CASH,
+        accumulatedPenalties: 0,
+        cumulativeGrossRevenue: 0,
+        pendingContainers: [],
+        ready: false,
+        performanceLog: [],
+        playerRating: null,
+        lastWeeklyEvaluation: null,
+        cargoPool: []
+      }))
+    ];
+
+    const session = {
+      sessionId,
+      week: 1,
+      currentPort: 'SBY',
+      activePorts: [...PORTS],
+      vesselLevel: 1,
+      sharedGrid: createEmptyGrid(bays),
+      players,
+      isGameOver: false,
+      seed: seed ?? null
+    };
+
+    OFFLINE_SESSIONS[sessionId] = session;
+    persistOfflineSession(session);
+
+    res.json({ success: true, data: session });
   } catch (error) {
     console.error('Error starting offline game:', error);
     res.status(500).json({ success: false, message: 'Internal server error starting game.' });
   }
 });
 
-/**
- * REST API Endpoint for Mabar Offline (Pass-and-Play)
- * Receives the current offline room state and processes sailing transitions for all 4 local players.
- */
-app.post('/api/game/depart-offline', (req, res) => {
+// 2. Claim cargo from the active (human) player's private pool
+app.post('/api/game/offline/claim-cargo', (req, res) => {
   try {
-    const { week, currentPort, players, sharedGrid, activePorts } = req.body;
-    
-    if (!players || !Array.isArray(players) || players.length === 0 || !sharedGrid) {
-      return res.status(400).json({ success: false, message: 'Data permainan tidak valid.' });
+    const session = findOfflineSession(req, res);
+    if (!session) return;
+    if (session.isGameOver) {
+      return res.status(400).json({ success: false, message: 'Permainan sudah selesai.' });
+    }
+    const { orderId } = req.body || {};
+
+    const player = session.players[getOfflineActivePlayerIndex(session)];
+    if (player.isBot) {
+      return res.status(400).json({ success: false, message: 'Giliran bot - tidak bisa mengklaim kargo secara manual.' });
     }
 
-    // Validate physics for the shared grid
-    const physicsCheck = validateGridPhysics(sharedGrid);
+    const orderIndex = player.cargoPool.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) {
+      return res.status(400).json({ success: false, message: 'Kontrak tidak ditemukan di pasar kargo Anda.' });
+    }
+    const order = player.cargoPool[orderIndex];
+
+    const newContainers = [];
+    for (let q = 0; q < order.quantity; q++) {
+      newContainers.push({
+        id: `${order.id}_cont_${q}`,
+        orderId: order.id,
+        containerType: order.containerType,
+        origin: order.origin,
+        destination: order.destination,
+        tariff: order.tariff,
+        customerType: order.customerType,
+        customerName: order.customerName
+      });
+    }
+    player.pendingContainers.push(...newContainers);
+    player.cargoPool.splice(orderIndex, 1);
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error claiming offline cargo:', error);
+    res.status(500).json({ success: false, message: 'Internal server error claiming cargo.' });
+  }
+});
+
+// 3. Decline cargo from the active (human) player's private pool
+app.post('/api/game/offline/decline-cargo', (req, res) => {
+  try {
+    const session = findOfflineSession(req, res);
+    if (!session) return;
+    if (session.isGameOver) {
+      return res.status(400).json({ success: false, message: 'Permainan sudah selesai.' });
+    }
+    const { orderId } = req.body || {};
+
+    const player = session.players[getOfflineActivePlayerIndex(session)];
+    if (player.isBot) {
+      return res.status(400).json({ success: false, message: 'Giliran bot - tidak bisa menolak kargo secara manual.' });
+    }
+
+    const orderIndex = player.cargoPool.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return res.json({ success: true, data: session });
+
+    const order = player.cargoPool[orderIndex];
+    if (order.customerType === 'Committed') {
+      return res.status(400).json({ success: false, message: 'Kontrak Committed wajib dikerjakan.' });
+    }
+    player.cargoPool.splice(orderIndex, 1);
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error declining offline cargo:', error);
+    res.status(500).json({ success: false, message: 'Internal server error declining cargo.' });
+  }
+});
+
+// 4. Place a claimed container into the shared grid
+app.post('/api/game/offline/place-container', (req, res) => {
+  try {
+    const session = findOfflineSession(req, res);
+    if (!session) return;
+    if (session.isGameOver) {
+      return res.status(400).json({ success: false, message: 'Permainan sudah selesai.' });
+    }
+    const { containerId, bay, row, tier } = req.body || {};
+
+    const player = session.players[getOfflineActivePlayerIndex(session)];
+    if (player.isBot) {
+      return res.status(400).json({ success: false, message: 'Giliran bot - tidak bisa menyusun kontainer secara manual.' });
+    }
+
+    const container = player.pendingContainers.find(c => c.id === containerId);
+    if (!container) {
+      return res.status(400).json({ success: false, message: 'Kontainer tidak ditemukan di buffer Anda.' });
+    }
+    if (!session.sharedGrid[bay] || !session.sharedGrid[bay][row] || !(tier in session.sharedGrid[bay][row])) {
+      return res.status(400).json({ success: false, message: 'Slot tidak valid.' });
+    }
+
+    const bayConfig = getBayConfig(bay);
+    const stack = session.sharedGrid[bay][row];
+
+    if (bayConfig.containerType === 'REEFER' && container.containerType !== 'REEFER') {
+      return res.status(400).json({ success: false, message: `Gagal Memuat: Bay ${bay} khusus slot REEFER.` });
+    }
+    if (bayConfig.containerType === 'DRY' && container.containerType !== 'DRY') {
+      return res.status(400).json({ success: false, message: `Gagal Memuat: Bay ${bay} khusus slot DRY.` });
+    }
+    if (stack[tier] !== null) {
+      return res.status(400).json({ success: false, message: 'Slot sudah terisi.' });
+    }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      return res.status(400).json({ success: false, message: 'Gagal Memuat: Tidak dapat mengakses underdeck (Tier 02) karena hatch cover terhalang kontainer di atas dek (Tier 82/84).' });
+    }
+    if (tier === '84' && stack['82'] === null) {
+      return res.status(400).json({ success: false, message: 'Kontainer melayang! Anda harus memuat Tier 82 terlebih dahulu.' });
+    }
+
+    stack[tier] = container;
+    player.pendingContainers = player.pendingContainers.filter(c => c.id !== containerId);
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error placing offline container:', error);
+    res.status(500).json({ success: false, message: 'Internal server error placing container.' });
+  }
+});
+
+// 5. Remove a container from the shared grid back into the buffer
+app.post('/api/game/offline/remove-container', (req, res) => {
+  try {
+    const session = findOfflineSession(req, res);
+    if (!session) return;
+    if (session.isGameOver) {
+      return res.status(400).json({ success: false, message: 'Permainan sudah selesai.' });
+    }
+    const { bay, row, tier } = req.body || {};
+
+    const player = session.players[getOfflineActivePlayerIndex(session)];
+    if (player.isBot) {
+      return res.status(400).json({ success: false, message: 'Giliran bot - tidak bisa membongkar kontainer secara manual.' });
+    }
+    if (!session.sharedGrid[bay] || !session.sharedGrid[bay][row]) {
+      return res.status(400).json({ success: false, message: 'Slot tidak valid.' });
+    }
+
+    const stack = session.sharedGrid[bay][row];
+    const container = stack[tier];
+    if (!container) {
+      return res.json({ success: true, data: session });
+    }
+    if (container.origin !== session.currentPort) {
+      return res.status(400).json({ success: false, message: `Gagal: Kontainer transit dari ${container.origin} dikunci di kapal.` });
+    }
+    if (tier === '02' && (stack['82'] !== null || stack['84'] !== null)) {
+      return res.status(400).json({ success: false, message: 'Tidak dapat membongkar underdeck (Tier 02) saat hatch cover terhalang kontainer di atas dek (Tier 82/84).' });
+    }
+    if (tier === '82' && stack['84'] !== null) {
+      return res.status(400).json({ success: false, message: 'Tidak dapat membongkar Tier 82 saat Tier 84 menampung kontainer di atasnya.' });
+    }
+
+    stack[tier] = null;
+    player.pendingContainers.push(container);
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error removing offline container:', error);
+    res.status(500).json({ success: false, message: 'Internal server error removing container.' });
+  }
+});
+
+// 6. Upgrade vessel - cash check and deduction now happen against the
+// server's own ledger, not a number the client sent.
+app.post('/api/game/offline/upgrade-vessel', (req, res) => {
+  try {
+    const session = findOfflineSession(req, res);
+    if (!session) return;
+    if (session.isGameOver) {
+      return res.status(400).json({ success: false, message: 'Permainan sudah selesai.' });
+    }
+
+    const nextLevel = session.vesselLevel + 1;
+    if (nextLevel > 3) {
+      return res.status(400).json({ success: false, message: 'Kapal Anda sudah mencapai ukuran maksimal (Besar)!' });
+    }
+    const cost = OFFLINE_UPGRADE_COST[nextLevel];
+
+    const player = session.players[getOfflineActivePlayerIndex(session)];
+    if (player.cash < cost) {
+      return res.status(400).json({ success: false, message: `Saldo tidak cukup! Biaya upgrade ke Kapal Level ${nextLevel} adalah Rp ${cost.toLocaleString('id-ID')}.` });
+    }
+
+    player.cash -= cost;
+
+    const nextBays = OFFLINE_BAYS_BY_LEVEL[nextLevel];
+    const newGrid = createEmptyGrid(nextBays);
+    Object.keys(session.sharedGrid).forEach(bay => {
+      if (newGrid[bay]) newGrid[bay] = session.sharedGrid[bay];
+    });
+
+    session.sharedGrid = newGrid;
+    session.vesselLevel = nextLevel;
+
+    persistOfflineSession(session);
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error upgrading offline vessel:', error);
+    res.status(500).json({ success: false, message: 'Internal server error upgrading vessel.' });
+  }
+});
+
+// 7. Depart - processes the sailing transition for the whole session. Takes
+// only a sessionId; every figure it uses (cash, grid, cargo, penalties)
+// comes from the server's own OFFLINE_SESSIONS entry.
+app.post('/api/game/offline/depart', (req, res) => {
+  try {
+    const session = findOfflineSession(req, res);
+    if (!session) return;
+    if (session.isGameOver) {
+      return res.status(400).json({ success: false, message: 'Permainan sudah selesai.' });
+    }
+
+    const { week, currentPort, players, activePorts: currentActivePorts, seed } = session;
+    const sharedGrid = session.sharedGrid;
+
+    const currentPortIndex = currentActivePorts.indexOf(currentPort);
+    const nextPort = currentActivePorts[(currentPortIndex + 1) % currentActivePorts.length];
+    const nextWeek = week + 1;
+    const isGameOver = nextWeek > 8;
+    const nextOrders = isGameOver
+      ? []
+      : generateOrders(nextPort, nextWeek, currentActivePorts, rngForPortCall(seed, nextWeek, nextPort));
+
+    const activePlayerIndex = currentPortIndex % players.length; // Surabaya is 0, Makassar is 1, etc.
+
+    // 0. Execute the turn for the active player only, and only if that player is a Bot.
+    // The vessel is berthed at exactly one port, so only the branch stationed there
+    // may run a sales call and load containers this week.
+    let workingGrid = JSON.parse(JSON.stringify(sharedGrid));
+    const processedPlayers = players.map((player, idx) => {
+      if (player.isBot && idx === activePlayerIndex) {
+        workingGrid = processBotTurn(
+          player,
+          workingGrid,
+          currentPort,
+          currentActivePorts,
+          rngForPortCall(seed, week, `bot${idx}`)
+        );
+      }
+      return player;
+    });
+
+    // Validate physics for the shared grid after Bot placements
+    const physicsCheck = validateGridPhysics(workingGrid);
     if (!physicsCheck.valid) {
       return res.status(400).json({
         success: false,
@@ -570,19 +1275,12 @@ app.post('/api/game/depart-offline', (req, res) => {
       });
     }
 
-    const currentActivePorts = activePorts || PORTS;
-    const currentPortIndex = currentActivePorts.indexOf(currentPort);
-    const nextPort = currentActivePorts[(currentPortIndex + 1) % currentActivePorts.length];
-    const nextWeek = week + 1;
-    const isGameOver = nextWeek > 8;
-    const nextOrders = isGameOver ? [] : generateOrders(nextPort, nextWeek, currentActivePorts);
-
-    const activePlayerIndex = currentPortIndex % players.length; // Surabaya is 0, Makassar is 1, etc.
-    const activePlayer = players[activePlayerIndex];
+    const activePlayer = processedPlayers[activePlayerIndex];
 
     // 1. Compute Restows on the shared grid
-    const restowCheck = calculateRestows(sharedGrid, currentPort, currentActivePorts);
+    const restowCheck = calculateRestows(workingGrid, currentPort, currentActivePorts);
     const restowPenaltyTotal = restowCheck.restowMovementsCount * 3000000;
+
 
     // 2. Compute Personal Rolling Penalties for the active player
     let personalRollingPenalty = 0;
@@ -649,17 +1347,23 @@ app.post('/api/game/depart-offline', (req, res) => {
     const totalWeeklyPenalties = restowPenaltyTotal + totalRollingPenalty;
 
     // 4. Calculate earned revenue for ALL players from unloaded containers destined for nextPort
-    const revenueByPlayer = Array(players.length).fill(0);
-    const bays = Object.keys(sharedGrid);
+    const revenueByPlayer = Array(processedPlayers.length).fill(0);
+    const bays = Object.keys(workingGrid);
     bays.forEach(bay => {
       const config = getBayConfig(bay);
       config.rows.forEach(row => {
         config.tiers.forEach(tier => {
-          const container = sharedGrid[bay][row][tier];
+          const container = workingGrid[bay][row][tier];
           if (container && container.destination === nextPort) {
-            const originPort = container.origin;
-            const originPlayerIndex = currentActivePorts.indexOf(originPort) % players.length;
-            if (originPlayerIndex !== -1 && originPlayerIndex < players.length) {
+            // Credit the branch that originally sold this cargo. Once unlocked
+            // ports (BJM/JKT/BLI) exceed the player count, the sales call at
+            // that port is already run by an existing player via the same
+            // `portIndex % players.length` wrap (see activePlayerIndex above),
+            // so revenue for cargo sold there must wrap to that same player -
+            // an unwrapped index would just discard the revenue.
+            const originPortIndex = currentActivePorts.indexOf(container.origin);
+            if (originPortIndex >= 0) {
+              const originPlayerIndex = originPortIndex % processedPlayers.length;
               revenueByPlayer[originPlayerIndex] += container.tariff;
             }
           }
@@ -667,9 +1371,10 @@ app.post('/api/game/depart-offline', (req, res) => {
       });
     });
 
+
     // 5. Update cash & penalties & cumulative gross revenue for all players
-    const nextActivePlayerIndex = currentActivePorts.indexOf(nextPort) % players.length;
-    const updatedPlayers = players.map((player, idx) => {
+    const nextActivePlayerIndex = currentActivePorts.indexOf(nextPort) % processedPlayers.length;
+    const updatedPlayers = processedPlayers.map((player, idx) => {
       const isCurrentActive = idx === activePlayerIndex;
       const earnedRevenue = revenueByPlayer[idx];
       
@@ -748,31 +1453,28 @@ app.post('/api/game/depart-offline', (req, res) => {
     }
 
     // Regenerate nextOrders if a new port was unlocked just now so it is included in destinations
-    const finalNextOrders = (isGameOver || unlockedPortMessages.length === 0) 
-      ? nextOrders 
-      : generateOrders(nextPort, nextWeek, updatedActivePorts);
+    const finalNextOrders = (isGameOver || unlockedPortMessages.length === 0)
+      ? nextOrders
+      : generateOrders(nextPort, nextWeek, updatedActivePorts, rngForPortCall(seed, nextWeek, `${nextPort}_unlocked`));
 
     // Update next player's cargo pool again if we regenerated it with the new port destinations
     if (unlockedPortMessages.length > 0 && !isGameOver) {
       updatedPlayers[nextActivePlayerIndex].cargoPool = JSON.parse(JSON.stringify(finalNextOrders));
     }
 
-    // 6. Unload next port containers and slide-down on the shared grid
-    const transitionedGrid = processSailingTransition(sharedGrid, nextPort);
+    // 6. Unload next port containers and slide-down on the working grid
+    const transitionedGrid = processSailingTransition(workingGrid, nextPort);
+
 
     let finalPlayers = updatedPlayers;
 
     if (isGameOver) {
       finalPlayers = updatedPlayers.map(player => {
-        let rating = 'Perwira Logistik Junior';
-        if (player.cash >= 300000000) {
-          rating = 'VP Operasi Logistik & Stowage';
-        } else if (player.cash >= 200000000) {
-          rating = 'Spesialis Stowage Pelabuhan Senior';
-        } else if (player.cash >= 100000000) {
-          rating = 'Koordinator Logistik Standar';
-        } else if (player.cash < 0) {
-          rating = 'Supervisor Terminal Bangkrut';
+        const rating = computePlayerRating(player.cash);
+        // Only the human captain goes on the leaderboard - a bot finishing
+        // its branch isn't a captain's achievement.
+        if (!player.isBot) {
+          recordLeaderboardEntry(player.name, player.cash, player.accumulatedPenalties, rating, 'OFFLINE');
         }
         return {
           ...player,
@@ -781,30 +1483,19 @@ app.post('/api/game/depart-offline', (req, res) => {
       });
     }
 
-    // Persist offline session to PostgreSQL database
-    upsertSessionToDb('OFFLINE_SESSION', {
-      week: nextWeek,
-      currentPort: nextPort,
-      activePorts: updatedActivePorts,
-      vesselLevel: 1,
-      sharedGrid: transitionedGrid,
-      globalCargoPool: finalNextOrders,
-      players: finalPlayers,
-      isGameOver
-    });
+    // Write the results back into the server's own session and persist.
+    session.week = nextWeek;
+    session.currentPort = nextPort;
+    session.activePorts = updatedActivePorts;
+    session.sharedGrid = transitionedGrid;
+    session.players = finalPlayers;
+    session.isGameOver = isGameOver;
+
+    persistOfflineSession(session);
 
     res.json({
       success: true,
-      data: {
-        week: nextWeek,
-        currentPort: nextPort,
-        globalCargoPool: finalNextOrders,
-        isGameOver,
-        players: finalPlayers,
-        sharedGrid: transitionedGrid,
-        activePorts: updatedActivePorts,
-        unlockMessages: unlockedPortMessages
-      }
+      data: { ...session, unlockMessages: unlockedPortMessages }
     });
 
   } catch (error) {
@@ -820,5 +1511,6 @@ httpServer.listen(PORT, async () => {
   console.log(`===================================================`);
   await initializeDatabase();
   await loadRoomsFromDb();
+  await loadSessionsFromDb();
 });
 

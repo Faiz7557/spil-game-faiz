@@ -1,0 +1,5 @@
+# Experiment outputs are reproducible from a seed, so they are not tracked.
+results/*.csv
+results/*.json
+__pycache__/
+*.pyc

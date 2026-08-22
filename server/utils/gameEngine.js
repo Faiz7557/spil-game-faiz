@@ -1,37 +1,56 @@
-// Ports circuit definition
-export const PORTS = ['SBY', 'MKS', 'JYP', 'MDN'];
+// Vessel layout, bay config, empty-grid, and physics validation now live in
+// shared/gameConstants.js (single source of truth for client + server +
+// research). Re-exported here so every existing importer of gameEngine.js
+// keeps working unchanged.
+export {
+  PORTS,
+  BAYS,
+  REEFER_BAYS,
+  getBayConfig,
+  createEmptyGrid,
+  validateGridPhysics
+} from '../../shared/gameConstants.js';
+// `export ... from` re-exports but does not bind these locally, and several
+// functions below (generateOrders, calculateRestows) use them as defaults.
+import { PORTS, getBayConfig } from '../../shared/gameConstants.js';
 
-// Vessel Bayplan specifications
-// Bay 18: DRY only, 3 rows, 2 tiers (84, 82 - on-deck only)
-// Bay 14 & 10: REEFER only, 4 rows, 3 tiers (84, 82, 02)
-// Bay 06 & 02: DRY only, 4 rows, 3 tiers (84, 82, 02)
-export const BAYS = ['18', '14', '10', '06', '02'];
-
-export const getBayConfig = (bay) => {
-  const isBay18 = bay === '18';
-  return {
-    rows: isBay18 ? ['01', '00', '02'] : ['03', '01', '02', '04'],
-    tiers: isBay18 ? ['84', '82'] : ['84', '82', '02'],
-    containerType: (bay === '14' || bay === '10' || bay === '22') ? 'REEFER' : 'DRY'
+/**
+ * Deterministic PRNG (mulberry32). Returns a function with the same contract
+ * as Math.random, so any call site can accept either one.
+ * Reproducible scenarios are a hard requirement for the offline experiments.
+ */
+export const createRng = (seed) => {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 };
 
 /**
- * Creates a clean, empty vessel grid
+ * FNV-1a 32-bit hash over the joined parts. Used to derive a stable sub-seed
+ * per (seed, week, port) so every port-call is reproducible on its own,
+ * without the server having to carry generator state between requests.
  */
-export const createEmptyGrid = (bays = BAYS) => {
-  const grid = {};
-  bays.forEach(bay => {
-    grid[bay] = {};
-    const config = getBayConfig(bay);
-    config.rows.forEach(row => {
-      grid[bay][row] = {};
-      config.tiers.forEach(tier => {
-        grid[bay][row][tier] = null;
-      });
-    });
-  });
-  return grid;
+export const hashSeed = (...parts) => {
+  const str = parts.join('|');
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+};
+
+/**
+ * Resolves the RNG for one port-call. A null/undefined seed keeps the original
+ * non-reproducible behaviour so normal gameplay is unchanged.
+ */
+export const rngForPortCall = (seed, week, port) => {
+  if (seed === undefined || seed === null || seed === '') return Math.random;
+  return createRng(hashSeed(seed, week, port));
 };
 
 // Official Tariff Table (Informasi Tarif Muatan PT. SPIL)
@@ -61,8 +80,7 @@ const TARIFF_TABLE = {
 /**
  * Generates random sales call orders at a given port
  */
-export const generateOrders = (port, week, activePorts = PORTS) => {
-  const nextPortIndex = (activePorts.indexOf(port) + 1) % activePorts.length;
+export const generateOrders = (port, week, activePorts = PORTS, rng = Math.random) => {
   const destinations = activePorts.filter(p => p !== port);
   
   const customerNames = [
@@ -73,17 +91,22 @@ export const generateOrders = (port, week, activePorts = PORTS) => {
   ];
   
   // Generate 6 to 10 orders
-  const numOrders = Math.floor(Math.random() * 5) + 6; // 6 to 10
+  const numOrders = Math.floor(rng() * 5) + 6; // 6 to 10
   const orders = [];
   
   for (let i = 0; i < numOrders; i++) {
-    const customerName = customerNames[Math.floor(Math.random() * customerNames.length)];
-    const customerType = Math.random() < 0.4 ? 'Committed' : 'Non-Committed';
-    const containerType = Math.random() < 0.5 ? 'DRY' : 'REEFER';
-    const destination = destinations[Math.floor(Math.random() * destinations.length)];
+    const customerName = customerNames[Math.floor(rng() * customerNames.length)];
+    const customerType = rng() < 0.4 ? 'Committed' : 'Non-Committed';
+    // 30% REEFER share. At 50% (the old value), measured demand exceeded
+    // REEFER capacity by 34% (rho_REEFER = 1.34, infeasible - see
+    // research/README.md "Pilot findings"). 30% brings rho_REEFER to ~0.80
+    // while leaving total demand and overall utilisation (rho ~0.89) unchanged,
+    // since only the DRY/REEFER split moves, not order count or quantity.
+    const containerType = rng() < 0.7 ? 'DRY' : 'REEFER';
+    const destination = destinations[Math.floor(rng() * destinations.length)];
     
     // Quantity: 1 to 3 containers
-    const quantity = Math.floor(Math.random() * 3) + 1;
+    const quantity = Math.floor(rng() * 3) + 1;
     
     // Calculate tariff using official sheet, fall back to randomized logic for new unlocked ports
     let tariff = 0;
@@ -91,9 +114,9 @@ export const generateOrders = (port, week, activePorts = PORTS) => {
       tariff = TARIFF_TABLE[port][destination][containerType];
     } else {
       if (containerType === 'DRY') {
-        tariff = 10000000 + Math.floor(Math.random() * 5) * 1000000;
+        tariff = 10000000 + Math.floor(rng() * 5) * 1000000;
       } else {
-        tariff = 16000000 + Math.floor(Math.random() * 7) * 1000000;
+        tariff = 16000000 + Math.floor(rng() * 7) * 1000000;
       }
     }
     
@@ -161,47 +184,6 @@ export const calculateRestows = (grid, currentPort, activePorts = PORTS) => {
     restowContainersCount,
     restowMovementsCount,
     restowedList
-  };
-};
-
-/**
- * Validates slot type restrictions and support structures.
- * Underdeck (02) is supported by tanktop.
- * On-deck (82) sits on hatch cover, supported without 02.
- * On-deck upper (84) requires on-deck lower (82).
- */
-export const validateGridPhysics = (grid) => {
-  const errors = [];
-  const bays = Object.keys(grid);
-  
-  bays.forEach(bay => {
-    const config = getBayConfig(bay);
-    config.rows.forEach(row => {
-      const stack = grid[bay][row];
-      
-      // 1. Container Type matching Bay slot type
-      config.tiers.forEach(tier => {
-        const container = stack[tier];
-        if (container) {
-          if (config.containerType === 'REEFER' && container.containerType !== 'REEFER') {
-            errors.push(`Slot Bay ${bay}, Row ${row}, Tier ${tier} hanya menerima kontainer REEFER, tetapi berisi DRY.`);
-          }
-          if (config.containerType === 'DRY' && container.containerType !== 'DRY') {
-            errors.push(`Slot Bay ${bay}, Row ${row}, Tier ${tier} hanya menerima kontainer DRY, tetapi berisi REEFER.`);
-          }
-        }
-      });
-      
-      // 2. Stacking rule: Tier 84 requires Tier 82 in the same row
-      if (stack['84'] && !stack['82']) {
-        errors.push(`Kesalahan Fisika Kapal: Kontainer di Bay ${bay}, Row ${row}, Tier 84 melayang. Dibutuhkan Tier 82.`);
-      }
-    });
-  });
-  
-  return {
-    valid: errors.length === 0,
-    errors
   };
 };
 
@@ -276,6 +258,8 @@ export const calculateRollingPenalties = (orders, grid, currentPort) => {
 
 /**
  * Calculates gross revenue of all containers successfully loaded at this port
+ * ('load' recognition - kept for reference/research use, not the shipped
+ * convention; see calculateDischargeRevenue).
  */
 export const calculateGrossRevenue = (grid, currentPort) => {
   let grossRevenue = 0;
@@ -292,6 +276,30 @@ export const calculateGrossRevenue = (grid, currentPort) => {
     });
   });
   return grossRevenue;
+};
+
+/**
+ * Calculates revenue of all containers about to be discharged at nextPort
+ * ('discharge' recognition - the shipped convention). A container loaded but
+ * still aboard when the horizon ends (week 8) earns nothing under this rule;
+ * that is a deliberate tradeoff for rewarding cargo that actually completes
+ * its voyage, matched on both the multiplayer and offline paths.
+ */
+export const calculateDischargeRevenue = (grid, nextPort) => {
+  let revenue = 0;
+  const bays = Object.keys(grid);
+  bays.forEach(bay => {
+    const config = getBayConfig(bay);
+    config.rows.forEach(row => {
+      config.tiers.forEach(tier => {
+        const container = grid[bay][row][tier];
+        if (container && container.destination === nextPort) {
+          revenue += container.tariff;
+        }
+      });
+    });
+  });
+  return revenue;
 };
 
 /**

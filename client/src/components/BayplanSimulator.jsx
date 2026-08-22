@@ -74,22 +74,29 @@ export default function BayplanSimulator({
     setSelectedPendingId(selectedPendingId === id ? null : id);
   };
 
+  // Find container in pending list. Doubles as "is the selection still
+  // valid" - once a placed container actually leaves the buffer (a
+  // successful server round-trip), this naturally goes undefined and the
+  // selection stops being actionable, with no need to explicitly clear
+  // selectedPendingId anywhere.
+  const activeSelectedContainer = pendingContainers.find(c => c.id === selectedPendingId);
+
   const handleSlotClick = (bay, row, tier) => {
     const containerInSlot = grid[bay][row][tier];
-    
+
     if (containerInSlot) {
       // Slot occupied: Remove container and return to pending
       onRemoveContainer(bay, row, tier);
-      setSelectedPendingId(null);
-    } else if (selectedPendingId) {
-      // Slot empty and container selected: Place container
+    } else if (activeSelectedContainer) {
+      // Slot empty and container selected: Place container.
+      // onPlaceContainer is a server round-trip that can fail (wrong slot
+      // type, physics violation) - selection is left alone here rather than
+      // cleared optimistically, so a failed attempt stays selected and
+      // ready to retry on a different slot instead of forcing the player to
+      // re-pick it from the buffer.
       onPlaceContainer(selectedPendingId, bay, row, tier);
-      setSelectedPendingId(null);
     }
   };
-
-  // Find container in pending list
-  const activeSelectedContainer = pendingContainers.find(c => c.id === selectedPendingId);
 
   // Get list of bays dynamically sorted descending
   const baysToRender = Object.keys(grid).sort((a, b) => parseInt(b) - parseInt(a));
@@ -163,8 +170,8 @@ export default function BayplanSimulator({
               disabled={loading || isGameOver}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-650 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:from-slate-200 disabled:to-slate-300 disabled:opacity-40 text-white font-black text-xs py-3.5 px-4 rounded-xl uppercase tracking-widest shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300"
             >
-              <Play className="w-3.5 h-3.5 fill-white" />
-              Berangkat (Sailing)
+              <Play className={`w-3.5 h-3.5 fill-white ${loading ? 'animate-pulse' : ''}`} />
+              {loading ? `Berlayar ke ${nextPort}...` : 'Berangkat (Sailing)'}
             </button>
           )}
 
@@ -623,6 +630,13 @@ export default function BayplanSimulator({
 
       {/* 2. Vessel Bayplan Simulator Canvas */}
       <div className="lg:col-span-3 flex flex-col gap-6 overflow-x-auto">
+        {/* Each bay card needs ~720px to show all 4 rows legibly, wider than
+            a phone screen - this scrolls sideways within its own box rather
+            than shrinking the grid into illegible slots. Hint is mobile-only
+            since desktop/tablet already show the full width. */}
+        <p className="sm:hidden text-[10px] text-slate-400 font-bold uppercase tracking-wide flex items-center gap-1.5 -mb-2">
+          <span aria-hidden="true">↔️</span> Geser ke samping untuk lihat semua baris kapal
+        </p>
         {/* Scrollable container grid workspace */}
         <div className="flex flex-col gap-6 pb-4 min-w-[720px] max-h-[1100px] overflow-y-auto pr-3 scrollbar-thin">
           {baysToRender.map(bay => {
