@@ -53,8 +53,10 @@ export const rngForPortCall = (seed, week, port) => {
   return createRng(hashSeed(seed, week, port));
 };
 
-// Official Tariff Table (Informasi Tarif Muatan PT. SPIL)
-const TARIFF_TABLE = {
+// Official Tariff Table (Informasi Tarif Muatan PT. SPIL).
+// Exported so research/verify-provenance.mjs can assert the shipped values
+// against the documented source instead of trusting a comment.
+export const TARIFF_TABLE = {
   SBY: {
     MKS: { DRY: 18000000, REEFER: 30000000 },
     MDN: { DRY: 6000000, REEFER: 11000000 },
@@ -80,7 +82,29 @@ const TARIFF_TABLE = {
 /**
  * Generates random sales call orders at a given port
  */
-export const generateOrders = (port, week, activePorts = PORTS, rng = Math.random) => {
+/**
+ * Scenario parameters for the demand generator.
+ *
+ * These are the three knobs the thesis sweeps in the sensitivity experiment.
+ * The defaults reproduce the shipped game EXACTLY - same rng draw sequence,
+ * same values - so passing nothing keeps client/server behaviour unchanged and
+ * keeps every previously recorded seed reproducible.
+ *
+ *   intensity      scales the number of orders per port-call, hence lambda,
+ *                  hence the offered load rho. 1.0 = 6..10 orders (mean 8).
+ *   reeferShare    sigma - probability a container is REEFER.
+ *   committedShare kappa - probability a customer is Committed.
+ */
+export const DEFAULT_SCENARIO = Object.freeze({
+  intensity: 1.0,
+  reeferShare: 0.30,
+  committedShare: 0.40
+});
+
+export const generateOrders = (
+  port, week, activePorts = PORTS, rng = Math.random, scenario = DEFAULT_SCENARIO
+) => {
+  const { intensity, reeferShare, committedShare } = { ...DEFAULT_SCENARIO, ...scenario };
   const destinations = activePorts.filter(p => p !== port);
   
   const customerNames = [
@@ -90,19 +114,23 @@ export const generateOrders = (port, week, activePorts = PORTS, rng = Math.rando
     'PT Khatulistiwa Ship'
   ];
   
-  // Generate 6 to 10 orders
-  const numOrders = Math.floor(rng() * 5) + 6; // 6 to 10
+  // Base draw is 6..10 orders (mean 8); `intensity` scales it. The base draw
+  // happens unconditionally so the rng stream is identical at every intensity -
+  // two strata that differ only in intensity still share the same underlying
+  // scenario, which is what makes the factorial design a clean comparison.
+  const baseOrders = Math.floor(rng() * 5) + 6;
+  const numOrders = Math.max(1, Math.round(baseOrders * intensity));
   const orders = [];
   
   for (let i = 0; i < numOrders; i++) {
     const customerName = customerNames[Math.floor(rng() * customerNames.length)];
-    const customerType = rng() < 0.4 ? 'Committed' : 'Non-Committed';
-    // 30% REEFER share. At 50% (the old value), measured demand exceeded
-    // REEFER capacity by 34% (rho_REEFER = 1.34, infeasible - see
-    // research/README.md "Pilot findings"). 30% brings rho_REEFER to ~0.80
-    // while leaving total demand and overall utilisation (rho ~0.89) unchanged,
-    // since only the DRY/REEFER split moves, not order count or quantity.
-    const containerType = rng() < 0.7 ? 'DRY' : 'REEFER';
+    const customerType = rng() < committedShare ? 'Committed' : 'Non-Committed';
+    // Nominal REEFER share is 30% (DEFAULT_SCENARIO.reeferShare). At 50% - the
+    // original value - measured demand exceeded REEFER capacity by 34%
+    // (rho_REEFER = 1.34, infeasible). 30% brings rho_REEFER to ~0.80 while
+    // leaving total demand and overall utilisation unchanged, since only the
+    // DRY/REEFER split moves, not order count or quantity.
+    const containerType = rng() < (1 - reeferShare) ? 'DRY' : 'REEFER';
     const destination = destinations[Math.floor(rng() * destinations.length)];
     
     // Quantity: 1 to 3 containers
