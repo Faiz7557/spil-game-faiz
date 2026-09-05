@@ -37,3 +37,12 @@ Thumbs.db
 *skripsi*
 *Skripsi*
 *.docx
+
+# Python Artifacts & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
