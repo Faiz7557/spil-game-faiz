@@ -32,3 +32,8 @@ Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
+
+# Dokumen Skripsi & Naskah Pribadi
+*skripsi*
+*Skripsi*
+*.docx
