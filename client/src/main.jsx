@@ -38,7 +38,7 @@ class ErrorBoundary extends React.Component {
             maxWidth: '700px',
             width: '100%',
             background: '#0f172a',
-            border: '1px solid #ef4444/30',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
             borderRadius: '16px',
             padding: '30px'
@@ -59,7 +59,7 @@ class ErrorBoundary extends React.Component {
             </p>
             
             <div style={{ margin: '15px 0' }}>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#f43f5e', uppercase: 'true', block: 'true', marginBottom: '5px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#f43f5e', textTransform: 'uppercase', display: 'block', marginBottom: '5px' }}>
                 Pesan Error:
               </span>
               <pre style={{ 
@@ -67,7 +67,7 @@ class ErrorBoundary extends React.Component {
                 padding: '15px', 
                 borderRadius: '8px', 
                 overflowX: 'auto', 
-                border: '1px solid #ef4444/20', 
+                border: '1px solid rgba(239, 68, 68, 0.2)', 
                 color: '#fda4af',
                 fontSize: '13px',
                 fontFamily: 'monospace',
@@ -77,7 +77,7 @@ class ErrorBoundary extends React.Component {
 
             {this.state.errorInfo && (
               <div style={{ margin: '15px 0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', uppercase: 'true', block: 'true', marginBottom: '5px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '5px' }}>
                   Trace Stack Komponen:
                 </span>
                 <pre style={{ 

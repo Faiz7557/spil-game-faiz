@@ -1,6 +1,5 @@
-import React from 'react';
 import { formatRupiah } from '../utils/gameHelpers';
-import { Ship, Award, RefreshCw, AlertOctagon, Trophy, ShieldAlert, FileSpreadsheet, Anchor } from 'lucide-react';
+import { Ship, Award, RefreshCw, AlertOctagon, Trophy, ShieldAlert, FileSpreadsheet } from 'lucide-react';
 
 export default function GameOverModal({ isOpen, cash, accumulatedPenalties, playerRating, history, onRestart }) {
   if (!isOpen) return null;

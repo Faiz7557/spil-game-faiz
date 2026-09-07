@@ -99,12 +99,13 @@ export const executeBotStowagePlacement = (bot, grid, currentPort, activePorts) 
   const remainingPending = [];
 
   // Sort pending containers depending on bot personality:
-  // For SMART bot: Next Port containers are stowed FIRST (to place them on upper deck 84/82)
+  // For SMART bot: Later Port containers are stowed FIRST (so they sink into underdeck 02)
+  // and Next Port containers are stowed LAST (so they sit on deck 82/84 above underdeck)
   const containersToStow = [...bot.pendingContainers];
   if (bot.personality === 'SMART') {
     containersToStow.sort((a, b) => {
-      if (a.destination === nextPort && b.destination !== nextPort) return -1;
-      if (a.destination !== nextPort && b.destination === nextPort) return 1;
+      if (a.destination !== nextPort && b.destination === nextPort) return -1;
+      if (a.destination === nextPort && b.destination !== nextPort) return 1;
       return 0;
     });
   }

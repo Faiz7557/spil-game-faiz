@@ -14,7 +14,8 @@ import {
   calculateRollingPenalties,
   calculateDischargeRevenue,
   processSailingTransition,
-  rngForPortCall
+  rngForPortCall,
+  OFFLINE_BAYS_BY_LEVEL
 } from './utils/gameEngine.js';
 import { query } from './utils/db.js';
 import { initializeDatabase } from './utils/initDb.js';
@@ -49,11 +50,6 @@ const ROOMS = {};
 const OFFLINE_SESSIONS = {};
 
 const OFFLINE_START_CASH = 150000000;
-const OFFLINE_BAYS_BY_LEVEL = {
-  1: ['10', '06', '02'],
-  2: ['18', '14', '10', '06', '02'],
-  3: ['26', '22', '18', '14', '10', '06', '02']
-};
 const OFFLINE_UPGRADE_COST = { 2: 50000000, 3: 100000000 };
 
 // Helper to generate a unique 4-character room code.
@@ -234,7 +230,7 @@ const upsertSessionToDb = async (sessionId, sessionData) => {
       JSON.stringify(sessionData.sharedGrid || {}),
       JSON.stringify(sessionData.globalCargoPool || []),
       JSON.stringify(sessionData.players || []),
-      sessionData.isGameOver || false
+      sessionData.isGameOver ?? false
     ]);
   } catch (err) {
     console.error(`[Database] Error saving session ${sessionId}:`, err.message || err);

@@ -5,6 +5,8 @@
 export {
   PORTS,
   BAYS,
+  ALL_BAYS,
+  OFFLINE_BAYS_BY_LEVEL,
   REEFER_BAYS,
   getBayConfig,
   createEmptyGrid,
@@ -64,12 +66,14 @@ export const PORT_BORDER_HOVER = {
 export const getNextPort = (port, activePorts) => {
   const ports = (activePorts && activePorts.length > 0) ? activePorts : PORTS;
   const idx = ports.indexOf(port);
+  if (idx === -1) return ports[0];
   return ports[(idx + 1) % ports.length];
 };
 
 export const getLaterPorts = (port, activePorts) => {
   const ports = (activePorts && activePorts.length > 0) ? activePorts : PORTS;
   const idx = ports.indexOf(port);
+  if (idx === -1) return [];
   const later = [];
   for (let i = 2; i < ports.length; i++) {
     later.push(ports[(idx + i) % ports.length]);

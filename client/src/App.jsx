@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import Dashboard from './components/Dashboard';
 import BayplanSimulator from './components/BayplanSimulator';
 import PerformanceModal from './components/PerformanceModal';
 import GameOverModal from './components/GameOverModal';
-import { validateGridPhysics } from './utils/gameHelpers';
-import { formatRupiah, PORT_NAMES } from './utils/gameHelpers';
-import { AlertCircle, HelpCircle, Anchor, Play, ShieldAlert, Award, Ship, Users, LogIn, ArrowRight, Monitor, Network } from 'lucide-react';
+import { validateGridPhysics, formatRupiah } from './utils/gameHelpers';
+import { AlertCircle, HelpCircle, Anchor, Play, Award, Users, LogIn, Monitor, Network } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5050';
 
@@ -60,6 +59,7 @@ export default function App() {
   // --- COMMON MULTIPLAYER STATES ---
   const [playerName, setPlayerName] = useState(() => getStoredAuthUser()?.username || localStorage.getItem('spil_player_name') || '');
   const [alertMessage, setAlertMessage] = useState(null);
+  const alertTimeoutRef = useRef(null);
   const [leaderboardData, setLeaderboardData] = useState(null); // null = not loaded yet
   const [loading, setLoading] = useState(false);
 
@@ -73,6 +73,19 @@ export default function App() {
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const [lastWeeklyEvaluation, setLastWeeklyEvaluation] = useState(null);
   const socketRef = useRef(null);
+
+  // Unmount cleanup for sockets and timers
+  useEffect(() => {
+    return () => {
+      if (alertTimeoutRef.current) {
+        clearTimeout(alertTimeoutRef.current);
+      }
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
 
   // --- OFFLINE MODE STATES ---
   // undefined = not checked yet, null = checked and nothing to resume, object = a resumable session
@@ -109,6 +122,7 @@ export default function App() {
       setRoomCode(roomCode);
       setRoomState(state);
       setIsInRoom(true);
+      setLoading(false);
       localStorage.setItem('spil_room_code', roomCode);
     });
 
@@ -118,17 +132,19 @@ export default function App() {
       setRoomCode(roomCode);
       setRoomState(state);
       setIsInRoom(true);
+      setLoading(false);
       localStorage.setItem('spil_room_code', roomCode);
     });
 
     socket.on('room_state', (state) => {
       setRoomState(state);
+      setLoading(false);
     });
 
     socket.on('sailing_completed', (state) => {
       setRoomState(state);
       const me = state.players[effectiveIdRef.current];
-      if (me) {
+      if (me && !state.isGameOver) {
         setLastWeeklyEvaluation(me.lastWeeklyEvaluation);
         setShowWeeklyModal(true);
       }
@@ -153,9 +169,11 @@ export default function App() {
   };
 
   const showTemporaryAlert = (msg) => {
+    if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
     setAlertMessage(msg);
-    setTimeout(() => {
+    alertTimeoutRef.current = setTimeout(() => {
       setAlertMessage(null);
+      alertTimeoutRef.current = null;
     }, 6000);
   };
 
@@ -213,6 +231,9 @@ export default function App() {
   const handleLogout = () => {
     setAuthUser(null);
     localStorage.removeItem('spil_auth');
+    setPlayerName('');
+    localStorage.removeItem('spil_player_name');
+    setOfflinePlayersNames(prev => ['Kapten 1', ...prev.slice(1)]);
   };
 
   // A previously-valid token can go stale (30-day expiry, or a manually
@@ -222,18 +243,22 @@ export default function App() {
   // authExpired: it clears the stale login so the next action falls back to
   // guest play (which still works) instead of failing forever.
   const handleAuthExpired = () => {
-    if (!authUser) return;
-    setAuthUser(null);
-    localStorage.removeItem('spil_auth');
-    showTemporaryAlert('Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
+    setAuthUser((prev) => {
+      if (!prev) return null;
+      localStorage.removeItem('spil_auth');
+      showTemporaryAlert('Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
+      return null;
+    });
   };
 
   // --- ONLINE EVENT HANDLERS ---
   const handleCreateRoom = (e) => {
     e.preventDefault();
+    if (loading) return;
     if (!playerName.trim()) {
       return showTemporaryAlert('Silakan masukkan nama Anda terlebih dahulu.');
     }
+    setLoading(true);
     localStorage.setItem('spil_player_name', playerName);
     const socket = connectSocket();
     socket.emit('create_room', { playerName, playerId: effectiveIdRef.current, authToken: authUser?.token });
@@ -241,17 +266,17 @@ export default function App() {
 
   const handleJoinRoom = (e) => {
     e.preventDefault();
+    if (loading) return;
     if (!playerName.trim()) {
       return showTemporaryAlert('Silakan masukkan nama Anda terlebih dahulu.');
     }
     if (!roomCodeInput.trim()) {
       return showTemporaryAlert('Silakan masukkan kode kamar.');
     }
+    setLoading(true);
     localStorage.setItem('spil_player_name', playerName);
     const socket = connectSocket();
     socket.emit('join_room', { roomCode: roomCodeInput, playerName, playerId: effectiveIdRef.current, authToken: authUser?.token });
-    setIsInRoom(true);
-    setRoomCode(roomCodeInput.toUpperCase());
   };
 
   // Silently try to rejoin a room left open from a previous visit (refresh,
@@ -492,7 +517,7 @@ export default function App() {
         // Weekly evaluation belongs to whoever was active BEFORE this depart -
         // read it via the still-old activePlayerIndex closure, before
         // applyOfflineSession moves activePlayerIndex to the next branch.
-        if (session.players[activePlayerIndex]) {
+        if (!session.isGameOver && session.players[activePlayerIndex]) {
           setLastWeeklyEvaluation(session.players[activePlayerIndex].lastWeeklyEvaluation);
           setShowWeeklyModal(true);
         }

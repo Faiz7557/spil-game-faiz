@@ -5,6 +5,8 @@
 export {
   PORTS,
   BAYS,
+  ALL_BAYS,
+  OFFLINE_BAYS_BY_LEVEL,
   REEFER_BAYS,
   getBayConfig,
   createEmptyGrid,
@@ -79,9 +81,6 @@ export const TARIFF_TABLE = {
   }
 };
 
-/**
- * Generates random sales call orders at a given port
- */
 /**
  * Scenario parameters for the demand generator.
  *

@@ -1,6 +1,5 @@
-import React from 'react';
 import { formatRupiah, PORT_NAMES, getNextPort } from '../utils/gameHelpers';
-import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, Users, CheckCircle2, Trophy, Navigation } from 'lucide-react';
+import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy } from 'lucide-react';
 
 export default function Dashboard({ week, currentPort, cash, accumulatedPenalties, roomCode, players, socketId, activePorts }) {
   const nextPort = getNextPort(currentPort, activePorts);
@@ -195,9 +194,9 @@ export default function Dashboard({ week, currentPort, cash, accumulatedPenaltie
                       )}
                     </div>
                     <span className={`font-extrabold shrink-0 text-[11px] ${p.cash >= 0 ? 'text-emerald-700' : 'text-spil-red'}`}>
-                      {p.cash >= 1000000000 
+                      {Math.abs(p.cash) >= 1000000000 
                         ? `${(p.cash / 1000000000).toFixed(1)}M` 
-                        : `${(p.cash / 1000000).toFixed(0)}J`}
+                        : `${(p.cash / 1000000).toFixed(0)}Jt`}
                     </span>
                   </div>
                 );

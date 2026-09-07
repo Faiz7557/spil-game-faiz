@@ -131,40 +131,40 @@
 
 /* High-contrast SPIL Brand Color Classes */
 .bg-spil-green {
-  background-color: #2E7D4E !important;
+  background-color: #2E7D4E;
 }
 .bg-spil-green-hover:hover, .hover\:bg-spil-green-hover:hover {
-  background-color: #225D3A !important;
+  background-color: #225D3A;
 }
 .text-spil-green {
-  color: #2E7D4E !important;
+  color: #2E7D4E;
 }
 .border-spil-green {
-  border-color: #2E7D4E !important;
+  border-color: #2E7D4E;
 }
 .bg-spil-green-light {
-  background-color: #DCFCE7 !important;
+  background-color: #DCFCE7;
 }
 
 .bg-spil-red {
-  background-color: #D21E20 !important;
+  background-color: #D21E20;
 }
 .bg-spil-red-hover:hover, .hover\:bg-spil-red-hover:hover {
-  background-color: #B5181A !important;
+  background-color: #B5181A;
 }
 .text-spil-red {
-  color: #D21E20 !important;
+  color: #D21E20;
 }
 .border-spil-red {
-  border-color: #D21E20 !important;
+  border-color: #D21E20;
 }
 .bg-spil-red-light {
-  background-color: #FEE2E2 !important;
+  background-color: #FEE2E2;
 }
 
 .border-l-spil-green {
-  border-left-color: #2E7D4E !important;
+  border-left-color: #2E7D4E;
 }
 .border-l-spil-red {
-  border-left-color: #D21E20 !important;
+  border-left-color: #D21E20;
 }

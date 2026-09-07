@@ -79,7 +79,7 @@ def execute_bot_stowage_placement(bot, grid, current_port, active_ports):
 
     containers_to_stow = list(pending)
     if bot['personality'] == 'SMART':
-        containers_to_stow.sort(key=lambda c: 0 if c['destination'] == next_port else 1)
+        containers_to_stow.sort(key=lambda c: 1 if c['destination'] == next_port else 0)
 
     bays = sorted(js_object_keys(grid), key=int, reverse=True)
 

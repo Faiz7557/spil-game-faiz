@@ -16,10 +16,18 @@
 export const PORTS = ['SBY', 'MKS', 'JYP', 'MDN'];
 
 // Vessel Bayplan specifications
+// Bay 26 & 22: DRY only, 4 rows, 3 tiers (84, 82, 02) - Level 3 Large Vessel
 // Bay 18: DRY only, 3 rows, 2 tiers (84, 82 - on-deck only)
 // Bay 14 & 10: REEFER only, 4 rows, 3 tiers (84, 82, 02)
 // Bay 06 & 02: DRY only, 4 rows, 3 tiers (84, 82, 02)
 export const BAYS = ['18', '14', '10', '06', '02'];
+export const ALL_BAYS = ['26', '22', '18', '14', '10', '06', '02'];
+
+export const OFFLINE_BAYS_BY_LEVEL = {
+  1: ['10', '06', '02'],
+  2: ['18', '14', '10', '06', '02'],
+  3: ['26', '22', '18', '14', '10', '06', '02']
+};
 
 // Bays fitted with reefer plugs. Kept as an explicit list so adding a bay
 // is a one-line change instead of an edit to a boolean expression.

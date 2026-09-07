@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { getBayConfig } from '../utils/gameHelpers';
-import { formatRupiah, PORT_NAMES, PORT_COLORS, getNextPort } from '../utils/gameHelpers';
+import { useState, Fragment } from 'react';
+import { getBayConfig, formatRupiah, getNextPort } from '../utils/gameHelpers';
 import { 
   Ship, Info, ArrowDown, ShieldAlert, Sparkles, XCircle, Anchor, Lock,
   Play, PhoneCall, Check, Trash2, AlertCircle, ChevronDown, ChevronUp, TrendingUp, Users 
@@ -37,9 +36,11 @@ export default function BayplanSimulator({
   const checkIsRestowBlocker = (bay, row, tier, container) => {
     if (!container || container.destination === nextPort) return false;
     
-    const stack = grid[bay][row];
+    const stack = grid?.[bay]?.[row];
+    if (!stack) return false;
     const tiers = getBayConfig(bay).tiers; // top to bottom (84, 82, 02)
     const currentTierIdx = tiers.indexOf(tier);
+    if (currentTierIdx === -1) return false;
     
     // Check if there is ANY next-port container below this container in the stack
     // Larger indices in config.tiers represent lower physical positions
@@ -65,6 +66,7 @@ export default function BayplanSimulator({
     e.preventDefault();
     const containerId = e.dataTransfer.getData('text/plain');
     if (containerId) {
+      if (grid?.[bay]?.[row]?.[tier] !== null && grid?.[bay]?.[row]?.[tier] !== undefined) return;
       onPlaceContainer(containerId, bay, row, tier);
     }
   };
@@ -82,21 +84,28 @@ export default function BayplanSimulator({
   const activeSelectedContainer = pendingContainers.find(c => c.id === selectedPendingId);
 
   const handleSlotClick = (bay, row, tier) => {
-    const containerInSlot = grid[bay][row][tier];
+    const containerInSlot = grid?.[bay]?.[row]?.[tier];
 
     if (containerInSlot) {
+      // Transit cargo is locked in the vessel and cannot be removed
+      if (containerInSlot.origin !== currentPort) {
+        return;
+      }
       // Slot occupied: Remove container and return to pending
       onRemoveContainer(bay, row, tier);
     } else if (activeSelectedContainer) {
       // Slot empty and container selected: Place container.
-      // onPlaceContainer is a server round-trip that can fail (wrong slot
-      // type, physics violation) - selection is left alone here rather than
-      // cleared optimistically, so a failed attempt stays selected and
-      // ready to retry on a different slot instead of forcing the player to
-      // re-pick it from the buffer.
       onPlaceContainer(selectedPendingId, bay, row, tier);
     }
   };
+
+  if (!grid) {
+    return (
+      <div className="w-full p-12 text-center text-white/80 font-bold bg-white/10 rounded-2xl animate-pulse">
+        Memuat grid kapal...
+      </div>
+    );
+  }
 
   // Get list of bays dynamically sorted descending
   const baysToRender = Object.keys(grid).sort((a, b) => parseInt(b) - parseInt(a));
@@ -113,7 +122,7 @@ export default function BayplanSimulator({
     const config = getBayConfig(bay);
     config.rows.forEach(row => {
       config.tiers.forEach(tier => {
-        if (grid[bay] && grid[bay][row] && grid[bay][row][tier]) {
+        if (grid?.[bay]?.[row]?.[tier]) {
           count++;
         }
       });
@@ -492,7 +501,7 @@ export default function BayplanSimulator({
                           UANG TAMBANG
                         </span>
                         <span className="text-[10px] font-extrabold text-emerald-700 leading-none block mt-0.5">
-                          {formatRupiah(container.tariff).split('.')[0]}M
+                          {formatRupiah(container.tariff).split('.')[0]} Jt
                         </span>
                       </div>
                     </div>
@@ -695,7 +704,7 @@ export default function BayplanSimulator({
                     const isUnderdeck = tier === '02';
                     
                     return (
-                      <React.Fragment key={tier}>
+                      <Fragment key={tier}>
                         {/* Visual Hatch Cover Plate above Tier 02 */}
                         {isUnderdeck && (
                           <div className="col-span-5 flex items-center gap-2.5 my-2.5 py-1 px-3 bg-slate-100 border border-slate-250 rounded-lg shadow-sm">
@@ -724,7 +733,7 @@ export default function BayplanSimulator({
 
                           {/* Grid slots data columns */}
                           {config.rows.map(row => {
-                            const container = grid[bay][row][tier];
+                            const container = grid?.[bay]?.[row]?.[tier];
                             const isRestowed = checkIsRestowBlocker(bay, row, tier, container);
                             
                             // Style mappings
@@ -797,7 +806,7 @@ export default function BayplanSimulator({
                                     </span>
                                     
                                     <span className="text-[7.5px] font-extrabold text-slate-700 mt-0.5 leading-none">
-                                      Rev: {formatRupiah(container.tariff).split('.')[0]}M
+                                      Rev: {formatRupiah(container.tariff).split('.')[0]} Jt
                                     </span>
 
                                     {/* Stripe patterns */}
@@ -825,7 +834,7 @@ export default function BayplanSimulator({
                             );
                           })}
                         </div>
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                 </div>

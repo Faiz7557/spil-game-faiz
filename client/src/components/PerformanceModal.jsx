@@ -1,6 +1,5 @@
-import React from 'react';
 import { formatRupiah, PORT_NAMES } from '../utils/gameHelpers';
-import { Award, Compass, AlertTriangle, ShieldCheck, ArrowRight, FileSpreadsheet, Percent, Calendar } from 'lucide-react';
+import { Compass, AlertTriangle, ShieldCheck, ArrowRight, FileSpreadsheet, Calendar } from 'lucide-react';
 
 export default function PerformanceModal({ isOpen, evaluation, history, onClose }) {
   if (!isOpen || !evaluation) return null;
@@ -130,7 +129,7 @@ export default function PerformanceModal({ isOpen, evaluation, history, onClose 
                       </span>
                     </div>
                     <span className="text-spil-red font-black">
-                      -Rp 6.000.000
+                      {formatRupiah(item.penalty || -6000000)}
                     </span>
                   </div>
                 ))}
