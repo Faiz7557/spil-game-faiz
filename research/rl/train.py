@@ -19,8 +19,17 @@ TEST and SENS are never touched here.
 CPU on purpose. The policy is a 2x64 MLP, far too small to amortise transfer to a
 GPU, and the bottleneck is stepping the environment.
 
-Windows note: SubprocVecEnv uses spawn, so the `__main__` guard at the bottom is
-load-bearing. Without it the process forks itself without end.
+The envs run IN THIS PROCESS by default (`--vec dummy`). `--vec subproc` spawns
+one process per env, and on Windows spawn means each worker re-imports SB3, which
+imports `torch.utils.tensorboard`, which imports tensorflow, keras, sklearn and
+scipy - roughly 1.5 GB per worker. Eight of those do not fit in 15 GB, and the
+run dies with MemoryError after thrashing. This environment is cheap pure Python
+and MaskablePPO needs a second IPC round-trip per step just to fetch the action
+mask, so in-process is both safer and faster here.
+
+The `__main__` guard at the bottom is still load-bearing for `--vec subproc`:
+Windows spawn re-runs the module, and without the guard the process would fork
+itself without end.
 """
 
 import argparse
@@ -32,6 +41,7 @@ from pathlib import Path
 import numpy as np
 
 try:
+    import torch as th
     from sb3_contrib import MaskablePPO
     from sb3_contrib.common.wrappers import ActionMasker
     from stable_baselines3.common.callbacks import BaseCallback
@@ -145,7 +155,11 @@ def build_a2c(env, seed, tb, n_envs):
 def build_dqn(env, seed, tb, n_envs):
     return MaskableDQN(
         'MlpPolicy', env, seed=seed, device='cpu', verbose=0, tensorboard_log=tb,
-        learning_rate=1e-4, buffer_size=200_000, learning_starts=10_000,
+        # 1M is SB3's own default. At a 10M-step budget a 200k buffer holds only
+        # 2% of the run, and DQN's curve could then flatten because it ran out of
+        # replay diversity rather than because the algorithm had converged - which
+        # would be read off the curve as "DQN converged at X" and be wrong.
+        learning_rate=1e-4, buffer_size=1_000_000, learning_starts=10_000,
         batch_size=128, gamma=0.995, tau=1.0,
         train_freq=4, gradient_steps=1, target_update_interval=2_000,
         exploration_fraction=0.2, exploration_initial_eps=1.0,
@@ -166,6 +180,17 @@ def main(argv=None):
     parser.add_argument('--eval-freq', type=int, default=50_000)
     parser.add_argument('--eval-seeds', type=int, default=3,
                         help='VAL seeds per stratum; total episodes is this x 24')
+    parser.add_argument('--vec', choices=['dummy', 'subproc'], default='dummy',
+                        help='dummy runs the envs in this process. subproc spawns '
+                             'one process per env, and on Windows each one re-imports '
+                             'SB3, which pulls in tensorflow via torch.utils.tensorboard '
+                             '- about 1.5 GB per worker. Eight of those exhaust 15 GB '
+                             'of RAM and the run dies with MemoryError. This env is '
+                             'cheap pure Python, so in-process is also faster.')
+    parser.add_argument('--threads', type=int, default=1,
+                        help='torch intra-op threads. A 2x64 MLP is far too small to '
+                             'benefit; the thread coordination costs more than the '
+                             'matmuls.')
     parser.add_argument('--out', default=None)
     args = parser.parse_args(argv)
 
@@ -173,13 +198,15 @@ def main(argv=None):
     out.mkdir(parents=True, exist_ok=True)
 
     set_random_seed(args.seed)
+    th.set_num_threads(args.threads)
 
     # DQN is off-policy with a replay buffer; parallel envs buy it much less than
     # they buy PPO, and its exploration override assumes one stream per step.
     n_envs = 1 if args.algo == 'dqn' else max(1, args.n_envs)
 
     env_fns = [make_env('train', args.seed, i) for i in range(n_envs)]
-    env = SubprocVecEnv(env_fns) if n_envs > 1 else DummyVecEnv(env_fns)
+    env = (SubprocVecEnv(env_fns) if args.vec == 'subproc' and n_envs > 1
+           else DummyVecEnv(env_fns))
 
     val_lo, _val_hi = SPLITS['val']
     eval_seeds = [val_lo + i for i in range(args.eval_seeds)]
@@ -191,8 +218,8 @@ def main(argv=None):
 
     model = BUILDERS[args.algo](env, args.seed, str(out / 'tb'), n_envs)
 
-    print('algo %s   timesteps %d   envs %d   seed %d' % (
-        args.algo, args.timesteps, n_envs, args.seed))
+    print('algo %s   timesteps %d   envs %d (%s)   torch threads %d   seed %d' % (
+        args.algo, args.timesteps, n_envs, args.vec, args.threads, args.seed))
     print('eval: %d VAL seeds x %d strata = %d episodes every %d steps'
           % (len(eval_seeds), len(eval_scenarios),
              len(eval_seeds) * len(eval_scenarios), args.eval_freq))

@@ -1,0 +1,203 @@
+{
+  "algo": "a2c",
+  "timesteps": 2000000,
+  "n_envs": 8,
+  "seed": 1,
+  "wall_clock_seconds": 420.57123550004326,
+  "best_val_profit": 1358283333.3333333,
+  "eval_seeds": [
+    200000,
+    200001,
+    200002
+  ],
+  "eval_strata": 24,
+  "eval_history": [
+    {
+      "timesteps": 50000,
+      "mean_profit": 1048080555.5555556
+    },
+    {
+      "timesteps": 100000,
+      "mean_profit": 1106397222.2222223
+    },
+    {
+      "timesteps": 150000,
+      "mean_profit": 1095505555.5555556
+    },
+    {
+      "timesteps": 200000,
+      "mean_profit": 1085872222.2222223
+    },
+    {
+      "timesteps": 250000,
+      "mean_profit": 1120625000.0
+    },
+    {
+      "timesteps": 300000,
+      "mean_profit": 1135775000.0
+    },
+    {
+      "timesteps": 350000,
+      "mean_profit": 1133769444.4444444
+    },
+    {
+      "timesteps": 400000,
+      "mean_profit": 1158908333.3333333
+    },
+    {
+      "timesteps": 450000,
+      "mean_profit": 1112861111.1111112
+    },
+    {
+      "timesteps": 500000,
+      "mean_profit": 1211922222.2222223
+    },
+    {
+      "timesteps": 550000,
+      "mean_profit": 1039044444.4444444
+    },
+    {
+      "timesteps": 600000,
+      "mean_profit": 1124380555.5555556
+    },
+    {
+      "timesteps": 650000,
+      "mean_profit": 1042352777.7777778
+    },
+    {
+      "timesteps": 700000,
+      "mean_profit": 1120808333.3333333
+    },
+    {
+      "timesteps": 750000,
+      "mean_profit": 1057630555.5555556
+    },
+    {
+      "timesteps": 800000,
+      "mean_profit": 1048036111.1111112
+    },
+    {
+      "timesteps": 850000,
+      "mean_profit": 1106133333.3333333
+    },
+    {
+      "timesteps": 900000,
+      "mean_profit": 1166108333.3333333
+    },
+    {
+      "timesteps": 950000,
+      "mean_profit": 1157547222.2222223
+    },
+    {
+      "timesteps": 1000000,
+      "mean_profit": 1139966666.6666667
+    },
+    {
+      "timesteps": 1050000,
+      "mean_profit": 1176658333.3333333
+    },
+    {
+      "timesteps": 1100000,
+      "mean_profit": 1176769444.4444444
+    },
+    {
+      "timesteps": 1150000,
+      "mean_profit": 1165938888.8888888
+    },
+    {
+      "timesteps": 1200000,
+      "mean_profit": 1172591666.6666667
+    },
+    {
+      "timesteps": 1250000,
+      "mean_profit": 1186211111.1111112
+    },
+    {
+      "timesteps": 1300000,
+      "mean_profit": 1240611111.1111112
+    },
+    {
+      "timesteps": 1350000,
+      "mean_profit": 1233630555.5555556
+    },
+    {
+      "timesteps": 1400000,
+      "mean_profit": 1254400000.0
+    },
+    {
+      "timesteps": 1450000,
+      "mean_profit": 1241638888.8888888
+    },
+    {
+      "timesteps": 1500000,
+      "mean_profit": 1258366666.6666667
+    },
+    {
+      "timesteps": 1550000,
+      "mean_profit": 1306080555.5555556
+    },
+    {
+      "timesteps": 1600000,
+      "mean_profit": 1312011111.1111112
+    },
+    {
+      "timesteps": 1650000,
+      "mean_profit": 1339186111.1111112
+    },
+    {
+      "timesteps": 1700000,
+      "mean_profit": 1325297222.2222223
+    },
+    {
+      "timesteps": 1750000,
+      "mean_profit": 1334669444.4444444
+    },
+    {
+      "timesteps": 1800000,
+      "mean_profit": 1339538888.8888888
+    },
+    {
+      "timesteps": 1850000,
+      "mean_profit": 1355055555.5555556
+    },
+    {
+      "timesteps": 1900000,
+      "mean_profit": 1350338888.8888888
+    },
+    {
+      "timesteps": 1950000,
+      "mean_profit": 1357936111.1111112
+    },
+    {
+      "timesteps": 2000000,
+      "mean_profit": 1358283333.3333333
+    }
+  ],
+  "hyperparameters": {
+    "verbose": 0,
+    "num_timesteps": 2000384,
+    "_total_timesteps": 2000000,
+    "_num_timesteps_at_start": 0,
+    "seed": 1,
+    "start_time": 1788803502109695600,
+    "learning_rate": 0.0007,
+    "tensorboard_log": "research\\results\\rl\\a2c_seed1\\tb",
+    "_episode_num": 0,
+    "use_sde": false,
+    "sde_sample_freq": -1,
+    "_current_progress_remaining": -0.00019199999999996997,
+    "_stats_window_size": 100,
+    "_n_updates": 3907,
+    "_custom_logger": false,
+    "n_envs": 8,
+    "n_steps": 64,
+    "gamma": 0.995,
+    "gae_lambda": 1.0,
+    "ent_coef": 0.01,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "batch_size": 512,
+    "n_epochs": 1,
+    "normalize_advantage": false
+  }
+}

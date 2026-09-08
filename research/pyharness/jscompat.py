@@ -19,6 +19,21 @@ def js_round(x):
     return math.floor(x + 0.5)
 
 
+def js_sum(values):
+    """Naive left-to-right float summation, the way `reduce((a, b) => a + b, 0)`
+    does it.
+
+    CPython 3.12 changed the built-in `sum()` to use Neumaier compensated
+    summation for floats, which is MORE accurate than JS - and therefore wrong
+    here. The two disagree in the last unit in the last place, which is exactly
+    enough to break a bit-for-bit claim on a mean.
+    """
+    total = 0.0
+    for v in values:
+        total += v
+    return total
+
+
 def js_object_keys(obj):
     """Reproduce `Object.keys()` ordering: canonical array-index keys first in
     ascending numeric order, then the remaining string keys in insertion order.

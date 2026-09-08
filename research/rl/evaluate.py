@@ -57,40 +57,67 @@ SENS_HEADER = (
     'utilisation,accepted,loaded,offered,mean_decision_ms')
 
 
-def _pilot_row(r, name, plan, scenario):
-    # A deterministic policy has no within-seed spread, so one run per seed is
-    # the whole story; see README, "Repetitions for stochastic agents".
+def _mean(results, key):
+    return float(np.mean([r[key] for r in results]))
+
+
+def _pilot_row(results, name, plan, scenario):
+    """One row per scenario-seed, averaged over the TRAINING seeds.
+
+    A trained policy is deterministic at evaluation time, so re-running it on
+    one scenario changes nothing. What does change is which policy you get: the
+    training run is stochastic, and a single training seed would report a draw
+    from that distribution as if it were the algorithm.
+
+    So training seeds are treated exactly as ASUMSI A-15 treats an agent's own
+    repetitions - the cell value entering the blocked design is the mean over
+    them, and the spread across them is reported separately as `cash_sd_within`
+    rather than being folded into the between-seed variation.
+    """
+    cash = [r['cash'] for r in results]
+    sd = float(np.std(cash, ddof=1)) if len(cash) > 1 else 0.0
     return ','.join(str(x) for x in [
-        r['seed'], name, plan, 1,
+        results[0]['seed'], name, plan, len(results),
         '%.4f' % rho_for(scenario), scenario['reeferShare'], scenario['committedShare'],
-        '%.0f' % r['cash'], 0, '%.0f' % r['revenue'],
-        '%.0f' % r['revenueLoad'], '%.0f' % r['revenueDischarge'], '%.0f' % r['revenueDrain'],
-        '%.3f' % r['restowContainers'], '%.3f' % r['rolled'],
-        '%.0f' % r['restowPenalty'], '%.0f' % r['restowPenaltyDrain'],
-        '%.0f' % r['rollingPenalty'],
-        '%.6f' % r['meanUtilisation'], '%.3f' % r['accepted'], '%.3f' % r['loaded'],
-        '%.0f' % r['offered'],
-        '%.3f' % r['aboardAtHorizon'], '%.0f' % r['valueAboardAtHorizon'],
-        '%.4f' % r['decisionMs'], '%.4f' % r['decisionMsMax'], '%.4f' % r['meanDecisionMs'],
+        '%.0f' % _mean(results, 'cash'), '%.0f' % sd, '%.0f' % _mean(results, 'revenue'),
+        '%.0f' % _mean(results, 'revenueLoad'),
+        '%.0f' % _mean(results, 'revenueDischarge'),
+        '%.0f' % _mean(results, 'revenueDrain'),
+        '%.3f' % _mean(results, 'restowContainers'), '%.3f' % _mean(results, 'rolled'),
+        '%.0f' % _mean(results, 'restowPenalty'),
+        '%.0f' % _mean(results, 'restowPenaltyDrain'),
+        '%.0f' % _mean(results, 'rollingPenalty'),
+        '%.6f' % _mean(results, 'meanUtilisation'),
+        '%.3f' % _mean(results, 'accepted'), '%.3f' % _mean(results, 'loaded'),
+        '%.0f' % _mean(results, 'offered'),
+        '%.3f' % _mean(results, 'aboardAtHorizon'),
+        '%.0f' % _mean(results, 'valueAboardAtHorizon'),
+        '%.4f' % _mean(results, 'decisionMs'), '%.4f' % _mean(results, 'decisionMsMax'),
+        '%.4f' % _mean(results, 'meanDecisionMs'),
     ])
 
 
-def _sens_row(r, name, plan, stratum):
+def _sens_row(results, name, plan, stratum):
     scenario = stratum['scenario']
     return ','.join(str(x) for x in [
         stratum['id'], '%.2f' % stratum['rho'], '%.2f' % stratum['sigma'],
         '%.2f' % stratum['kappa'], '%.4f' % rho_reefer_for(scenario),
-        r['seed'], name, plan,
-        '%.0f' % r['cash'], '%.0f' % r['revenue'],
-        '%.3f' % r['restowContainers'], '%.3f' % r['rolled'],
-        '%.6f' % r['meanUtilisation'], '%.3f' % r['accepted'], '%.3f' % r['loaded'],
-        '%.0f' % r['offered'], '%.4f' % r['meanDecisionMs'],
+        results[0]['seed'], name, plan,
+        '%.0f' % _mean(results, 'cash'), '%.0f' % _mean(results, 'revenue'),
+        '%.3f' % _mean(results, 'restowContainers'), '%.3f' % _mean(results, 'rolled'),
+        '%.6f' % _mean(results, 'meanUtilisation'),
+        '%.3f' % _mean(results, 'accepted'), '%.3f' % _mean(results, 'loaded'),
+        '%.0f' % _mean(results, 'offered'), '%.4f' % _mean(results, 'meanDecisionMs'),
     ])
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--model', required=True)
+    parser.add_argument('--model', required=True, nargs='+',
+                        help='one checkpoint per TRAINING seed. Passing all of '
+                             'them averages over the seeds (ASUMSI A-15); passing '
+                             'one reports a single draw from the training '
+                             'distribution as if it were the algorithm.')
     parser.add_argument('--algo', choices=sorted(LOADERS), required=True)
     parser.add_argument('--agent-name', required=True,
                         help='the name this agent gets in the results table')
@@ -100,9 +127,15 @@ def main(argv=None):
     parser.add_argument('--out', default=None)
     args = parser.parse_args(argv)
 
-    model = LOADERS[args.algo].load(args.model, device='cpu')
-    agent = PolicyAgent(maskable_policy(model, deterministic=True),
-                        name=args.agent_name, plan=args.plan)
+    agents = []
+    for path in args.model:
+        model = LOADERS[args.algo].load(path, device='cpu')
+        agents.append(PolicyAgent(maskable_policy(model, deterministic=True),
+                                  name=args.agent_name, plan=args.plan))
+    print('%d training seed(s): %s' % (len(agents), ', '.join(args.model)))
+    if len(agents) == 1:
+        print('  NOTE: one checkpoint only, so cash_sd_within will be 0 and the '
+              'row reports a single training draw, not the algorithm.')
 
     if args.mode == 'test':
         lo, hi = SPLITS['test']
@@ -113,9 +146,10 @@ def main(argv=None):
         rows = [PILOT_HEADER]
         cash = []
         for seed in seeds:
-            r = run_episode(agent, seed, scenario=NOMINAL_SCENARIO)
-            rows.append(_pilot_row(r, args.agent_name, args.plan, NOMINAL_SCENARIO))
-            cash.append(r['cash'])
+            results = [run_episode(a, seed, scenario=NOMINAL_SCENARIO) for a in agents]
+            rows.append(_pilot_row(results, args.agent_name, args.plan,
+                                   NOMINAL_SCENARIO))
+            cash.append(_mean(results, 'cash'))
         out = Path(args.out or 'research/results/rl_test_%s.csv' % args.agent_name)
         summary = 'TEST  %d seeds, nominal   mean cash %.0f   median %.0f' % (
             len(seeds), float(np.mean(cash)), float(np.median(cash)))
@@ -127,9 +161,10 @@ def main(argv=None):
         cash = []
         for stratum in strata:
             for seed in seeds:
-                r = run_episode(agent, seed, scenario=stratum['scenario'])
-                rows.append(_sens_row(r, args.agent_name, args.plan, stratum))
-                cash.append(r['cash'])
+                results = [run_episode(a, seed, scenario=stratum['scenario'])
+                           for a in agents]
+                rows.append(_sens_row(results, args.agent_name, args.plan, stratum))
+                cash.append(_mean(results, 'cash'))
             print('  %-20s done' % stratum['id'])
         out = Path(args.out or 'research/results/rl_sens_%s.csv' % args.agent_name)
         summary = 'SENS  %d strata x %d seeds   mean cash %.0f' % (

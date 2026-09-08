@@ -53,11 +53,19 @@ START_CASH = 150_000_000
 Q05 = {2: 1.960, 3: 2.343, 4: 2.569, 5: 2.728,
        6: 2.850, 7: 2.949, 8: 3.031, 9: 3.102, 10: 3.164}
 
-PRIMARY = ("cash", True, "final cash")
+# The dependent variables of Tabel 3.5, in the units that table defines.
+#
+# `profit` rather than `cash`: the table defines the endpoint as final cash MINUS
+# starting capital. The two rank identically - the 150 jt is a constant handed to
+# every agent - so every p-value, rank and effect size is unchanged. What changes
+# is the printed magnitude, and a Bab 4 that quotes cash as "pendapatan bersih"
+# is wrong by exactly the starting capital. The realisation ratio already used
+# profit for this reason; this makes the whole script consistent with it.
+PRIMARY = ("profit", True, "pendapatan bersih (kas akhir - kas awal)")
 SECONDARY = [
-    ("restow", False, "restowed containers"),
-    ("rolled", False, "rolled containers"),
-    ("utilisation", True, "mean slot utilisation"),
+    ("restow", False, "jumlah restow"),
+    ("rolled", False, "rolled container"),
+    ("utilisation", True, "utilisasi slot"),
 ]
 
 
@@ -133,7 +141,7 @@ def analyse(df, metric, higher_is_better, label, role=""):
     print("Nemenyi CD    = %.3f at alpha = 0.05\n" % cd)
 
     order = np.argsort(mean_ranks)
-    scale = 1e6 if metric in ("cash", "revenue") else 1
+    scale = 1e6 if metric in ("cash", "profit", "revenue") else 1
     unit = " (jt)" if scale > 1 else ""
     print("  %-20s%11s%9s%14s%14s" % ("agent", "mean rank", "sd rank",
                                       "median" + unit, "mean" + unit))
@@ -162,7 +170,7 @@ def analyse(df, metric, higher_is_better, label, role=""):
     return p
 
 
-def pairwise_effect(df, metric="cash", scale=1e6):
+def pairwise_effect(df, metric="profit", scale=1e6):
     """Practical significance: per-block differences with a bootstrap CI.
 
     A Nemenyi star says two agents are distinguishable. It does not say the gap
@@ -206,8 +214,7 @@ def realisation(df, results_dir):
 
     # Ratios are computed on PROFIT, not on cash: starting capital is handed to
     # every agent for free and would flatter all of them equally.
-    merged["ratio"] = ((merged["cash"] - START_CASH)
-                       / (merged["ub_cash"] - START_CASH))
+    merged["ratio"] = merged["profit"] / (merged["ub_cash"] - START_CASH)
 
     print("\n" + "=" * 96)
     print("REALISATION RATIO vs the provable upper bound   (%d seeds covered)"
@@ -226,33 +233,47 @@ def realisation(df, results_dir):
 
 
 def stability_and_cost(df):
-    """Spread across seeds and the compute each agent spent to get there."""
-    print("\n" + "=" * 96)
-    print("STABILITY ACROSS SEEDS AND DECISION COST")
-    print("=" * 96)
-    print("  CV  = sd/mean of final cash; p05 = 5th-percentile cash (the bad weeks)")
-    print("  sd(algo) = the agent's own noise on a fixed scenario, 0 if deterministic")
-    print("  ms/call is per port-call, single-threaded, same machine for every agent\n")
-    print("  %-20s%11s%8s%11s%11s%11s%10s"
-          % ("agent", "mean (jt)", "CV", "p05 (jt)", "IQR (jt)", "sd(algo)", "ms/call"))
+    """Spread across seeds and the compute each agent spent to get there.
+
+    `sd(antar-seed)` IS the stability variable of Tabel 3.5, printed as a
+    standard deviation in jt rather than only as a coefficient of variation.
+
+    Note the two spreads are different quantities and are easy to confuse:
+      sd(antar-seed)  how much the agent's profit moves when the SCENARIO changes
+      sd(algo)        how much it moves on a FIXED scenario, across its own
+                      repetitions - the A-15 quantity, 0 for a deterministic agent
+    """
+    print("\n" + "=" * 108)
+    print("STABILITAS ANTAR-SEED DAN BIAYA KEPUTUSAN")
+    print("=" * 108)
+    print("  sd(antar-seed) = simpangan baku pendapatan bersih antar-seed (Tabel 3.5)")
+    print("  CV = sd/mean;  p05 = persentil ke-5 (minggu-minggu buruk)")
+    print("  sd(algo) = derau agen itu sendiri pada skenario tetap, 0 bila deterministik")
+    print("  ms/port-call: SATU port-call membungkus select() + stow() untuk 10-20")
+    print("    petikemas sekaligus, jadi ini BUKAN waktu per penempatan. A5 diukur di")
+    print("    Python dan A1-A4 di Node (ASUMSI A-13): bandingkan ordenya saja.\n")
+    print("  %-20s%11s%14s%8s%11s%11s%11s%13s"
+          % ("agent", "mean (jt)", "sd antar-seed", "CV", "p05 (jt)", "IQR (jt)",
+             "sd(algo)", "ms/port-call"))
 
     has_ms = "mean_decision_ms" in df.columns
     has_within = "cash_sd_within" in df.columns
     rows = []
     for agent, g in df.groupby("agent"):
-        cash = g["cash"].values
+        profit = g["profit"].values
         rows.append((
-            agent, cash.mean() / 1e6, cash.std() / cash.mean(),
-            np.percentile(cash, 5) / 1e6,
-            (np.percentile(cash, 75) - np.percentile(cash, 25)) / 1e6,
+            agent, profit.mean() / 1e6, profit.std(ddof=1) / 1e6,
+            profit.std() / profit.mean(),
+            np.percentile(profit, 5) / 1e6,
+            (np.percentile(profit, 75) - np.percentile(profit, 25)) / 1e6,
             (g["cash_sd_within"].mean() / 1e6) if has_within else float("nan"),
             g["mean_decision_ms"].mean() if has_ms else float("nan")
         ))
     for r in sorted(rows, key=lambda x: -x[1]):
-        print("  %-20s%11.1f%8.3f%11.1f%11.1f%11.1f%10.3f" % r)
+        print("  %-20s%11.1f%14.1f%8.3f%11.1f%11.1f%11.1f%13.3f" % r)
 
 
-def sample_size_curve(df, metric="cash"):
+def sample_size_curve(df, metric="profit"):
     wide = df.pivot(index="seed", columns="agent", values=metric)
     print("\n" + "=" * 96)
     print("ROBUSTNESS DISPLAY - Friedman p and Nemenyi CD as n grows")
@@ -296,15 +317,54 @@ def run_family(df, results_dir, banner):
     stability_and_cost(df)
 
 
-def main():
-    results_dir = Path(__file__).resolve().parent.parent / "results"
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else results_dir / "pilot_results.csv"
+def load_results(results_dir, path=None, verbose=True):
+    """The one place results are assembled, so stats.py and figures.py cannot
+    end up analysing and plotting two different tables."""
+    path = Path(path) if path else results_dir / "pilot_results.csv"
     if not path.exists():
         sys.exit("no results at %s\nrun:  node research/run-pilot.mjs" % path)
 
+    say = print if verbose else (lambda *a, **k: None)
+
     df = pd.read_csv(path)
-    print("loaded %d rows from %s: %d agents x %d seeds"
-          % (len(df), path.name, df["agent"].nunique(), df["seed"].nunique()))
+    say("loaded %d rows from %s: %d agents x %d seeds"
+        % (len(df), path.name, df["agent"].nunique(), df["seed"].nunique()))
+
+    # The learning agents are scored by research/rl/evaluate.py into their own
+    # files, in this same schema. Picking them up automatically keeps A5 in the
+    # ranked table without anyone having to remember to concatenate by hand.
+    for extra in sorted(results_dir.glob("rl_test_*.csv")):
+        add = pd.read_csv(extra)
+        missing = set(df.columns) - set(add.columns)
+        if missing:
+            say("  skipped %s: missing columns %s" % (extra.name, sorted(missing)))
+            continue
+        df = pd.concat([df, add[df.columns]], ignore_index=True)
+        say("  + %d rows from %s (%s)"
+            % (len(add), extra.name, ", ".join(sorted(add["agent"].unique()))))
+
+    # Tabel 3.5 defines the primary endpoint as final cash minus starting capital.
+    df["profit"] = df["cash"] - START_CASH
+
+    # A blocked design needs every agent on every seed. An agent evaluated on a
+    # different seed set would silently drop every other agent's rows in the
+    # pivot, so say so instead of quietly analysing a subset.
+    per_agent = df.groupby("agent")["seed"].nunique()
+    if per_agent.nunique() > 1:
+        say("\n  WARNING: agents do not share one seed set - the design is not "
+            "balanced:")
+        for agent, n in per_agent.sort_values().items():
+            say("    %-20s %d seeds" % (agent, n))
+        common = set.intersection(*(set(g["seed"]) for _, g in df.groupby("agent")))
+        say("    analysing the %d seeds common to all agents" % len(common))
+        df = df[df["seed"].isin(common)]
+    return df
+
+
+def main():
+    results_dir = Path(__file__).resolve().parent.parent / "results"
+    df = load_results(results_dir, sys.argv[1] if len(sys.argv) > 1 else None)
+
     if "replicates" in df.columns:
         reps = df.groupby("agent")["replicates"].max()
         stoch = reps[reps > 1]

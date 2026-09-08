@@ -1,0 +1,210 @@
+{
+  "algo": "dqn",
+  "timesteps": 2000000,
+  "n_envs": 1,
+  "seed": 1,
+  "wall_clock_seconds": 1285.025938100065,
+  "best_val_profit": 1427088888.8888888,
+  "eval_seeds": [
+    200000,
+    200001,
+    200002
+  ],
+  "eval_strata": 24,
+  "eval_history": [
+    {
+      "timesteps": 50000,
+      "mean_profit": 1007997222.2222222
+    },
+    {
+      "timesteps": 100000,
+      "mean_profit": 910119444.4444444
+    },
+    {
+      "timesteps": 150000,
+      "mean_profit": 915841666.6666666
+    },
+    {
+      "timesteps": 200000,
+      "mean_profit": 835341666.6666666
+    },
+    {
+      "timesteps": 250000,
+      "mean_profit": 806022222.2222222
+    },
+    {
+      "timesteps": 300000,
+      "mean_profit": 789952777.7777778
+    },
+    {
+      "timesteps": 350000,
+      "mean_profit": 974966666.6666666
+    },
+    {
+      "timesteps": 400000,
+      "mean_profit": 1226997222.2222223
+    },
+    {
+      "timesteps": 450000,
+      "mean_profit": 1152775000.0
+    },
+    {
+      "timesteps": 500000,
+      "mean_profit": 990197222.2222222
+    },
+    {
+      "timesteps": 550000,
+      "mean_profit": 1071433333.3333334
+    },
+    {
+      "timesteps": 600000,
+      "mean_profit": 943397222.2222222
+    },
+    {
+      "timesteps": 650000,
+      "mean_profit": 1041525000.0
+    },
+    {
+      "timesteps": 700000,
+      "mean_profit": 993944444.4444444
+    },
+    {
+      "timesteps": 750000,
+      "mean_profit": 1026238888.8888888
+    },
+    {
+      "timesteps": 800000,
+      "mean_profit": 1016027777.7777778
+    },
+    {
+      "timesteps": 850000,
+      "mean_profit": 1019408333.3333334
+    },
+    {
+      "timesteps": 900000,
+      "mean_profit": 998241666.6666666
+    },
+    {
+      "timesteps": 950000,
+      "mean_profit": 1116630555.5555556
+    },
+    {
+      "timesteps": 1000000,
+      "mean_profit": 1285561111.1111112
+    },
+    {
+      "timesteps": 1050000,
+      "mean_profit": 1321422222.2222223
+    },
+    {
+      "timesteps": 1100000,
+      "mean_profit": 1265700000.0
+    },
+    {
+      "timesteps": 1150000,
+      "mean_profit": 1279880555.5555556
+    },
+    {
+      "timesteps": 1200000,
+      "mean_profit": 1295325000.0
+    },
+    {
+      "timesteps": 1250000,
+      "mean_profit": 1303894444.4444444
+    },
+    {
+      "timesteps": 1300000,
+      "mean_profit": 1323713888.8888888
+    },
+    {
+      "timesteps": 1350000,
+      "mean_profit": 1294869444.4444444
+    },
+    {
+      "timesteps": 1400000,
+      "mean_profit": 1325069444.4444444
+    },
+    {
+      "timesteps": 1450000,
+      "mean_profit": 1360338888.8888888
+    },
+    {
+      "timesteps": 1500000,
+      "mean_profit": 1358186111.1111112
+    },
+    {
+      "timesteps": 1550000,
+      "mean_profit": 1370727777.7777777
+    },
+    {
+      "timesteps": 1600000,
+      "mean_profit": 1344950000.0
+    },
+    {
+      "timesteps": 1650000,
+      "mean_profit": 1324755555.5555556
+    },
+    {
+      "timesteps": 1700000,
+      "mean_profit": 1351727777.7777777
+    },
+    {
+      "timesteps": 1750000,
+      "mean_profit": 1359713888.8888888
+    },
+    {
+      "timesteps": 1800000,
+      "mean_profit": 1376852777.7777777
+    },
+    {
+      "timesteps": 1850000,
+      "mean_profit": 1374352777.7777777
+    },
+    {
+      "timesteps": 1900000,
+      "mean_profit": 1389713888.8888888
+    },
+    {
+      "timesteps": 1950000,
+      "mean_profit": 1369088888.8888888
+    },
+    {
+      "timesteps": 2000000,
+      "mean_profit": 1427088888.8888888
+    }
+  ],
+  "hyperparameters": {
+    "verbose": 0,
+    "num_timesteps": 2000000,
+    "_total_timesteps": 2000000,
+    "_num_timesteps_at_start": 0,
+    "seed": 1,
+    "start_time": 1788805653865554800,
+    "learning_rate": 0.0001,
+    "tensorboard_log": "research\\results\\rl\\dqn_seed1\\tb",
+    "_episode_num": 21269,
+    "use_sde": false,
+    "sde_sample_freq": -1,
+    "_current_progress_remaining": 0.0,
+    "_stats_window_size": 100,
+    "_n_updates": 497500,
+    "_custom_logger": false,
+    "n_envs": 1,
+    "buffer_size": 200000,
+    "batch_size": 128,
+    "learning_starts": 10000,
+    "tau": 1.0,
+    "gamma": 0.995,
+    "gradient_steps": 1,
+    "optimize_memory_usage": false,
+    "n_steps": 1,
+    "use_sde_at_warmup": false,
+    "exploration_initial_eps": 1.0,
+    "exploration_final_eps": 0.05,
+    "exploration_fraction": 0.2,
+    "target_update_interval": 2000,
+    "_n_calls": 2000000,
+    "max_grad_norm": 10.0,
+    "exploration_rate": 0.05
+  }
+}

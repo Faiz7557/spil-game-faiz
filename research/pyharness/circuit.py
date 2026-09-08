@@ -17,7 +17,7 @@ from .engine import (
     DEFAULT_SCENARIO, calculate_restows, generate_orders, process_sailing_transition,
     rng_for_port_call,
 )
-from .jscompat import js_object_keys
+from .jscompat import js_object_keys, js_sum
 
 CONFIG = {
     'ports': ['SBY', 'MKS', 'JYP', 'MDN'],
@@ -339,7 +339,7 @@ def run_episode(agent, seed, demand=None, scenario=None, replicate=0):
         'scenario': scenario,
         'revenue': revenue,
         'cash': CONFIG['startCash'] + revenue - m['restowPenalty'] - m['rollingPenalty'],
-        'meanUtilisation': sum(m['utilisation']) / len(m['utilisation']),
+        'meanUtilisation': js_sum(m['utilisation']) / len(m['utilisation']),
         'meanDecisionMs': m['decisionMs'] / max(1, m['decisionCalls']),
     }
     result.update(m)
