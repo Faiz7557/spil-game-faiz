@@ -44,7 +44,8 @@ try:
     import torch as th
     from sb3_contrib import MaskablePPO
     from sb3_contrib.common.wrappers import ActionMasker
-    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.callbacks import (
+        BaseCallback, CallbackList, CheckpointCallback)
     from stable_baselines3.common.monitor import Monitor
     from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
     from stable_baselines3.common.utils import set_random_seed
@@ -180,6 +181,13 @@ def main(argv=None):
     parser.add_argument('--eval-freq', type=int, default=50_000)
     parser.add_argument('--eval-seeds', type=int, default=3,
                         help='VAL seeds per stratum; total episodes is this x 24')
+    parser.add_argument('--checkpoint-freq', type=int, default=500_000,
+                        help='save a checkpoint every N timesteps. Without these '
+                             'the A-16 budget rule selects a budget whose model no '
+                             'longer exists, and the reported policy is instead '
+                             'best-on-VAL over every evaluation - a maximum over '
+                             '~100 noisy estimates, which is a lucky draw as much '
+                             'as a good policy. 0 disables.')
     parser.add_argument('--vec', choices=['dummy', 'subproc'], default='dummy',
                         help='dummy runs the envs in this process. subproc spawns '
                              'one process per env, and on Windows each one re-imports '
@@ -212,9 +220,18 @@ def main(argv=None):
     eval_seeds = [val_lo + i for i in range(args.eval_seeds)]
     eval_scenarios = [s['scenario'] for s in all_strata()]
 
-    callback = HarnessEvalCallback(
+    eval_cb = HarnessEvalCallback(
         seeds=eval_seeds, scenarios=eval_scenarios,
         eval_freq=args.eval_freq, save_path=out)
+
+    callbacks = [eval_cb]
+    if args.checkpoint_freq > 0:
+        # save_freq counts callback calls, which happen once per vec-env step,
+        # so a timestep budget has to be divided by the number of envs.
+        callbacks.append(CheckpointCallback(
+            save_freq=max(1, args.checkpoint_freq // n_envs),
+            save_path=str(out / 'checkpoints'), name_prefix='step'))
+    callback = CallbackList(callbacks)
 
     model = BUILDERS[args.algo](env, args.seed, str(out / 'tb'), n_envs)
 
@@ -224,6 +241,10 @@ def main(argv=None):
           % (len(eval_seeds), len(eval_scenarios),
              len(eval_seeds) * len(eval_scenarios), args.eval_freq))
     print('output %s\n' % out)
+
+    if args.checkpoint_freq > 0:
+        print('checkpoint setiap %s langkah -> %s'
+              % (f"{args.checkpoint_freq:,d}", out / 'checkpoints'))
 
     started = time.perf_counter()
     model.learn(total_timesteps=args.timesteps, callback=callback,
@@ -240,11 +261,13 @@ def main(argv=None):
             'n_envs': n_envs,
             'seed': args.seed,
             'wall_clock_seconds': elapsed,
-            'best_val_profit': (None if not np.isfinite(callback.best_profit)
-                                else callback.best_profit),
+            'best_val_profit': (None if not np.isfinite(eval_cb.best_profit)
+                                else eval_cb.best_profit),
+            'checkpoint_freq': args.checkpoint_freq,
+            'eval_freq': args.eval_freq,
             'eval_seeds': eval_seeds,
             'eval_strata': len(eval_scenarios),
-            'eval_history': callback.history,
+            'eval_history': eval_cb.history,
             'hyperparameters': {
                 k: v for k, v in model.__dict__.items()
                 if isinstance(v, (int, float, str, bool))
@@ -252,7 +275,7 @@ def main(argv=None):
         }, fh, indent=2)
 
     print('\ndone in %.1f min   best VAL mean profit %.0f' % (
-        elapsed / 60, callback.best_profit))
+        elapsed / 60, eval_cb.best_profit))
     print('saved %s and %s' % (out / 'best_model.zip', out / 'final_model.zip'))
     return 0
 
