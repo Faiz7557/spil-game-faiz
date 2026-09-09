@@ -1,5 +1,17 @@
 # Experiment outputs are reproducible from a seed, so they are not tracked.
 results/*.csv
 results/*.json
+
+# Trained policies are the exception: PyTorch training is not bit-for-bit
+# reproducible across machines and thread counts, so the weights ARE the
+# artefact and best_model.zip / final_model.zip / run.json stay tracked.
+#
+# The intermediate checkpoints and TensorBoard logs are not. Nine runs at 10M
+# steps produce 180 checkpoints, and every retrain would add another full copy
+# to git history, permanently. run.json already carries the learning curves,
+# which is what the analysis actually reads.
+results/rl/*/checkpoints/
+results/rl/*/tb/
+
 __pycache__/
 *.pyc
