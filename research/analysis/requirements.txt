@@ -1,7 +1,0 @@
-# Analysis pipeline for the agent comparison.
-numpy>=1.26
-pandas>=2.0
-scipy>=1.11
-
-# Agent A5 and the RL comparators train from research/rl/requirements.txt.
-# Kept separate so running stats.py does not pull in torch.

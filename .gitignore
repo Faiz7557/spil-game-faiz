@@ -46,3 +46,9 @@ __pycache__/
 venv/
 env/
 .pytest_cache/
+
+# Folder Tambahan & Riset
+research/
+Info/
+Skripsi Kating/
+.claude/
