@@ -13,6 +13,7 @@ import {
   validateGridPhysics,
   calculateRollingPenalties,
   calculateDischargeRevenue,
+  calculateDischargeCount,
   processSailingTransition,
   rngForPortCall,
   OFFLINE_BAYS_BY_LEVEL
@@ -767,7 +768,7 @@ const executeSailingTransition = (roomCode) => {
         if (isCommitted) {
           penaltyPerUnit = containerType === 'DRY' ? 16000000 : 24000000;
         } else {
-          // Regular accepted but not loaded
+          // Non-Committed accepted but not loaded
           penaltyPerUnit = containerType === 'DRY' ? 8000000 : 16000000;
         }
 
@@ -778,7 +779,7 @@ const executeSailingTransition = (roomCode) => {
         personalRolledList.push({
           orderId,
           customerName: player.pendingContainers.find(c => c.orderId === orderId)?.customerName || 'Pelanggan',
-          customerType: isCommitted ? 'Committed' : 'Regular',
+          customerType: isCommitted ? 'Committed' : 'Non-Committed',
           containerType,
           missingCount,
           penaltyPerUnit,
@@ -819,6 +820,20 @@ const executeSailingTransition = (roomCode) => {
     const grossRevenue = calculateDischargeRevenue(player.grid, nextPort);
     const netIncome = grossRevenue - totalWeeklyPenalties;
 
+    // Calculate terminal handling moves (Bongkar, Muat, Shifting)
+    const dischargedCount = calculateDischargeCount(player.grid, nextPort);
+    let loadedCount = 0;
+    Object.keys(player.grid).forEach(b => {
+      Object.keys(player.grid[b]).forEach(r => {
+        Object.keys(player.grid[b][r]).forEach(t => {
+          const c = player.grid[b][r][t];
+          if (c && c.origin === currentPort) loadedCount++;
+        });
+      });
+    });
+    const restowMovements = restowCheck.restowContainersCount * 2;
+    const totalCraneMoves = dischargedCount + loadedCount + restowMovements;
+
     // 4. Update player state
     player.cash += netIncome;
     player.accumulatedPenalties += totalWeeklyPenalties;
@@ -835,7 +850,11 @@ const executeSailingTransition = (roomCode) => {
       rolledCount: personalRolledCount,
       rollingPenalty: totalRollingPenalty,
       restowCount: restowCheck.restowContainersCount,
+      restowMovements,
       restowPenalty: restowPenaltyTotal,
+      dischargedCount,
+      loadedCount,
+      totalCraneMoves,
       grossRevenue,
       netIncome,
       cashSnapshot: player.cash,
@@ -1309,7 +1328,7 @@ app.post('/api/game/offline/depart', (req, res) => {
         personalRolledList.push({
           orderId,
           customerName: pendingContainers.find(c => c.orderId === orderId)?.customerName || 'Pelanggan',
-          customerType: isCommitted ? 'Committed' : 'Regular',
+          customerType: isCommitted ? 'Committed' : 'Non-Committed',
           containerType,
           missingCount,
           penaltyPerUnit,
@@ -1343,6 +1362,9 @@ app.post('/api/game/offline/depart', (req, res) => {
     const totalWeeklyPenalties = restowPenaltyTotal + totalRollingPenalty;
 
     // 4. Calculate earned revenue for ALL players from unloaded containers destined for nextPort
+    // and track terminal handling moves (Bongkar, Muat, Shifting)
+    let offlineDischargedCount = 0;
+    let offlineLoadedCount = 0;
     const revenueByPlayer = Array(processedPlayers.length).fill(0);
     const bays = Object.keys(workingGrid);
     bays.forEach(bay => {
@@ -1350,23 +1372,31 @@ app.post('/api/game/offline/depart', (req, res) => {
       config.rows.forEach(row => {
         config.tiers.forEach(tier => {
           const container = workingGrid[bay][row][tier];
-          if (container && container.destination === nextPort) {
-            // Credit the branch that originally sold this cargo. Once unlocked
-            // ports (BJM/JKT/BLI) exceed the player count, the sales call at
-            // that port is already run by an existing player via the same
-            // `portIndex % players.length` wrap (see activePlayerIndex above),
-            // so revenue for cargo sold there must wrap to that same player -
-            // an unwrapped index would just discard the revenue.
-            const originPortIndex = currentActivePorts.indexOf(container.origin);
-            if (originPortIndex >= 0) {
-              const originPlayerIndex = originPortIndex % processedPlayers.length;
-              revenueByPlayer[originPlayerIndex] += container.tariff;
+          if (container) {
+            if (container.destination === nextPort) {
+              offlineDischargedCount++;
+              // Credit the branch that originally sold this cargo. Once unlocked
+              // ports (BJM/JKT/BLI) exceed the player count, the sales call at
+              // that port is already run by an existing player via the same
+              // `portIndex % players.length` wrap (see activePlayerIndex above),
+              // so revenue for cargo sold there must wrap to that same player -
+              // an unwrapped index would just discard the revenue.
+              const originPortIndex = currentActivePorts.indexOf(container.origin);
+              if (originPortIndex >= 0) {
+                const originPlayerIndex = originPortIndex % processedPlayers.length;
+                revenueByPlayer[originPlayerIndex] += container.tariff;
+              }
+            }
+            if (container.origin === currentPort) {
+              offlineLoadedCount++;
             }
           }
         });
       });
     });
 
+    const offlineRestowMovements = restowCheck.restowContainersCount * 2;
+    const offlineTotalCraneMoves = offlineDischargedCount + offlineLoadedCount + offlineRestowMovements;
 
     // 5. Update cash & penalties & cumulative gross revenue for all players
     const nextActivePlayerIndex = currentActivePorts.indexOf(nextPort) % processedPlayers.length;
@@ -1394,7 +1424,11 @@ app.post('/api/game/offline/depart', (req, res) => {
           rolledCount: personalRolledCount,
           rollingPenalty: totalRollingPenalty,
           restowCount: restowCheck.restowContainersCount,
+          restowMovements: offlineRestowMovements,
           restowPenalty: restowPenaltyTotal,
+          dischargedCount: offlineDischargedCount,
+          loadedCount: offlineLoadedCount,
+          totalCraneMoves: offlineTotalCraneMoves,
           grossRevenue: earnedRevenue,
           netIncome,
           cashSnapshot: newCash,

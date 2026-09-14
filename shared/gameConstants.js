@@ -15,6 +15,171 @@
 // Ports circuit definition
 export const PORTS = ['SBY', 'MKS', 'JYP', 'MDN'];
 
+export const PORT_CODES_INFO = [
+  { code: 'SBY', number: '01', name: 'Surabaya', fullName: 'Pelabuhan Tanjung Perak, Surabaya' },
+  { code: 'MKS', number: '02', name: 'Makassar', fullName: 'Pelabuhan Soekarno-Hatta, Makassar' },
+  { code: 'JYP', number: '03', name: 'Jayapura', fullName: 'Pelabuhan Jayapura, Papua' },
+  { code: 'MDN', number: '04', name: 'Medan', fullName: 'Pelabuhan Belawan, Medan' }
+];
+
+// Official Tariff Table (Informasi Tarif Muatan PT. SPIL).
+// Single source of truth for client, server, and research provenance.
+export const TARIFF_TABLE = {
+  SBY: {
+    MKS: { DRY: 18000000, REEFER: 30000000 },
+    MDN: { DRY: 6000000, REEFER: 11000000 },
+    JYP: { DRY: 16200000, REEFER: 24000000 }
+  },
+  MKS: {
+    SBY: { DRY: 10000000, REEFER: 18000000 },
+    MDN: { DRY: 12000000, REEFER: 20000000 },
+    JYP: { DRY: 16000000, REEFER: 24000000 }
+  },
+  JYP: {
+    SBY: { DRY: 13000000, REEFER: 19000000 },
+    MKS: { DRY: 13000000, REEFER: 23000000 },
+    MDN: { DRY: 11000000, REEFER: 17000000 }
+  },
+  MDN: {
+    SBY: { DRY: 13000000, REEFER: 22000000 },
+    MKS: { DRY: 14000000, REEFER: 24000000 },
+    JYP: { DRY: 14000000, REEFER: 22000000 }
+  }
+};
+
+// Official Glossary Sections from GLOSSARIUM - SPIL GAME 4 JALUR.pdf
+export const GLOSSARY_SECTIONS = [
+  {
+    id: 'port-route',
+    title: 'Port Code & Port Route',
+    subtitle: 'Kode Pelabuhan & Rotasi Sirkuit Pelayaran',
+    page: 'Hal. 2-3',
+    icon: 'Anchor',
+    items: [
+      {
+        term: 'Sirkuit Rotasi Tetap',
+        desc: 'SBY (01) ➔ MKS (02) ➔ JYP (03) ➔ MDN (04) ➔ kembali ke SBY (01). Kapal berlayar secara siklis menghubungkan pulau-pulau utama Indonesia.'
+      },
+      {
+        term: 'Port Code Resmi',
+        desc: '01 SBY: Surabaya, 02 MKS: Makassar, 03 JYP: Jayapura, 04 MDN: Medan.'
+      }
+    ]
+  },
+  {
+    id: 'bayplan-stowage',
+    title: 'Bayplan Kapal & Stowage Sheet',
+    subtitle: 'Perencanaan Muatan & Fisika Kapal',
+    page: 'Hal. 4-5',
+    icon: 'Ship',
+    items: [
+      {
+        term: 'Bay Plan',
+        desc: 'Gambaran perencanaan muatan kapal petikemas (kontainer) yang menghitung berdasarkan jenis peti kemas (DRY / REEFER), tujuan pengirimannya, dan volume daya angkut kapal yang akan dimuat.'
+      },
+      {
+        term: 'Bay (Posisi Membujur)',
+        desc: 'Pembagian muatan berupa nomor membujur dari ujung kapal depan (haluan/bow) hingga belakang (buritan/stern).'
+      },
+      {
+        term: 'Row (Posisi Melintang)',
+        desc: 'Nomor baris melintang dari sumbu tengah kapal. Nomor ganjil di sisi kiri (Port side), nomor genap di sisi kanan (Starboard), dan 00 di garis tengah (Center).'
+      },
+      {
+        term: 'Tier (Tingkat Ketinggian)',
+        desc: 'Ketinggian tumpukan petikemas. Tier 02 berada di dalam palka (Underdeck/Hold), sedangkan Tier 82 & 84 berada di atas geladak kapal (On-Deck).'
+      },
+      {
+        term: 'Jumlah Perpindahan (Discharge Moves)',
+        desc: 'Kuantitas perpindahan/pergerakan crane ketika membongkar kontainer (menurunkan kontainer dari kapal).'
+      },
+      {
+        term: 'Jumlah Pergerakan Muat (Load Moves)',
+        desc: 'Kuantitas perpindahan/pergerakan crane ketika memuat kontainer (menaikkan kontainer ke atas kapal).'
+      },
+      {
+        term: 'Restowage Move (Shifting)',
+        desc: 'Penyusunan ulang kontainer di atas kapal dengan menurunkan kontainer untuk mengambil kontainer di bawahnya dan menaikkannya kembali. 1 kontainer restow = 2 pergerakan (turun + naik kembali) dengan biaya Rp 3.000.000 per pergerakan (total Rp 6.000.000 per kontainer blocker).'
+      }
+    ]
+  },
+  {
+    id: 'stock-availability',
+    title: 'Update Stok & Ketersediaan',
+    subtitle: 'Manajemen Kuota & Rute Kargo',
+    page: 'Hal. 6-7',
+    icon: 'Package',
+    items: [
+      {
+        term: 'Fungsi Lembar Stok',
+        desc: 'Digunakan untuk update jumlah kontainer saat tiba maupun akan berangkat: mengetahui kapasitas kapal yang bisa dimuat, mencatat sales call yang diambil/ditolak, dan menghitung estimasi pendapatan.'
+      },
+      {
+        term: 'Next Port',
+        desc: 'Pelabuhan tujuan selanjutnya tepat setelah cabang Anda. Kargo Next Port wajib ditempatkan di dek atas (Tier 82/84) agar saat kapal bersandar dapat langsung dibongkar tanpa memblokir kargo lain.'
+      },
+      {
+        term: 'Later Port',
+        desc: 'Pelabuhan tujuan kedua & ketiga setelah cabang Anda. Kargo Later Port sebaiknya ditempatkan di palka bawah (Tier 02) agar tidak terganggu saat kapal singgah di pelabuhan perantara.'
+      },
+      {
+        term: 'Kuota DRY vs REEFER',
+        desc: 'Bay 10 & 14 dilengkapi plug listrik pendingin khusus kontainer REEFER. Bay 18, 06, dan 02 dikhususkan untuk DRY kontainer. Muatan tidak boleh saling tertukar jenis slotnya.'
+      }
+    ]
+  },
+  {
+    id: 'sales-call-tariff',
+    title: 'Sales Call & Informasi Tarif',
+    subtitle: 'Penerimaan Order & Klasifikasi Customer',
+    page: 'Hal. 8',
+    icon: 'PhoneCall',
+    items: [
+      {
+        term: 'Informasi Tarif Muatan',
+        desc: 'Lembar panduan resmi SPIL untuk mengetahui batas tarif/harga minimal pengangkutan container dari pelabuhan asal ke pelabuhan tujuan (bervariasi berdasarkan rute dan tipe petikemas DRY/REEFER).'
+      },
+      {
+        term: 'Committed Customer',
+        desc: 'Customer prioritas (terikat kontrak). Apabila muatan kontainernya TIDAK DIAMBIL atau GAGAL DIMUAT ke dalam kapal, kapten/operator akan langsung dikenakan penalti rolling penuh (DRY Rp 16 Jt, REEFER Rp 24 Jt per unit).'
+      },
+      {
+        term: 'Non-Committed Customer',
+        desc: 'Customer biasa. Apabila penawaran kontainernya tidak diambil/ditolak, TIDAK AKAN terkena penalti. Namun, jika order sudah diterima/diklaim tetapi gagal termuat ke atas kapal, tetap dikenakan penalti (DRY Rp 8 Jt, REEFER Rp 16 Jt per unit).'
+      }
+    ]
+  },
+  {
+    id: 'weekly-performance',
+    title: 'Lembar Kinerja Mingguan',
+    subtitle: 'Audit Finansial & Evaluasi Cabang',
+    page: 'Hal. 9-10',
+    icon: 'FileText',
+    items: [
+      {
+        term: 'Fungsi Lembar Kinerja',
+        desc: 'Mendokumentasikan performa cabang/pelabuhan: menghitung kontainer gagal muat (rolled), jumlah restow, total penalti operasional, dan pendapatan bersih (net revenue).'
+      },
+      {
+        term: 'Rolled Containers',
+        desc: 'Kontainer yang gagal muat / tertinggal di pelabuhan asal padahal kapasitas kapal tersedia atau order sudah terlanjur diklaim.'
+      },
+      {
+        term: 'Rolling Penalty',
+        desc: 'Denda kegagalan muat: Committed (DRY Rp 16 Jt, REEFER Rp 24 Jt), Non-Committed (DRY Rp 8 Jt, REEFER Rp 16 Jt).'
+      },
+      {
+        term: 'Restow Penalty',
+        desc: 'Denda akibat pergerakan crane tambahan untuk membongkar kontainer yang menghalangi kargo pelabuhan saat ini (Rp 3.000.000 per movement, atau Rp 6.000.000 per blocker).'
+      },
+      {
+        term: 'Pendapatan Bersih (Net Income)',
+        desc: 'Pendapatan Kotor Freight (diakui saat kontainer sampai di pelabuhan tujuan / discharge) dikurangi Total Penalti Rolling dan Total Penalti Restow.'
+      }
+    ]
+  }
+];
+
 // Vessel Bayplan specifications
 // Bay 26 & 22: DRY only, 4 rows, 3 tiers (84, 82, 02) - Level 3 Large Vessel
 // Bay 18: DRY only, 3 rows, 2 tiers (84, 82 - on-deck only)

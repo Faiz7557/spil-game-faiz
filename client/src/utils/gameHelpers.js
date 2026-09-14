@@ -4,6 +4,9 @@
 // change. This is also what fixed the client/server REEFER_BAYS drift.
 export {
   PORTS,
+  PORT_CODES_INFO,
+  TARIFF_TABLE,
+  GLOSSARY_SECTIONS,
   BAYS,
   ALL_BAYS,
   OFFLINE_BAYS_BY_LEVEL,

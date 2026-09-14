@@ -1,5 +1,5 @@
 import { formatRupiah, PORT_NAMES } from '../utils/gameHelpers';
-import { Compass, AlertTriangle, ShieldCheck, ArrowRight, FileSpreadsheet, Calendar } from 'lucide-react';
+import { Compass, AlertTriangle, ShieldCheck, ArrowRight, FileSpreadsheet, Calendar, Activity, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
 
 export default function PerformanceModal({ isOpen, evaluation, history, onClose }) {
   if (!isOpen || !evaluation) return null;
@@ -74,6 +74,77 @@ export default function PerformanceModal({ isOpen, evaluation, history, onClose 
           </div>
         </div>
 
+        {/* Terminal Crane Movements Audit */}
+        <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4.5">
+          <div className="flex justify-between items-center border-b border-slate-200/80 pb-2.5 mb-3">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+              <Activity className="w-4 h-4 text-indigo-600 shrink-0" />
+              Audit Pergerakan Crane Terminal (Terminal Crane Moves)
+            </h3>
+            <span className="text-[9px] font-black px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 uppercase">
+              Total Crane Moves: {evaluation.totalCraneMoves || (evaluation.dischargedCount || 0) + (evaluation.loadedCount || 0) + ((evaluation.restowCount || 0) * 2)} Gerakan
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Discharge Moves */}
+            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-[8px] font-black uppercase tracking-wider">1. Bongkar (Discharge)</span>
+                <ArrowDownCircle className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <span className="text-base font-black text-slate-800">
+                {evaluation.dischargedCount || 0} <span className="text-[9px] text-slate-400 font-bold uppercase">Gerakan</span>
+              </span>
+              <span className="text-[7.5px] text-slate-400 font-bold block mt-1 uppercase">
+                Kontainer tiba di tujuan
+              </span>
+            </div>
+
+            {/* Load Moves */}
+            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-[8px] font-black uppercase tracking-wider">2. Muat (Load)</span>
+                <ArrowUpCircle className="w-3.5 h-3.5 text-sky-600" />
+              </div>
+              <span className="text-base font-black text-slate-800">
+                {evaluation.loadedCount || 0} <span className="text-[9px] text-slate-400 font-bold uppercase">Gerakan</span>
+              </span>
+              <span className="text-[7.5px] text-slate-400 font-bold block mt-1 uppercase">
+                Kargo baru dimuat
+              </span>
+            </div>
+
+            {/* Restow Moves */}
+            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-[8px] font-black uppercase tracking-wider">3. Shifting (Restow)</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${evaluation.restowCount > 0 ? 'text-spil-red animate-spin' : 'text-slate-400'}`} />
+              </div>
+              <span className={`text-base font-black ${evaluation.restowCount > 0 ? 'text-spil-red' : 'text-slate-800'}`}>
+                {evaluation.restowMovements !== undefined ? evaluation.restowMovements : (evaluation.restowCount || 0) * 2} <span className="text-[9px] text-slate-400 font-bold uppercase">Gerakan</span>
+              </span>
+              <span className="text-[7.5px] text-slate-400 font-bold block mt-1 uppercase">
+                {evaluation.restowCount || 0} Blocker × 2 (Turun + Naik)
+              </span>
+            </div>
+
+            {/* Terminal Total */}
+            <div className="bg-gradient-to-br from-indigo-50/60 to-white p-3 rounded-xl border border-indigo-150 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between text-indigo-500 mb-1">
+                <span className="text-[8px] font-black uppercase tracking-wider">Total Crane Ops</span>
+                <span className="text-[9px] font-black">CRANE</span>
+              </div>
+              <span className="text-base font-black text-indigo-900">
+                {evaluation.totalCraneMoves || (evaluation.dischargedCount || 0) + (evaluation.loadedCount || 0) + ((evaluation.restowCount || 0) * 2)} <span className="text-[9px] text-indigo-600 font-bold uppercase">Moves</span>
+              </span>
+              <span className="text-[7.5px] text-indigo-600 font-bold block mt-1 uppercase">
+                Audit efisiensi pelabuhan
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Detailed Audit Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 1. Rolled Cargo Details */}
@@ -92,7 +163,7 @@ export default function PerformanceModal({ isOpen, evaluation, history, onClose 
                         {item.customerName}
                       </span>
                       <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
-                        {item.customerType} | {item.containerType} ({item.missingCount}x rolled)
+                        {item.customerType === 'Regular' ? 'Non-Committed' : item.customerType} | {item.containerType} ({item.missingCount}x rolled)
                       </span>
                     </div>
                     <span className="text-spil-red font-black">

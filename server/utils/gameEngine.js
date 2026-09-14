@@ -4,6 +4,9 @@
 // keeps working unchanged.
 export {
   PORTS,
+  PORT_CODES_INFO,
+  TARIFF_TABLE,
+  GLOSSARY_SECTIONS,
   BAYS,
   ALL_BAYS,
   OFFLINE_BAYS_BY_LEVEL,
@@ -14,7 +17,7 @@ export {
 } from '../../shared/gameConstants.js';
 // `export ... from` re-exports but does not bind these locally, and several
 // functions below (generateOrders, calculateRestows) use them as defaults.
-import { PORTS, getBayConfig } from '../../shared/gameConstants.js';
+import { PORTS, getBayConfig, TARIFF_TABLE } from '../../shared/gameConstants.js';
 
 /**
  * Deterministic PRNG (mulberry32). Returns a function with the same contract
@@ -55,31 +58,7 @@ export const rngForPortCall = (seed, week, port) => {
   return createRng(hashSeed(seed, week, port));
 };
 
-// Official Tariff Table (Informasi Tarif Muatan PT. SPIL).
-// Exported so research/verify-provenance.mjs can assert the shipped values
-// against the documented source instead of trusting a comment.
-export const TARIFF_TABLE = {
-  SBY: {
-    MKS: { DRY: 18000000, REEFER: 30000000 },
-    MDN: { DRY: 6000000, REEFER: 11000000 },
-    JYP: { DRY: 16200000, REEFER: 24000000 }
-  },
-  MKS: {
-    SBY: { DRY: 10000000, REEFER: 18000000 },
-    MDN: { DRY: 12000000, REEFER: 20000000 },
-    JYP: { DRY: 16000000, REEFER: 24000000 }
-  },
-  JYP: {
-    SBY: { DRY: 13000000, REEFER: 19000000 },
-    MKS: { DRY: 13000000, REEFER: 23000000 },
-    MDN: { DRY: 11000000, REEFER: 17000000 }
-  },
-  MDN: {
-    SBY: { DRY: 13000000, REEFER: 22000000 },
-    MKS: { DRY: 14000000, REEFER: 24000000 },
-    JYP: { DRY: 14000000, REEFER: 22000000 }
-  }
-};
+
 
 /**
  * Scenario parameters for the demand generator.
@@ -327,6 +306,26 @@ export const calculateDischargeRevenue = (grid, nextPort) => {
     });
   });
   return revenue;
+};
+
+/**
+  * Counts all containers about to be discharged at nextPort (discharge move count).
+  */
+export const calculateDischargeCount = (grid, nextPort) => {
+  let count = 0;
+  const bays = Object.keys(grid);
+  bays.forEach(bay => {
+    const config = getBayConfig(bay);
+    config.rows.forEach(row => {
+      config.tiers.forEach(tier => {
+        const container = grid[bay][row][tier];
+        if (container && container.destination === nextPort) {
+          count++;
+        }
+      });
+    });
+  });
+  return count;
 };
 
 /**

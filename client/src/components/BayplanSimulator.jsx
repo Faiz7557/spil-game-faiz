@@ -2,7 +2,8 @@ import { useState, Fragment } from 'react';
 import { getBayConfig, formatRupiah, getNextPort } from '../utils/gameHelpers';
 import { 
   Ship, Info, ArrowDown, ShieldAlert, Sparkles, XCircle, Anchor, Lock,
-  Play, PhoneCall, Check, Trash2, AlertCircle, ChevronDown, ChevronUp, TrendingUp, Users 
+  Play, PhoneCall, Check, Trash2, AlertCircle, ChevronDown, ChevronUp, TrendingUp, Users,
+  ChevronLeft, ChevronRight, FileText
 } from 'lucide-react';
 
 export default function BayplanSimulator({ 
@@ -25,11 +26,13 @@ export default function BayplanSimulator({
   loading,
   isGameOver,
   isReadyCurrent,
-  onToggleReadyOnline
+  onToggleReadyOnline,
+  onOpenTariff
 }) {
   const [selectedPendingId, setSelectedPendingId] = useState(null);
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(false);
   const [isGuideExpanded, setIsGuideExpanded] = useState(true);
+  const [activeOrderIndex, setActiveOrderIndex] = useState(0);
   const nextPort = getNextPort(currentPort, activePorts);
 
   // Local helper to determine if a container is a restow blocker in real-time
@@ -116,10 +119,11 @@ export default function BayplanSimulator({
     return acc + (config.rows.length * config.tiers.length);
   }, 0);
 
-  // Compute occupied slots
-  const occupiedSlotsCount = Object.keys(grid).reduce((total, bay) => {
-    let count = 0;
+  // Compute occupied slots total & by container type (DRY vs REEFER)
+  const { occupiedSlotsCount, dryOccupied, dryTotal, reeferOccupied, reeferTotal } = Object.keys(grid).reduce((acc, bay) => {
     const config = getBayConfig(bay);
+    const baySlots = config.rows.length * config.tiers.length;
+    let count = 0;
     config.rows.forEach(row => {
       config.tiers.forEach(tier => {
         if (grid?.[bay]?.[row]?.[tier]) {
@@ -127,8 +131,16 @@ export default function BayplanSimulator({
         }
       });
     });
-    return total + count;
-  }, 0);
+    acc.occupiedSlotsCount += count;
+    if (config.containerType === 'REEFER') {
+      acc.reeferOccupied += count;
+      acc.reeferTotal += baySlots;
+    } else {
+      acc.dryOccupied += count;
+      acc.dryTotal += baySlots;
+    }
+    return acc;
+  }, { occupiedSlotsCount: 0, dryOccupied: 0, dryTotal: 0, reeferOccupied: 0, reeferTotal: 0 });
   const occupancyPercentage = totalSlots > 0 ? Math.round((occupiedSlotsCount / totalSlots) * 100) : 0;
 
   return (
@@ -200,6 +212,18 @@ export default function BayplanSimulator({
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(occupancyPercentage, 100)}%` }}
               ></div>
+            </div>
+
+            {/* Quota breakdown DRY vs REEFER */}
+            <div className="grid grid-cols-2 gap-2 text-[9px] font-black">
+              <div className="bg-amber-50/80 border border-amber-200/70 p-1.5 rounded-lg flex items-center justify-between">
+                <span className="text-amber-800 uppercase">DRY:</span>
+                <span className="text-amber-900">{dryOccupied} / {dryTotal}</span>
+              </div>
+              <div className="bg-sky-50/80 border border-sky-200/70 p-1.5 rounded-lg flex items-center justify-between">
+                <span className="text-sky-800 uppercase">REEFER:</span>
+                <span className="text-sky-900">{reeferOccupied} / {reeferTotal}</span>
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 select-none">
@@ -300,11 +324,23 @@ export default function BayplanSimulator({
               <div className="p-1 rounded-lg bg-indigo-50 border border-indigo-100">
                 <PhoneCall className="w-3.5 h-3.5 text-indigo-650 animate-pulse" />
               </div>
-              Pasar Kargo
+              Pasar Kargo (Sales Call)
             </h3>
-            <span className="text-[8px] font-black text-indigo-750 bg-indigo-50 border border-indigo-150/60 px-2 py-0.5 rounded-full shadow-sm">
-              {cargoPool.length} Kontrak Tersedia
-            </span>
+            <div className="flex items-center gap-1.5">
+              {onOpenTariff && (
+                <button
+                  type="button"
+                  onClick={onOpenTariff}
+                  className="text-[8px] font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-md flex items-center gap-1 transition-all"
+                  title="Buka Lembar Informasi Tarif PT. SPIL"
+                >
+                  <FileText className="w-2.5 h-2.5" /> Tarif
+                </button>
+              )}
+              <span className="text-[8px] font-black text-indigo-750 bg-indigo-50 border border-indigo-150/60 px-2 py-0.5 rounded-full shadow-sm">
+                {cargoPool.length} Kontrak
+              </span>
+            </div>
           </div>
 
           {cargoPool.length === 0 ? (
@@ -314,9 +350,12 @@ export default function BayplanSimulator({
               <span className="text-[8.5px] text-slate-400 block mt-0.5 uppercase font-black tracking-wider">Kapal siap diberangkatkan!</span>
             </div>
           ) : (() => {
-            const activeOrder = cargoPool[0];
+            const safeOrderIndex = Math.min(activeOrderIndex, Math.max(0, cargoPool.length - 1));
+            const activeOrder = cargoPool[safeOrderIndex];
+            if (!activeOrder) return null;
             const isCommitted = activeOrder.customerType === 'Committed';
             const isReefer = activeOrder.containerType === 'REEFER';
+            const isNextPort = activeOrder.destination === nextPort;
             
             return (
               <div 
@@ -326,7 +365,34 @@ export default function BayplanSimulator({
                     : 'border-slate-200/90 border-l-spil-green bg-gradient-to-br from-emerald-50/20 via-white to-white'
                 }`}
               >
-                <div className="flex justify-between items-start gap-2 mb-2.5">
+                {/* Contract Navigator pagination */}
+                {cargoPool.length > 1 && (
+                  <div className="flex justify-between items-center mb-2 pb-1.5 border-b border-slate-100/80 text-[8.5px]">
+                    <span className="font-extrabold text-slate-400 uppercase tracking-wider">
+                      Kontrak {safeOrderIndex + 1} dari {cargoPool.length}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveOrderIndex(prev => (prev > 0 ? prev - 1 : cargoPool.length - 1))}
+                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
+                        title="Kontrak Sebelumnya"
+                      >
+                        <ChevronLeft className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveOrderIndex(prev => (prev < cargoPool.length - 1 ? prev + 1 : 0))}
+                        className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
+                        title="Kontrak Berikutnya"
+                      >
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="truncate">
                     <h4 className="text-[11px] font-extrabold text-slate-800 truncate" title={activeOrder.customerName}>
                       {activeOrder.customerName}
@@ -336,18 +402,27 @@ export default function BayplanSimulator({
                     </span>
                   </div>
                   
-                  {isCommitted ? (
-                    <span className="text-[7.5px] font-black tracking-widest px-2 py-0.5 rounded bg-spil-red text-white uppercase shadow-sm">
-                      COMMITTED
+                  <div className="flex flex-col items-end gap-1">
+                    {isCommitted ? (
+                      <span className="text-[7.5px] font-black tracking-widest px-2 py-0.5 rounded bg-spil-red text-white uppercase shadow-sm">
+                        COMMITTED
+                      </span>
+                    ) : (
+                      <span className="text-[7.5px] font-black tracking-widest px-2 py-0.5 rounded bg-sky-50 border border-sky-150 text-sky-700 uppercase shadow-sm">
+                        NON-COMMITTED
+                      </span>
+                    )}
+                    <span className={`text-[7px] font-black tracking-wider px-1.5 py-0.5 rounded uppercase ${
+                      isNextPort 
+                        ? 'bg-amber-100 text-amber-900 border border-amber-200' 
+                        : 'bg-indigo-100 text-indigo-900 border border-indigo-200'
+                    }`}>
+                      {isNextPort ? '⚡ NEXT PORT' : '⚓ LATER PORT'}
                     </span>
-                  ) : (
-                    <span className="text-[7.5px] font-black tracking-widest px-2 py-0.5 rounded bg-sky-50 border border-sky-150 text-sky-700 uppercase shadow-sm">
-                      REGULAR
-                    </span>
-                  )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/50 mb-3.5 text-[10px]">
+                <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/50 mb-3 text-[10px]">
                   <div>
                     <span className="text-[7px] text-slate-400 font-black block uppercase tracking-wider">
                       CARGO TIPE / QTY
@@ -481,9 +556,18 @@ export default function BayplanSimulator({
                       }`}>
                         {container.containerType}
                       </span>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">
-                        BOX: {container.id.split('_').slice(-2).join('-')}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[6.5px] font-black px-1 py-0.2 rounded uppercase ${
+                          container.destination === nextPort
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : 'bg-indigo-100 text-indigo-900 border border-indigo-200'
+                        }`}>
+                          {container.destination === nextPort ? '⚡ NEXT PORT' : '⚓ LATER PORT'}
+                        </span>
+                        <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider">
+                          BOX: {container.id.split('_').slice(-2).join('-')}
+                        </span>
+                      </div>
                     </div>
                     
                     <div className="flex justify-between items-end mt-1 pl-2">
@@ -639,6 +723,19 @@ export default function BayplanSimulator({
 
       {/* 2. Vessel Bayplan Simulator Canvas */}
       <div className="lg:col-span-3 flex flex-col gap-6 overflow-x-auto">
+        {/* Orientation Guidance Bar (ISO 9711) */}
+        <div className="flex justify-between items-center bg-white border border-slate-200/90 px-4 py-2 rounded-xl text-[9px] font-black text-slate-500 uppercase tracking-widest shadow-sm select-none">
+          <span className="flex items-center gap-1.5 text-indigo-700">
+            <Ship className="w-3.5 h-3.5" /> HALUAN / BOW (DEPAN KAPAL)
+          </span>
+          <span className="text-slate-350 font-extrabold hidden md:inline">
+            SUSUNAN BAY DARI DEPAN KE BELAKANG ──────────────▶
+          </span>
+          <span className="flex items-center gap-1.5 text-slate-700">
+            BURITAN / STERN (BELAKANG KAPAL) ⚓
+          </span>
+        </div>
+
         {/* Each bay card needs ~720px to show all 4 rows legibly, wider than
             a phone screen - this scrolls sideways within its own box rather
             than shrinking the grid into illegible slots. Hint is mobile-only
@@ -648,9 +745,11 @@ export default function BayplanSimulator({
         </p>
         {/* Scrollable container grid workspace */}
         <div className="flex flex-col gap-6 pb-4 min-w-[720px] max-h-[1100px] overflow-y-auto pr-3 scrollbar-thin">
-          {baysToRender.map(bay => {
+          {baysToRender.map((bay, idx) => {
             const config = getBayConfig(bay);
             const isReeferBay = config.containerType === 'REEFER';
+            const isBowBay = idx === 0;
+            const isSternBay = bay === '02';
             
             return (
               <div 
@@ -662,9 +761,21 @@ export default function BayplanSimulator({
                   <div className="flex items-center gap-2">
                     <Anchor className="w-4 h-4 text-slate-400" />
                     <div>
-                      <h4 className="font-extrabold text-sm text-slate-800 tracking-wider">
-                        BAY {bay}
-                      </h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-sm text-slate-800 tracking-wider">
+                          BAY {bay}
+                        </h4>
+                        {isBowBay && (
+                          <span className="text-[7.5px] font-black bg-indigo-50 border border-indigo-200 text-indigo-700 px-1.5 py-0.2 rounded uppercase">
+                            HALUAN (BOW)
+                          </span>
+                        )}
+                        {isSternBay && (
+                          <span className="text-[7.5px] font-black bg-slate-100 border border-slate-200 text-slate-700 px-1.5 py-0.2 rounded uppercase">
+                            BURITAN (STERN)
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[8px] text-slate-400 font-bold uppercase block mt-0.5">
                         Tipe: {config.containerType} | Rows: {config.rows.join(', ')} | Tiers: {config.tiers.join(', ')}
                       </span>

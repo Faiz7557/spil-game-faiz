@@ -4,6 +4,8 @@ import Dashboard from './components/Dashboard';
 import BayplanSimulator from './components/BayplanSimulator';
 import PerformanceModal from './components/PerformanceModal';
 import GameOverModal from './components/GameOverModal';
+import TariffModal from './components/TariffModal';
+import GlossaryModal from './components/GlossaryModal';
 import { validateGridPhysics, formatRupiah } from './utils/gameHelpers';
 import { AlertCircle, HelpCircle, Anchor, Play, Award, Users, LogIn, Monitor, Network } from 'lucide-react';
 
@@ -72,6 +74,8 @@ export default function App() {
   
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const [lastWeeklyEvaluation, setLastWeeklyEvaluation] = useState(null);
+  const [isTariffOpen, setIsTariffOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const socketRef = useRef(null);
 
   // Unmount cleanup for sockets and timers
@@ -714,13 +718,31 @@ export default function App() {
             </button>
           </div>
 
-          <button
-            onClick={handleOpenLeaderboard}
-            className="mt-6 inline-flex items-center gap-2 text-slate-500 hover:text-amber-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
-          >
-            <Award className="w-4 h-4" /> Papan Peringkat Global
-          </button>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+            <button
+              onClick={handleOpenLeaderboard}
+              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-amber-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
+            >
+              <Award className="w-4 h-4" /> Papan Peringkat
+            </button>
+            <button
+              onClick={() => setIsTariffOpen(true)}
+              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-emerald-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
+            >
+              📋 Lembar Tarif SPIL
+            </button>
+            <button
+              onClick={() => setIsGlossaryOpen(true)}
+              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
+            >
+              📖 Glosarium & Panduan
+            </button>
+          </div>
         </div>
+
+        {/* Informational Modals for Landing Page */}
+        <TariffModal isOpen={isTariffOpen} onClose={() => setIsTariffOpen(false)} currentPort="SBY" />
+        <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
       </div>
     );
   }
@@ -1059,6 +1081,8 @@ export default function App() {
         players={formattedPlayersList}
         socketId={currentSocketOrIndexId}
         activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
+        onOpenTariff={() => setIsTariffOpen(true)}
+        onOpenGlossary={() => setIsGlossaryOpen(true)}
       />
 
       {/* 3. Bar Status Giliran Kapten (Hanya muncul di Mode Offline) */}
@@ -1136,6 +1160,7 @@ export default function App() {
           isGameOver={isGameOver}
           isReadyCurrent={isReadyCurrent}
           onToggleReadyOnline={handleToggleReadyOnline}
+          onOpenTariff={() => setIsTariffOpen(true)}
         />
       </div>
 
@@ -1165,15 +1190,36 @@ export default function App() {
         onRestart={handleLeaveRoom}
       />
 
+      {/* 8. Lembar Informasi Tarif PT. SPIL Modal */}
+      <TariffModal 
+        isOpen={isTariffOpen} 
+        onClose={() => setIsTariffOpen(false)} 
+        currentPort={currentPort}
+      />
+
+      {/* 9. Glosarium & Standar Operasional SPIL Modal */}
+      <GlossaryModal 
+        isOpen={isGlossaryOpen} 
+        onClose={() => setIsGlossaryOpen(false)} 
+      />
+
       {/* Footer Info Guidance */}
       <footer className="w-full mt-10 border-t border-emerald-700/50 pt-6 pb-2 text-center text-[10px] text-emerald-100/70 font-bold uppercase tracking-widest flex flex-col sm:flex-row justify-between items-center gap-4">
         <span>© Prototipe PT Salam Pacific Indonesia Lines (SPIL)</span>
         <div className="flex items-center gap-4 text-emerald-200">
-          <span className="flex items-center gap-1 hover:text-white cursor-pointer">
-            <Anchor className="w-3.5 h-3.5" /> Ports: SBY - MKS - JYP - MDN
+          <span 
+            onClick={() => setIsTariffOpen(true)} 
+            className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors"
+            title="Buka Lembar Informasi Tarif Muatan"
+          >
+            <Anchor className="w-3.5 h-3.5" /> Ports: 01 SBY - 02 MKS - 03 JYP - 04 MDN
           </span>
-          <span className="flex items-center gap-1 hover:text-white cursor-pointer">
-            <HelpCircle className="w-3.5 h-3.5" /> Biaya Shifting: Rp 3.000.000 / Move
+          <span 
+            onClick={() => setIsGlossaryOpen(true)} 
+            className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors"
+            title="Buka Glosarium & Panduan Operasional"
+          >
+            <HelpCircle className="w-3.5 h-3.5" /> Panduan & Glosarium SPIL
           </span>
         </div>
       </footer>

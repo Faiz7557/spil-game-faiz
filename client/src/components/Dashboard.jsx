@@ -1,7 +1,18 @@
-import { formatRupiah, PORT_NAMES, getNextPort } from '../utils/gameHelpers';
-import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy } from 'lucide-react';
+import { formatRupiah, PORT_NAMES, getNextPort, PORT_CODES_INFO } from '../utils/gameHelpers';
+import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen } from 'lucide-react';
 
-export default function Dashboard({ week, currentPort, cash, accumulatedPenalties, roomCode, players, socketId, activePorts }) {
+export default function Dashboard({ 
+  week, 
+  currentPort, 
+  cash, 
+  accumulatedPenalties, 
+  roomCode, 
+  players, 
+  socketId, 
+  activePorts,
+  onOpenTariff,
+  onOpenGlossary
+}) {
   const nextPort = getNextPort(currentPort, activePorts);
   const playersList = players ? Object.values(players).sort((a, b) => b.cash - a.cash) : [];
   
@@ -67,13 +78,40 @@ export default function Dashboard({ week, currentPort, cash, accumulatedPenaltie
           </div>
         )}
 
+        {/* Quick Action Buttons (Tarif & Glosarium) */}
+        <div className="flex items-center gap-2 self-start lg:self-auto flex-wrap">
+          {onOpenTariff && (
+            <button
+              type="button"
+              onClick={onOpenTariff}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              title="Buka Lembar Informasi Tarif Muatan PT. SPIL"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Info Tarif</span>
+            </button>
+          )}
+
+          {onOpenGlossary && (
+            <button
+              type="button"
+              onClick={onOpenGlossary}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              title="Buka Glosarium & Standar Operasional SPIL Game"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Glosarium</span>
+            </button>
+          )}
+        </div>
+
         {/* Port Sailing Voyage Timeline */}
         <div className="flex items-center gap-3 bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80 w-full lg:w-auto shadow-sm">
           <div className="flex items-center gap-1.5 text-slate-500 text-[9px] font-black uppercase tracking-wider pl-1">
             <Anchor className="w-3.5 h-3.5 text-spil-green" /> Port
           </div>
           <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-spil-green text-white shadow-sm flex items-center gap-1 select-none">
-            {currentPort}
+            {PORT_CODES_INFO[currentPort]?.fullLabel || currentPort}
             <span className="text-[9px] font-medium text-emerald-100">({PORT_NAMES[currentPort]})</span>
           </span>
           
@@ -83,7 +121,7 @@ export default function Dashboard({ week, currentPort, cash, accumulatedPenaltie
           </div>
           
           <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-indigo-650 text-white shadow-sm flex items-center gap-1 select-none">
-            {nextPort}
+            {PORT_CODES_INFO[nextPort]?.fullLabel || nextPort}
             <span className="text-[9px] font-medium text-indigo-150">({PORT_NAMES[nextPort]})</span>
           </span>
         </div>
