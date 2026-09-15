@@ -110,8 +110,18 @@ export default function BayplanSimulator({
     );
   }
 
-  // Get list of bays dynamically sorted descending
-  const baysToRender = Object.keys(grid).sort((a, b) => parseInt(b) - parseInt(a));
+  // Bow first: bay numbers ascend from bow to stern
+  const baysToRender = Object.keys(grid).sort((a, b) => parseInt(a) - parseInt(b));
+
+  // Display order for a bay cross-section viewed from aft looking forward:
+  // port (even rows, outermost first) on the left, centre 00, starboard (odd
+  // rows) on the right. Display-only - the shared config order is untouched
+  // because the server and research agents iterate it.
+  const toDisplayRows = (rows) => {
+    const even = rows.filter(r => r !== '00' && parseInt(r) % 2 === 0).sort((a, b) => parseInt(b) - parseInt(a));
+    const odd = rows.filter(r => parseInt(r) % 2 === 1).sort((a, b) => parseInt(a) - parseInt(b));
+    return [...even, ...rows.filter(r => r === '00'), ...odd];
+  };
 
   // Compute dynamic slot capacity
   const totalSlots = Object.keys(grid).reduce((acc, bay) => {
@@ -297,7 +307,7 @@ export default function BayplanSimulator({
                   <span className="text-[7.5px] font-black text-emerald-400 uppercase tracking-widest">KIRI / KANAN</span>
                 </div>
                 <p className="text-[10px] leading-relaxed text-slate-600 mt-0.5">
-                  Baris melintang. <span className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-black text-[9px]">Ganjil</span> = Kiri (Port side), <span className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-black text-[9px]">Genap</span> = Kanan (Starboard), <span className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-black text-[9px]">00</span> = Center.
+                  Baris melintang dari garis tengah. <span className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-black text-[9px]">Ganjil</span> = Kanan (Starboard), <span className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-black text-[9px]">Genap</span> = Kiri (Port), <span className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-black text-[9px]">00</span> = Center.
                 </p>
               </div>
 
@@ -729,7 +739,7 @@ export default function BayplanSimulator({
             <Ship className="w-3.5 h-3.5" /> HALUAN / BOW (DEPAN KAPAL)
           </span>
           <span className="text-slate-350 font-extrabold hidden md:inline">
-            SUSUNAN BAY DARI DEPAN KE BELAKANG ──────────────▶
+            BAY DARI ATAS KE BAWAH · PENAMPANG TAMPAK DARI BURITAN (KIRI = PORT)
           </span>
           <span className="flex items-center gap-1.5 text-slate-700">
             BURITAN / STERN (BELAKANG KAPAL) ⚓
@@ -748,8 +758,10 @@ export default function BayplanSimulator({
           {baysToRender.map((bay, idx) => {
             const config = getBayConfig(bay);
             const isReeferBay = config.containerType === 'REEFER';
+            // Bays are numbered ascending from bow to stern (ISO 9711-1 and the
+            // official stowage sheet glossary), so the lowest bay is the bow.
             const isBowBay = idx === 0;
-            const isSternBay = bay === '02';
+            const isSternBay = idx === baysToRender.length - 1;
             
             return (
               <div 
@@ -777,7 +789,7 @@ export default function BayplanSimulator({
                         )}
                       </div>
                       <span className="text-[8px] text-slate-400 font-bold uppercase block mt-0.5">
-                        Tipe: {config.containerType} | Rows: {config.rows.join(', ')} | Tiers: {config.tiers.join(', ')}
+                        Tipe: {config.containerType} | Rows: {toDisplayRows(config.rows).join(', ')} | Tiers: {config.tiers.join(', ')}
                       </span>
                     </div>
                   </div>
@@ -795,11 +807,11 @@ export default function BayplanSimulator({
                   {/* Rows headers with Port/Starboard Side indicators */}
                   <div className="grid grid-cols-5 text-center text-[9px] font-black text-slate-400 mb-1.5 uppercase select-none tracking-widest">
                     <div></div>
-                    {config.rows.map(row => {
+                    {toDisplayRows(config.rows).map(row => {
                       let sideLabel = '';
                       if (row === '00') sideLabel = '(Center)';
-                      else if (parseInt(row) % 2 === 1) sideLabel = '(Port/Kiri)';
-                      else if (parseInt(row) % 2 === 0) sideLabel = '(Stbd/Kanan)';
+                      else if (parseInt(row) % 2 === 1) sideLabel = '(Stbd/Kanan)';
+                      else if (parseInt(row) % 2 === 0) sideLabel = '(Port/Kiri)';
                       
                       return (
                         <div key={row} className="font-black flex flex-col items-center">
@@ -843,7 +855,7 @@ export default function BayplanSimulator({
                           </div>
 
                           {/* Grid slots data columns */}
-                          {config.rows.map(row => {
+                          {toDisplayRows(config.rows).map(row => {
                             const container = grid?.[bay]?.[row]?.[tier];
                             const isRestowed = checkIsRestowBlocker(bay, row, tier, container);
                             

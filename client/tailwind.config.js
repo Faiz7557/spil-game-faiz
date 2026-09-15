@@ -16,6 +16,37 @@ export default {
         'spil-dark': '#1E293B',
         'spil-charcoal': '#0F172A',
         'spil-grey': '#F8F9FA',
+        // Redesign tokens. Destination ports use the Okabe-Ito palette so they
+        // stay distinguishable under colour-vision deficiency; they are the only
+        // categorical colours allowed on the bayplan.
+        port: {
+          sby: '#0072B2',
+          mks: '#E69F00',
+          jyp: '#009E73',
+          mdn: '#CC79A7',
+          bjm: '#56B4E9',
+          jkt: '#D55E00',
+          bli: '#F0E442'
+        },
+        // Semantic status colours, kept separate from brand red/green.
+        status: {
+          danger: '#B42318',
+          'danger-soft': '#FEE4E2',
+          warning: '#B54708',
+          'warning-soft': '#FEF0C7',
+          success: '#067647',
+          'success-soft': '#DCFAE6',
+          info: '#175CD3',
+          'info-soft': '#D1E9FF'
+        },
+        // Cool neutral ground for the planning workspace.
+        ground: {
+          DEFAULT: '#EEF2F3',
+          sunk: '#E3E9EC',
+          line: '#CAD4D9',
+          ink: '#13212B',
+          muted: '#52626C'
+        },
         // Custom variant shades used in components
         indigo: {
           150: '#e0e7ff',
