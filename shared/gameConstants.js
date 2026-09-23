@@ -83,7 +83,7 @@ export const GLOSSARY_SECTIONS = [
       },
       {
         term: 'Row (Posisi Melintang)',
-        desc: 'Nomor baris melintang dari sumbu tengah kapal. Nomor ganjil di sisi kiri (Port side), nomor genap di sisi kanan (Starboard), dan 00 di garis tengah (Center).'
+        desc: 'Nomor baris melintang dari sumbu tengah kapal. Nomor ganjil di sisi kanan kapal (Starboard), nomor genap di sisi kiri kapal (Port), dan 00 di garis tengah (Center), sesuai ISO 9711-1.'
       },
       {
         term: 'Tier (Tingkat Ketinggian)',

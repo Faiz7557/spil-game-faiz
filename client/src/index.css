@@ -45,6 +45,20 @@
   }
 }
 
+/* Honour the OS "reduce motion" setting (WCAG 2.3.3): the UI leans on looping
+   pulse/bounce/ping/spin utilities, none of which carry information that isn't
+   also shown statically. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom light-theme scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
