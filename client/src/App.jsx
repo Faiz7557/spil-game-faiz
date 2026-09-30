@@ -71,6 +71,7 @@ export default function App() {
   const autoRejoinAttemptedRef = useRef(false);
   const [roomCode, setRoomCode] = useState('');
   const [roomState, setRoomState] = useState(null);
+  const [turnTimer, setTurnTimer] = useState(null);
   
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const [lastWeeklyEvaluation, setLastWeeklyEvaluation] = useState(null);
@@ -147,12 +148,17 @@ export default function App() {
 
     socket.on('sailing_completed', (state) => {
       setRoomState(state);
+      setTurnTimer(null);
       const me = state.players[effectiveIdRef.current];
       if (me && !state.isGameOver) {
         setLastWeeklyEvaluation(me.lastWeeklyEvaluation);
         setShowWeeklyModal(true);
       }
       setLoading(false);
+    });
+
+    socket.on('turn_timer_tick', (data) => {
+      setTurnTimer(data);
     });
 
     socket.on('error_message', (msg) => {
@@ -525,9 +531,6 @@ export default function App() {
           setLastWeeklyEvaluation(session.players[activePlayerIndex].lastWeeklyEvaluation);
           setShowWeeklyModal(true);
         }
-        if (session.unlockMessages && session.unlockMessages.length > 0) {
-          showTemporaryAlert(`🔓 UNLOCK RUTE BARU: ${session.unlockMessages.join('\n')}`);
-        }
         applyOfflineSession(session);
       } else {
         showTemporaryAlert(resData.message || 'Transisi keberangkatan offline gagal.');
@@ -563,6 +566,7 @@ export default function App() {
     setIsInRoom(false);
     setRoomCode('');
     setRoomState(null);
+    setTurnTimer(null);
     setIsOfflineGameStarted(false);
     setOfflinePlayers([]);
     setResumableSession(undefined);
@@ -1081,6 +1085,7 @@ export default function App() {
         players={formattedPlayersList}
         socketId={currentSocketOrIndexId}
         activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
+        turnTimer={gameMode === 'ONLINE' ? turnTimer : null}
         onOpenTariff={() => setIsTariffOpen(true)}
         onOpenGlossary={() => setIsGlossaryOpen(true)}
       />

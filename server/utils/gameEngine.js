@@ -114,16 +114,12 @@ export const generateOrders = (
     // Quantity: 1 to 3 containers
     const quantity = Math.floor(rng() * 3) + 1;
     
-    // Calculate tariff using official sheet, fall back to randomized logic for new unlocked ports
+    // Calculate tariff using official SPIL sheet (4 canonical ports)
     let tariff = 0;
     if (TARIFF_TABLE[port] && TARIFF_TABLE[port][destination] && TARIFF_TABLE[port][destination][containerType]) {
       tariff = TARIFF_TABLE[port][destination][containerType];
     } else {
-      if (containerType === 'DRY') {
-        tariff = 10000000 + Math.floor(rng() * 5) * 1000000;
-      } else {
-        tariff = 16000000 + Math.floor(rng() * 7) * 1000000;
-      }
+      tariff = containerType === 'DRY' ? 10000000 : 18000000;
     }
     
     orders.push({

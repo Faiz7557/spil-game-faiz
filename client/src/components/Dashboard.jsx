@@ -1,5 +1,5 @@
 import { formatRupiah, PORT_NAMES, getNextPort, PORT_CODES_INFO } from '../utils/gameHelpers';
-import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen } from 'lucide-react';
+import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen, Clock } from 'lucide-react';
 
 export default function Dashboard({ 
   week, 
@@ -10,6 +10,7 @@ export default function Dashboard({
   players, 
   socketId, 
   activePorts,
+  turnTimer,
   onOpenTariff,
   onOpenGlossary
 }) {
@@ -75,6 +76,25 @@ export default function Dashboard({
             <span className={`text-sm font-black uppercase tracking-widest ${roomCode.includes('LOCAL') ? 'text-emerald-700' : 'text-indigo-600'}`}>
               {roomCode}
             </span>
+          </div>
+        )}
+
+        {/* Turn Countdown Timer */}
+        {turnTimer && (
+          <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border shadow-sm transition-all duration-300 self-start lg:self-auto shrink-0 ${
+            turnTimer.remainingSeconds <= 10 
+              ? 'bg-rose-50 border-rose-300 text-rose-700 animate-pulse' 
+              : turnTimer.remainingSeconds <= 20
+              ? 'bg-amber-50 border-amber-300 text-amber-800'
+              : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+          }`}>
+            <Clock className="w-4 h-4 shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-[8px] font-black uppercase tracking-wider">Batas Waktu:</span>
+              <span className="text-sm font-black font-mono leading-none">
+                {String(Math.floor(turnTimer.remainingSeconds / 60)).padStart(2, '0')}:{String(turnTimer.remainingSeconds % 60).padStart(2, '0')}
+              </span>
+            </div>
           </div>
         )}
 

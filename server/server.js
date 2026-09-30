@@ -379,6 +379,7 @@ io.on('connection', (socket) => {
       console.log(`[Room Created] Code: ${roomCode} by ${playerName}`);
       upsertRoomToDb(roomCode);
       socket.emit('room_created', { roomCode, state: ROOMS[roomCode] });
+      startTurnTimer(roomCode);
 
     } catch (err) {
       console.error('Error creating room:', err);
@@ -442,6 +443,14 @@ io.on('connection', (socket) => {
       // doesn't imply "this is you" to the client.
       socket.emit('room_joined', { roomCode: code, state: room });
       broadcastRoomState(code);
+
+      // Sync active countdown timer to the newly connected/reconnected player
+      if (ROOM_TIMERS[code]) {
+        socket.emit('turn_timer_tick', {
+          remainingSeconds: ROOM_TIMERS[code].timerState.remainingSeconds,
+          totalSeconds: ROOM_TIMERS[code].timerState.totalSeconds
+        });
+      }
     } catch (err) {
       console.error('Error joining room:', err);
       socket.emit('error_message', 'Gagal bergabung dengan kamar.');
@@ -618,6 +627,7 @@ io.on('connection', (socket) => {
     const allReady = connectedPlayers.length > 0 && connectedPlayers.every(p => p.ready);
 
     if (allReady) {
+      stopTurnTimer(roomCode);
       executeSailingTransition(roomCode);
     } else {
       broadcastRoomState(roomCode);
@@ -656,12 +666,14 @@ io.on('connection', (socket) => {
     socket.roomCode = null;
 
     if (Object.keys(room.players).length === 0) {
+      stopTurnTimer(roomCode);
       delete ROOMS[roomCode];
       deleteRoomFromDb(roomCode);
       console.log(`[Room Cleaned] Deleted empty Room ${roomCode}`);
     } else {
       const connectedPlayers = Object.values(room.players).filter(p => p.connected);
       if (connectedPlayers.length > 0 && connectedPlayers.every(p => p.ready)) {
+        stopTurnTimer(roomCode);
         executeSailingTransition(roomCode);
       } else {
         broadcastRoomState(roomCode);
@@ -691,6 +703,7 @@ io.on('connection', (socket) => {
       // unreadiness, matching the old "removed on disconnect" behaviour.
       const connectedPlayers = Object.values(room.players).filter(p => p.connected);
       if (connectedPlayers.length > 0 && connectedPlayers.every(p => p.ready)) {
+        stopTurnTimer(roomCode);
         executeSailingTransition(roomCode);
       } else {
         broadcastRoomState(roomCode);
@@ -699,8 +712,66 @@ io.on('connection', (socket) => {
   });
 });
 
+// In-memory multiplayer room turn countdown timers (60s turn limit)
+const TURN_DURATION_SECONDS = 60;
+const ROOM_TIMERS = {};
+
+const stopTurnTimer = (roomCode) => {
+  if (ROOM_TIMERS[roomCode]) {
+    clearInterval(ROOM_TIMERS[roomCode].intervalId);
+    delete ROOM_TIMERS[roomCode];
+  }
+};
+
+const startTurnTimer = (roomCode) => {
+  stopTurnTimer(roomCode);
+  const room = ROOMS[roomCode];
+  if (!room || room.isGameOver) return;
+
+  const timerState = {
+    remainingSeconds: TURN_DURATION_SECONDS,
+    totalSeconds: TURN_DURATION_SECONDS
+  };
+
+  io.to(roomCode).emit('turn_timer_tick', {
+    remainingSeconds: timerState.remainingSeconds,
+    totalSeconds: timerState.totalSeconds
+  });
+
+  const intervalId = setInterval(() => {
+    const currentRoom = ROOMS[roomCode];
+    if (!currentRoom || currentRoom.isGameOver) {
+      stopTurnTimer(roomCode);
+      return;
+    }
+
+    timerState.remainingSeconds -= 1;
+    io.to(roomCode).emit('turn_timer_tick', {
+      remainingSeconds: timerState.remainingSeconds,
+      totalSeconds: timerState.totalSeconds
+    });
+
+    if (timerState.remainingSeconds <= 0) {
+      console.log(`[Turn Timer Expired] Auto-sailing Room ${roomCode}`);
+      stopTurnTimer(roomCode);
+
+      // Auto-ready any connected player who has not clicked ready
+      Object.values(currentRoom.players).forEach(p => {
+        if (p.connected && !p.ready) {
+          p.ready = true;
+        }
+      });
+
+      executeSailingTransition(roomCode);
+    }
+  }, 1000);
+
+  ROOM_TIMERS[roomCode] = { intervalId, timerState };
+};
+
 // Main integrated sailing physics calculator for multiplayer
 const executeSailingTransition = (roomCode) => {
+  stopTurnTimer(roomCode);
   const room = ROOMS[roomCode];
   if (!room) return;
   // Every caller (player_ready, leave_room, disconnect) only checks "are all
@@ -893,6 +964,11 @@ const executeSailingTransition = (roomCode) => {
   // Broadcast the fresh room state & tell clients sailing is complete
   upsertRoomToDb(roomCode);
   io.to(roomCode).emit('sailing_completed', room);
+
+  // Restart turn countdown for the next week if game is still active
+  if (!room.isGameOver) {
+    startTurnTimer(roomCode);
+  }
 };
 
 
@@ -1375,13 +1451,8 @@ app.post('/api/game/offline/depart', (req, res) => {
           if (container) {
             if (container.destination === nextPort) {
               offlineDischargedCount++;
-              // Credit the branch that originally sold this cargo. Once unlocked
-              // ports (BJM/JKT/BLI) exceed the player count, the sales call at
-              // that port is already run by an existing player via the same
-              // `portIndex % players.length` wrap (see activePlayerIndex above),
-              // so revenue for cargo sold there must wrap to that same player -
-              // an unwrapped index would just discard the revenue.
-              const originPortIndex = currentActivePorts.indexOf(container.origin);
+              // Credit the branch that originally sold this cargo.
+              const originPortIndex = PORTS.indexOf(container.origin);
               if (originPortIndex >= 0) {
                 const originPlayerIndex = originPortIndex % processedPlayers.length;
                 revenueByPlayer[originPlayerIndex] += container.tariff;
@@ -1399,7 +1470,7 @@ app.post('/api/game/offline/depart', (req, res) => {
     const offlineTotalCraneMoves = offlineDischargedCount + offlineLoadedCount + offlineRestowMovements;
 
     // 5. Update cash & penalties & cumulative gross revenue for all players
-    const nextActivePlayerIndex = currentActivePorts.indexOf(nextPort) % processedPlayers.length;
+    const nextActivePlayerIndex = PORTS.indexOf(nextPort) % processedPlayers.length;
     const updatedPlayers = processedPlayers.map((player, idx) => {
       const isCurrentActive = idx === activePlayerIndex;
       const earnedRevenue = revenueByPlayer[idx];
@@ -1453,48 +1524,8 @@ app.post('/api/game/offline/depart', (req, res) => {
       };
     });
 
-    // Check for route unlocks based on player cumulative revenue
-    const updatedActivePorts = [...currentActivePorts];
-    const unlockedPortMessages = [];
-    
-    // Check Banjarmasin (BJM) - unlocks at Rp 200,000,000 cumulative revenue
-    if (!updatedActivePorts.includes('BJM')) {
-      const anyQualified = updatedPlayers.some(p => (p.cumulativeGrossRevenue || 0) >= 200000000);
-      if (anyQualified) {
-        updatedActivePorts.push('BJM');
-        unlockedPortMessages.push('Pelabuhan Banjarmasin (BJM) telah berhasil dibuka untuk pelayaran!');
-      }
-    }
-    // Check Jakarta (JKT) - unlocks at Rp 350,000,000 cumulative revenue
-    if (!updatedActivePorts.includes('JKT') && updatedActivePorts.includes('BJM')) {
-      const anyQualified = updatedPlayers.some(p => (p.cumulativeGrossRevenue || 0) >= 350000000);
-      if (anyQualified) {
-        updatedActivePorts.push('JKT');
-        unlockedPortMessages.push('Pelabuhan Jakarta (JKT) telah berhasil dibuka untuk pelayaran!');
-      }
-    }
-    // Check Bali (BLI) - unlocks at Rp 500,000,000 cumulative revenue
-    if (!updatedActivePorts.includes('BLI') && updatedActivePorts.includes('JKT')) {
-      const anyQualified = updatedPlayers.some(p => (p.cumulativeGrossRevenue || 0) >= 500000000);
-      if (anyQualified) {
-        updatedActivePorts.push('BLI');
-        unlockedPortMessages.push('Pelabuhan Bali (BLI) telah berhasil dibuka untuk pelayaran!');
-      }
-    }
-
-    // Regenerate nextOrders if a new port was unlocked just now so it is included in destinations
-    const finalNextOrders = (isGameOver || unlockedPortMessages.length === 0)
-      ? nextOrders
-      : generateOrders(nextPort, nextWeek, updatedActivePorts, rngForPortCall(seed, nextWeek, `${nextPort}_unlocked`));
-
-    // Update next player's cargo pool again if we regenerated it with the new port destinations
-    if (unlockedPortMessages.length > 0 && !isGameOver) {
-      updatedPlayers[nextActivePlayerIndex].cargoPool = JSON.parse(JSON.stringify(finalNextOrders));
-    }
-
     // 6. Unload next port containers and slide-down on the working grid
     const transitionedGrid = processSailingTransition(workingGrid, nextPort);
-
 
     let finalPlayers = updatedPlayers;
 
@@ -1516,7 +1547,7 @@ app.post('/api/game/offline/depart', (req, res) => {
     // Write the results back into the server's own session and persist.
     session.week = nextWeek;
     session.currentPort = nextPort;
-    session.activePorts = updatedActivePorts;
+    session.activePorts = PORTS;
     session.sharedGrid = transitionedGrid;
     session.players = finalPlayers;
     session.isGameOver = isGameOver;
@@ -1525,7 +1556,7 @@ app.post('/api/game/offline/depart', (req, res) => {
 
     res.json({
       success: true,
-      data: { ...session, unlockMessages: unlockedPortMessages }
+      data: session
     });
 
   } catch (error) {

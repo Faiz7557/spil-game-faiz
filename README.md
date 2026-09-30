@@ -25,7 +25,7 @@
   - [Sistem Penalti](#5-sistem-penalti)
   - [Sistem Pendapatan](#6-sistem-pendapatan)
   - [Sistem Rating Kapten](#7-sistem-rating-kapten)
-  - [Vessel Upgrade & Route Unlock](#8-vessel-upgrade--route-unlock)
+  - [Vessel Upgrade](#8-vessel-upgrade)
 - [Mode Permainan](#-mode-permainan)
   - [Mabar Offline (vs Bot AI)](#1-mabar-offline-vs-bot-ai)
   - [Mabar Online (Multiplayer Real-time)](#2-mabar-online-multiplayer-real-time)
@@ -225,12 +225,7 @@ Kapal berlayar secara **siklis** menghubungkan pelabuhan-pelabuhan utama Indones
  Tanjung Perak  Soekarno-Hatta  Pel. Jayapura  Pel. Belawan
 ```
 
-**Rute Tambahan (Unlockable):**
-| Pelabuhan | Kode | Syarat Pembukaan |
-|-----------|------|-----------------|
-| Banjarmasin | BJM | Pendapatan kumulatif ≥ Rp 200.000.000 |
-| Jakarta | JKT | BJM sudah terbuka + pendapatan ≥ Rp 350.000.000 |
-| Bali | BLI | JKT sudah terbuka + pendapatan ≥ Rp 500.000.000 |
+Sirkuit pelayaran distandarisasi secara penuh pada **4 pelabuhan resmi** sesuai Glosarium Operasional PT. SPIL, menjamin konsistensi 100% antara engine game, tabel tarif resmi, bayplan ISO 9711, dan environment riset DRL.
 
 ### 2. Bayplan Kapal & Koordinat ISO 9711
 
@@ -369,7 +364,7 @@ Setiap minggu (port call) terdiri dari tiga fase utama:
 | > Rp 0 | Perwira Logistik Junior |
 | < Rp 0 | Supervisor Terminal Bangkrut |
 
-### 8. Vessel Upgrade & Route Unlock
+### 8. Vessel Upgrade
 
 **Vessel Level (Mode Offline):**
 
@@ -405,7 +400,6 @@ Setiap minggu (port call) terdiri dari tiga fase utama:
 - **Resumable Session** — Session disimpan di database, bisa dilanjutkan saat browser dibuka kembali
 - **Deterministic RNG** — Skenario identik untuk seed yang sama (reproduksi eksperimen)
 - **Vessel Upgrade** — Pemain bisa memperbesar kapal (Level 1→2→3) jika kas mencukupi
-- **Route Unlock** — Pelabuhan baru (BJM, JKT, BLI) terbuka berdasarkan pendapatan kumulatif
 
 ### 2. Mabar Online (Multiplayer Real-time)
 
@@ -413,7 +407,7 @@ Setiap minggu (port call) terdiri dari tiga fase utama:
 1. Host membuat room → mendapat kode 4 karakter (contoh: `A3B7`)
 2. Pemain lain bergabung dengan kode tersebut
 3. Semua pemain **berbagi satu kargo pool global** dan **satu grid kapal bersama**
-4. Saat semua pemain menekan **Ready**, server menjalankan transisi berlayar
+4. Saat semua pemain menekan **Ready** atau **Turn Timer (60 detik)** habis, server menjalankan transisi berlayar
 5. Evaluasi dihitung untuk setiap pemain berdasarkan kontribusi masing-masing
 
 **Fitur Khusus Mode Online:**
@@ -422,6 +416,7 @@ Setiap minggu (port call) terdiri dari tiga fase utama:
 - **Reconnect Safe** — Player ID persistent via `localStorage`, bukan `socket.id`
 - **Shared Cargo Pool** — Kompetisi langsung memperebutkan pesanan kargo yang sama
 - **Global Grid** — Satu kapal dioperasikan bersama, keputusan satu pemain memengaruhi semua
+- **Turn Countdown Timer (60s)** — Timer sinkron server; auto-ready pemain saat timeout mencegah deadlock room
 
 ---
 
@@ -485,6 +480,7 @@ Setiap minggu (port call) terdiri dari tiga fase utama:
 | `room_joined` | `{ roomCode, state }` | Berhasil bergabung ke room |
 | `room_state` | `{ ...roomState }` | Broadcast state terbaru ke semua pemain |
 | `sailing_completed` | `{ ...roomState }` | Transisi berlayar selesai, evaluasi mingguan |
+| `turn_timer_tick` | `{ remainingSeconds, totalSeconds }` | Broadcast sisa waktu giliran (60s) setiap detik |
 | `error_message` | `string` | Pesan error (termasuk `auth_expired:...`) |
 
 ### Game Engine

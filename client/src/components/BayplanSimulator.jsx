@@ -631,7 +631,7 @@ export default function BayplanSimulator({
                   Upgrade & Rute
                 </h3>
                 <span className="text-[7.5px] text-slate-400 font-bold block uppercase mt-0.5 tracking-wider">
-                  Kapal Lvl {vesselLevel || 1} • {activePorts ? activePorts.length : 4} Pelabuhan Terbuka
+                  Kapal Lvl {vesselLevel || 1} • 4 Jalur Pelayaran Resmi
                 </span>
               </div>
             </div>
@@ -678,54 +678,54 @@ export default function BayplanSimulator({
                 )}
               </div>
 
-              {/* Route Progress Milestones */}
-              {gameMode === 'OFFLINE' && (
-                <div className="border-t border-slate-100/80 pt-3.5 flex flex-col gap-3">
-                  <span className="text-[8px] text-slate-450 font-black tracking-widest uppercase block border-l-2 border-spil-green pl-2">
-                    📍 PROGRESS RUTE BARU
-                  </span>
-                  
-                  {/* Timeline listing */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-200/90 shadow-sm text-[10px]">
-                      <span className="font-extrabold text-slate-700">MDN - Medan</span>
-                      <span className="text-[7.5px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md uppercase tracking-wider">UNLOCKED</span>
-                    </div>
-
-                    <div className={`flex justify-between items-center p-2 rounded-xl border text-[10px] shadow-sm transition-all duration-300 ${activePorts && activePorts.includes('BJM') ? 'bg-white border-slate-200' : 'bg-white/40 border-slate-150 opacity-60'}`}>
-                      <span className="font-extrabold text-slate-700">BJM - Banjarmasin</span>
-                      {activePorts && activePorts.includes('BJM') ? (
-                        <span className="text-[7.5px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md uppercase tracking-wider">UNLOCKED</span>
-                      ) : (
-                        <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shadow-sm">Rp 200M</span>
-                      )}
-                    </div>
-
-                    <div className={`flex justify-between items-center p-2 rounded-xl border text-[10px] shadow-sm transition-all duration-300 ${activePorts && activePorts.includes('JKT') ? 'bg-white border-slate-200' : 'bg-white/40 border-slate-150 opacity-60'}`}>
-                      <span className="font-extrabold text-slate-700">JKT - Jakarta</span>
-                      {activePorts && activePorts.includes('JKT') ? (
-                        <span className="text-[7.5px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md uppercase tracking-wider">UNLOCKED</span>
-                      ) : (
-                        <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shadow-sm">Rp 350M</span>
-                      )}
-                    </div>
-
-                    <div className={`flex justify-between items-center p-2 rounded-xl border text-[10px] shadow-sm transition-all duration-300 ${activePorts && activePorts.includes('BLI') ? 'bg-white border-slate-200' : 'bg-white/40 border-slate-150 opacity-60'}`}>
-                      <span className="font-extrabold text-slate-700">BLI - Bali</span>
-                      {activePorts && activePorts.includes('BLI') ? (
-                        <span className="text-[7.5px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md uppercase tracking-wider">UNLOCKED</span>
-                      ) : (
-                        <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shadow-sm">Rp 500M</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-1 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-950 p-3 rounded-xl text-center text-[9px] text-slate-400 font-bold leading-tight shadow-md">
-                    PENDAPATAN KUMULATIF:<br/>
-                    <strong className="text-white text-xs block mt-1 tracking-wide font-black">{formatRupiah(cumulativeGrossRevenue || 0)}</strong>
-                  </div>
+              {/* Rotasi Sirkuit Pelayaran SPIL (4 Jalur) */}
+              <div className="border-t border-slate-100/80 pt-3.5 flex flex-col gap-3">
+                <span className="text-[8px] text-slate-450 font-black tracking-widest uppercase block border-l-2 border-spil-green pl-2">
+                  🚢 ROTASI SIRKUIT SPIL (4 JALUR RESMI)
+                </span>
+                
+                {/* Circuit listing */}
+                <div className="space-y-1.5">
+                  {[
+                    { code: 'SBY', name: 'Surabaya (Tanjung Perak)' },
+                    { code: 'MKS', name: 'Makassar (Soekarno-Hatta)' },
+                    { code: 'JYP', name: 'Jayapura (Pel. Jayapura)' },
+                    { code: 'MDN', name: 'Medan (Belawan)' }
+                  ].map((portItem) => {
+                    const isCurrent = currentPort === portItem.code;
+                    const isNext = nextPort === portItem.code;
+                    return (
+                      <div 
+                        key={portItem.code} 
+                        className={`flex justify-between items-center p-2 rounded-xl border text-[10px] transition-all duration-200 ${
+                          isCurrent 
+                            ? 'bg-emerald-50 border-emerald-300 font-extrabold text-emerald-900 shadow-sm' 
+                            : isNext
+                            ? 'bg-blue-50/80 border-blue-200 text-blue-900 font-semibold'
+                            : 'bg-white/60 border-slate-150 text-slate-600'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5 font-bold">
+                          <span className="font-mono text-[9px] px-1 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">{portItem.code}</span>
+                          <span className="truncate max-w-[130px]">{portItem.name}</span>
+                        </span>
+                        {isCurrent ? (
+                          <span className="text-[7.5px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">SAAT INI</span>
+                        ) : isNext ? (
+                          <span className="text-[7.5px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">BERIKUTNYA</span>
+                        ) : (
+                          <span className="text-[7.5px] font-bold text-slate-400 uppercase tracking-wider">TRANSIT</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+
+                <div className="mt-1 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-950 p-2.5 rounded-xl text-center text-[9px] text-slate-400 font-bold leading-tight shadow-md">
+                  PENDAPATAN KUMULATIF:<br/>
+                  <strong className="text-white text-xs block mt-1 tracking-wide font-black">{formatRupiah(cumulativeGrossRevenue || 0)}</strong>
+                </div>
+              </div>
             </div>
           )}
         </div>
