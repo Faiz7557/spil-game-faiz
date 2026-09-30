@@ -1,7 +1,7 @@
 import { formatRupiah } from '../utils/gameHelpers';
 import { Ship, Award, RefreshCw, AlertOctagon, Trophy, ShieldAlert, FileSpreadsheet } from 'lucide-react';
 
-export default function GameOverModal({ isOpen, cash, accumulatedPenalties, playerRating, history, onRestart }) {
+export default function GameOverModal({ isOpen, cash, accumulatedPenalties, playerRating, history, players, onRestart }) {
   if (!isOpen) return null;
   
   const isBankrupt = cash < 0;
@@ -65,6 +65,50 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
             </span>
           </div>
         </div>
+
+        {/* Benchmark Final Podium (Human vs AI Bots) */}
+        {players && Object.values(players).length > 1 && (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-1.5 border-b border-slate-200 pb-2">
+              <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+              Klasemen Akhir Pelayaran 8-Minggu (Human vs AI Benchmark)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {Object.values(players)
+                .sort((a, b) => b.cash - a.cash)
+                .map((p, idx) => {
+                  const isUser = !p.isBot;
+                  return (
+                    <div 
+                      key={p.id || idx}
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isUser 
+                          ? 'bg-emerald-50/80 border-emerald-300 shadow-sm ring-2 ring-emerald-500/20' 
+                          : 'bg-white border-slate-200 shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-black uppercase text-slate-500">
+                          {idx === 0 ? '🥇 Juara 1' : idx === 1 ? '🥈 Juara 2' : idx === 2 ? '🥉 Juara 3' : `#${idx + 1}`}
+                        </span>
+                        {isUser && (
+                          <span className="text-[8px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase">
+                            Anda
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-black text-slate-800 truncate mb-1">
+                        {p.name}
+                      </span>
+                      <span className={`text-sm font-black ${p.cash >= 0 ? 'text-emerald-700' : 'text-spil-red'}`}>
+                        {formatRupiah(p.cash)}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
 
         {/* Final Financial Breakdown Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

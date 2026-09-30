@@ -364,10 +364,7 @@ export default function App() {
     setOfflinePorts(session.activePorts);
     setOfflineVesselLevel(session.vesselLevel);
     setOfflineIsGameOver(session.isGameOver);
-    const nextActiveIndex = session.activePorts.indexOf(session.currentPort) % session.players.length;
-    if (nextActiveIndex !== -1) {
-      setActivePlayerIndex(nextActiveIndex);
-    }
+    setActivePlayerIndex(0);
   };
 
   // Check once per visit to the offline lobby whether an abandoned session
@@ -1090,29 +1087,27 @@ export default function App() {
         onOpenGlossary={() => setIsGlossaryOpen(true)}
       />
 
-      {/* 3. Bar Status Giliran Kapten (Hanya muncul di Mode Offline) */}
+      {/* 3. Bar Status Kompetisi Mode Offline (Human vs AI Benchmark Agents) */}
       {gameMode === 'OFFLINE' && (
         <div className="w-full glass-panel p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white border-l-4 border-l-spil-green shadow-sm">
           <div className="flex items-center gap-2">
             <Users className="w-4.5 h-4.5 text-spil-green" />
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wide">Representatif Pelabuhan (Turn-based):</span>
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wide">Papan Skor Benchmark AI (Chief Planner vs Bots):</span>
           </div>
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            {offlinePlayers.map((player, idx) => {
-              const isActive = idx === activePlayerIndex;
-              // Map dynamic starting ports dynamically based on activePorts
-              const portCode = offlinePorts[idx] || ['SBY', 'MKS', 'JYP', 'MDN'][idx];
+            {offlinePlayers.map((player) => {
+              const isUser = !player.isBot;
               return (
                 <div
                   key={player.id}
                   className={`flex-1 md:flex-initial flex items-center justify-center gap-2 text-xs font-extrabold px-4 py-2.5 rounded-xl uppercase tracking-wider border transition-all duration-300 ${
-                    isActive 
+                    isUser 
                       ? 'bg-spil-green text-white border-spil-green shadow-md scale-[1.02]' 
-                      : 'bg-slate-50 border-slate-200/60 text-slate-400 opacity-60'
+                      : 'bg-slate-50 border-slate-200/80 text-slate-700'
                   }`}
                 >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-white animate-pulse' : 'bg-slate-300'}`}></span>
-                  <span>{player.name} ({portCode})</span>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isUser ? 'bg-white animate-pulse' : 'bg-indigo-500'}`}></span>
+                  <span>{player.name}: {formatRupiah(player.cash)}</span>
                 </div>
               );
             })}
@@ -1125,12 +1120,12 @@ export default function App() {
         <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
             <h2 className="text-lg font-black text-white flex items-center gap-2">
-              🚢 {gameMode === 'ONLINE' ? `Grid Stowage Bayplan Lokal - ${activePlayerName}` : `Grid Stowage Bayplan Bersama (Giliran: ${activePlayerName})`}
+              🚢 {gameMode === 'ONLINE' ? `Grid Stowage Bayplan Lokal - ${activePlayerName}` : `Kapal Armada SPIL (Chief Stowage: ${activePlayerName})`}
             </h2>
             <p className="text-xs text-emerald-100/90 font-bold mt-0.5">
               {gameMode === 'ONLINE' 
                 ? 'Tata kargo klaiman Anda. Pelayaran akan diproses setelah seluruh kapten menekan tombol Siap Berlayar.'
-                : 'Susun kontainer pada kapal bersama. Pelayaran ke pelabuhan berikutnya akan memicu bongkar muat dan giliran otomatis.'}
+                : 'Tata muatan kontainer kapal Anda di setiap pelabuhan sirkuit. Maksimalkan profit dan kalahkan AI Benchmark!'}
             </p>
           </div>
           
@@ -1192,6 +1187,7 @@ export default function App() {
             ? (activeOnlinePlayer ? activeOnlinePlayer.performanceLog : [])
             : (activeOfflinePlayer ? activeOfflinePlayer.performanceLog : [])
         }
+        players={formattedPlayersList}
         onRestart={handleLeaveRoom}
       />
 

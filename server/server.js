@@ -69,6 +69,7 @@ const generateRoomCode = () => {
 const broadcastRoomState = (roomCode) => {
   const room = ROOMS[roomCode];
   if (!room) return;
+  room.lastActiveAt = Date.now();
   io.to(roomCode).emit('room_state', room);
   upsertRoomToDb(roomCode);
 };
@@ -131,6 +132,7 @@ const loadSessionsFromDb = async () => {
 };
 
 const persistOfflineSession = (session) => {
+  session.lastActiveAt = Date.now();
   upsertSessionToDb(session.sessionId, {
     week: session.week,
     currentPort: session.currentPort,
@@ -143,10 +145,40 @@ const persistOfflineSession = (session) => {
   });
 };
 
-const getOfflineActivePlayerIndex = (session) => {
-  const portIndex = session.activePorts.indexOf(session.currentPort);
-  return portIndex % session.players.length;
-};
+// Periodic cleanup for abandoned rooms and sessions in memory (runs every 30 minutes)
+const ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+setInterval(() => {
+  const now = Date.now();
+  // 1. Clean inactive rooms where all players are disconnected
+  Object.keys(ROOMS).forEach(roomCode => {
+    const room = ROOMS[roomCode];
+    if (!room) return;
+    const allDisconnected = Object.values(room.players).every(p => !p.connected);
+    const lastActive = room.lastActiveAt || 0;
+    if (allDisconnected && (now - lastActive > ROOM_TTL_MS)) {
+      console.log(`[TTL Cleanup] Evicting stale inactive Room ${roomCode}`);
+      stopTurnTimer(roomCode);
+      delete ROOMS[roomCode];
+      deleteRoomFromDb(roomCode);
+    }
+  });
+
+  // 2. Clean inactive in-memory offline sessions (persisted in DB)
+  Object.keys(OFFLINE_SESSIONS).forEach(sessionId => {
+    const session = OFFLINE_SESSIONS[sessionId];
+    if (!session) return;
+    const lastActive = session.lastActiveAt || 0;
+    if (now - lastActive > SESSION_TTL_MS) {
+      console.log(`[TTL Cleanup] Evicting stale Offline Session ${sessionId} from memory`);
+      delete OFFLINE_SESSIONS[sessionId];
+    }
+  });
+}, 30 * 60 * 1000);
+
+// In Chief Stowage Planner mode, the human player (index 0) manages stowage across all 4 ports
+const getOfflineActivePlayerIndex = (session) => 0;
 
 const computePlayerRating = (cash) => {
   if (cash >= 300000000) return 'VP Operasi Logistik & Stowage';
@@ -773,14 +805,11 @@ const startTurnTimer = (roomCode) => {
 const executeSailingTransition = (roomCode) => {
   stopTurnTimer(roomCode);
   const room = ROOMS[roomCode];
-  if (!room) return;
-  // Every caller (player_ready, leave_room, disconnect) only checks "are all
-  // connected players ready", not whether the room already finished - a
-  // stray ready/reconnect after game-over could otherwise re-run this,
-  // advancing week past 8 again and writing duplicate leaderboard entries.
-  if (room.isGameOver) return;
+  if (!room || room.isGameOver || room.isTransitioning) return;
+  room.isTransitioning = true;
 
-  const currentPort = room.currentPort;
+  try {
+    const currentPort = room.currentPort;
   const currentWeek = room.week;
   const currentPortIndex = PORTS.indexOf(currentPort);
   const nextPort = PORTS[(currentPortIndex + 1) % PORTS.length];
@@ -969,6 +998,9 @@ const executeSailingTransition = (roomCode) => {
   if (!room.isGameOver) {
     startTurnTimer(roomCode);
   }
+  } finally {
+    room.isTransitioning = false;
+  }
 };
 
 
@@ -1072,6 +1104,8 @@ app.post('/api/game/offline/start', (req, res) => {
         name: bot.name,
         isBot: true,
         personality: bot.personality,
+        avatar: bot.avatar,
+        description: bot.description,
         cash: OFFLINE_START_CASH,
         accumulatedPenalties: 0,
         cumulativeGrossRevenue: 0,
@@ -1080,7 +1114,8 @@ app.post('/api/game/offline/start', (req, res) => {
         performanceLog: [],
         playerRating: null,
         lastWeeklyEvaluation: null,
-        cargoPool: []
+        cargoPool: [],
+        grid: createEmptyGrid(bays)
       }))
     ];
 
@@ -1308,6 +1343,17 @@ app.post('/api/game/offline/upgrade-vessel', (req, res) => {
     session.sharedGrid = newGrid;
     session.vesselLevel = nextLevel;
 
+    // Synchronize bot benchmark vessel grids to the upgraded capacity
+    session.players.slice(1).forEach(bot => {
+      if (bot.grid) {
+        const botNewGrid = createEmptyGrid(nextBays);
+        Object.keys(bot.grid).forEach(bay => {
+          if (botNewGrid[bay]) botNewGrid[bay] = bot.grid[bay];
+        });
+        bot.grid = botNewGrid;
+      }
+    });
+
     persistOfflineSession(session);
     res.json({ success: true, data: session });
   } catch (error) {
@@ -1338,27 +1384,11 @@ app.post('/api/game/offline/depart', (req, res) => {
       ? []
       : generateOrders(nextPort, nextWeek, currentActivePorts, rngForPortCall(seed, nextWeek, nextPort));
 
-    const activePlayerIndex = currentPortIndex % players.length; // Surabaya is 0, Makassar is 1, etc.
+    // Current port orders for AI benchmarks
+    const currentPortOrders = generateOrders(currentPort, week, currentActivePorts, rngForPortCall(seed, week, currentPort));
 
-    // 0. Execute the turn for the active player only, and only if that player is a Bot.
-    // The vessel is berthed at exactly one port, so only the branch stationed there
-    // may run a sales call and load containers this week.
-    let workingGrid = JSON.parse(JSON.stringify(sharedGrid));
-    const processedPlayers = players.map((player, idx) => {
-      if (player.isBot && idx === activePlayerIndex) {
-        workingGrid = processBotTurn(
-          player,
-          workingGrid,
-          currentPort,
-          currentActivePorts,
-          rngForPortCall(seed, week, `bot${idx}`)
-        );
-      }
-      return player;
-    });
-
-    // Validate physics for the shared grid after Bot placements
-    const physicsCheck = validateGridPhysics(workingGrid);
+    // 1. Validate physics for Human player's sharedGrid
+    const physicsCheck = validateGridPhysics(sharedGrid);
     if (!physicsCheck.valid) {
       return res.status(400).json({
         success: false,
@@ -1366,29 +1396,29 @@ app.post('/api/game/offline/depart', (req, res) => {
       });
     }
 
-    const activePlayer = processedPlayers[activePlayerIndex];
+    const humanPlayer = players[0];
 
-    // 1. Compute Restows on the shared grid
-    const restowCheck = calculateRestows(workingGrid, currentPort, currentActivePorts);
-    const restowPenaltyTotal = restowCheck.restowMovementsCount * 3000000;
+    // 2. Compute Restows on human's grid
+    const humanRestowCheck = calculateRestows(sharedGrid, currentPort, currentActivePorts);
+    const humanRestowMovements = humanRestowCheck.restowMovementsCount;
+    const humanRestowPenalty = humanRestowMovements * 3000000;
 
+    // 3. Compute Personal Rolling Penalties for human player
+    let humanRollingPenalty = 0;
+    let humanRolledCount = 0;
+    const humanRolledList = [];
 
-    // 2. Compute Personal Rolling Penalties for the active player
-    let personalRollingPenalty = 0;
-    let personalRolledCount = 0;
-    const personalRolledList = [];
-
-    const pendingContainers = activePlayer.pendingContainers || [];
-    if (pendingContainers.length > 0) {
+    const humanPending = humanPlayer.pendingContainers || [];
+    if (humanPending.length > 0) {
       const grouped = {};
-      pendingContainers.forEach(c => {
+      humanPending.forEach(c => {
         grouped[c.orderId] = (grouped[c.orderId] || 0) + 1;
       });
 
       Object.keys(grouped).forEach(orderId => {
         const missingCount = grouped[orderId];
-        const isCommitted = orderId.includes('Committed') || pendingContainers.find(c => c.orderId === orderId)?.customerType === 'Committed';
-        const containerType = pendingContainers.find(c => c.orderId === orderId)?.containerType || 'DRY';
+        const isCommitted = orderId.includes('Committed') || humanPending.find(c => c.orderId === orderId)?.customerType === 'Committed';
+        const containerType = humanPending.find(c => c.orderId === orderId)?.containerType || 'DRY';
         
         let penaltyPerUnit = 0;
         if (isCommitted) {
@@ -1398,12 +1428,12 @@ app.post('/api/game/offline/depart', (req, res) => {
         }
 
         const penalty = missingCount * penaltyPerUnit;
-        personalRollingPenalty += penalty;
-        personalRolledCount += missingCount;
+        humanRollingPenalty += penalty;
+        humanRolledCount += missingCount;
 
-        personalRolledList.push({
+        humanRolledList.push({
           orderId,
-          customerName: pendingContainers.find(c => c.orderId === orderId)?.customerName || 'Pelanggan',
+          customerName: humanPending.find(c => c.orderId === orderId)?.customerName || 'Pelanggan',
           customerType: isCommitted ? 'Committed' : 'Non-Committed',
           containerType,
           missingCount,
@@ -1413,16 +1443,15 @@ app.post('/api/game/offline/depart', (req, res) => {
       });
     }
 
-    // 3. Compute Ignored Committed Penalty for the active player (from their own private cargoPool)
-    let ignoredCommittedPenalty = 0;
-    const poolToEvaluate = activePlayer.cargoPool || [];
-    poolToEvaluate.forEach(order => {
+    // Check ignored committed orders in human's cargoPool
+    const humanPool = humanPlayer.cargoPool || [];
+    humanPool.forEach(order => {
       if (order.customerType === 'Committed') {
         const penaltyPerUnit = order.containerType === 'DRY' ? 16000000 : 24000000;
         const totalPenalty = order.quantity * penaltyPerUnit;
-        ignoredCommittedPenalty += totalPenalty;
+        humanRollingPenalty += totalPenalty;
 
-        personalRolledList.push({
+        humanRolledList.push({
           orderId: order.id,
           customerName: `${order.customerName}`,
           customerType: 'Committed (Terabaikan)',
@@ -1434,106 +1463,134 @@ app.post('/api/game/offline/depart', (req, res) => {
       }
     });
 
-    const totalRollingPenalty = personalRollingPenalty + ignoredCommittedPenalty;
-    const totalWeeklyPenalties = restowPenaltyTotal + totalRollingPenalty;
+    const humanTotalWeeklyPenalties = humanRestowPenalty + humanRollingPenalty;
 
-    // 4. Calculate earned revenue for ALL players from unloaded containers destined for nextPort
-    // and track terminal handling moves (Bongkar, Muat, Shifting)
-    let offlineDischargedCount = 0;
-    let offlineLoadedCount = 0;
-    const revenueByPlayer = Array(processedPlayers.length).fill(0);
-    const bays = Object.keys(workingGrid);
-    bays.forEach(bay => {
-      const config = getBayConfig(bay);
-      config.rows.forEach(row => {
-        config.tiers.forEach(tier => {
-          const container = workingGrid[bay][row][tier];
-          if (container) {
-            if (container.destination === nextPort) {
-              offlineDischargedCount++;
-              // Credit the branch that originally sold this cargo.
-              const originPortIndex = PORTS.indexOf(container.origin);
-              if (originPortIndex >= 0) {
-                const originPlayerIndex = originPortIndex % processedPlayers.length;
-                revenueByPlayer[originPlayerIndex] += container.tariff;
-              }
-            }
-            if (container.origin === currentPort) {
-              offlineLoadedCount++;
-            }
-          }
+    // 4. Calculate earned discharge revenue and crane moves for human player
+    const humanDischargedCount = calculateDischargeCount(sharedGrid, nextPort);
+    const humanDischargeRevenue = calculateDischargeRevenue(sharedGrid, nextPort);
+
+    let humanLoadedCount = 0;
+    Object.keys(sharedGrid).forEach(b => {
+      Object.keys(sharedGrid[b]).forEach(r => {
+        Object.keys(sharedGrid[b][r]).forEach(t => {
+          const c = sharedGrid[b][r][t];
+          if (c && c.origin === currentPort) humanLoadedCount++;
         });
       });
     });
 
-    const offlineRestowMovements = restowCheck.restowContainersCount * 2;
-    const offlineTotalCraneMoves = offlineDischargedCount + offlineLoadedCount + offlineRestowMovements;
+    const humanTotalCraneMoves = humanDischargedCount + humanLoadedCount + humanRestowMovements;
+    const humanNetIncome = humanDischargeRevenue - humanTotalWeeklyPenalties;
 
-    // 5. Update cash & penalties & cumulative gross revenue for all players
-    const nextActivePlayerIndex = PORTS.indexOf(nextPort) % processedPlayers.length;
-    const updatedPlayers = processedPlayers.map((player, idx) => {
-      const isCurrentActive = idx === activePlayerIndex;
-      const earnedRevenue = revenueByPlayer[idx];
-      
-      let netIncome = earnedRevenue;
-      if (isCurrentActive) {
-        netIncome = earnedRevenue - totalWeeklyPenalties;
-      }
+    const humanNewCash = humanPlayer.cash + humanNetIncome;
+    const humanNewPenalties = humanPlayer.accumulatedPenalties + humanTotalWeeklyPenalties;
+    const humanNewRevenue = (humanPlayer.cumulativeGrossRevenue || 0) + humanDischargeRevenue;
 
-      const newCash = player.cash + netIncome;
-      const newAccumulatedPenalties = player.accumulatedPenalties + (isCurrentActive ? totalWeeklyPenalties : 0);
-      const newCumulativeGrossRevenue = (player.cumulativeGrossRevenue || 0) + earnedRevenue;
+    const humanEvaluation = {
+      week,
+      port: currentPort,
+      rolledCount: humanRolledCount,
+      rollingPenalty: humanRollingPenalty,
+      restowCount: humanRestowCheck.restowContainersCount,
+      restowMovements: humanRestowMovements,
+      restowPenalty: humanRestowPenalty,
+      dischargedCount: humanDischargedCount,
+      loadedCount: humanLoadedCount,
+      totalCraneMoves: humanTotalCraneMoves,
+      grossRevenue: humanDischargeRevenue,
+      netIncome: humanNetIncome,
+      cashSnapshot: humanNewCash,
+      accumulatedPenaltiesSnapshot: humanNewPenalties,
+      rolledDetails: humanRolledList,
+      restowDetails: humanRestowCheck.restowedList
+    };
 
-      // Record Weekly Evaluation ONLY for the active player
-      let weeklyEvaluation = player.lastWeeklyEvaluation;
-      let updatedHistory = player.performanceLog || [];
-      
-      if (isCurrentActive) {
-        weeklyEvaluation = {
-          week,
-          port: currentPort,
-          rolledCount: personalRolledCount,
-          rollingPenalty: totalRollingPenalty,
-          restowCount: restowCheck.restowContainersCount,
-          restowMovements: offlineRestowMovements,
-          restowPenalty: restowPenaltyTotal,
-          dischargedCount: offlineDischargedCount,
-          loadedCount: offlineLoadedCount,
-          totalCraneMoves: offlineTotalCraneMoves,
-          grossRevenue: earnedRevenue,
-          netIncome,
-          cashSnapshot: newCash,
-          accumulatedPenaltiesSnapshot: newAccumulatedPenalties,
-          rolledDetails: personalRolledList,
-          restowDetails: restowCheck.restowedList
-        };
-        updatedHistory = [...updatedHistory, weeklyEvaluation];
-      }
+    const updatedHumanPlayer = {
+      ...humanPlayer,
+      cash: humanNewCash,
+      accumulatedPenalties: humanNewPenalties,
+      cumulativeGrossRevenue: humanNewRevenue,
+      ready: false,
+      pendingContainers: [],
+      performanceLog: [...(humanPlayer.performanceLog || []), humanEvaluation],
+      lastWeeklyEvaluation: humanEvaluation,
+      cargoPool: isGameOver ? [] : JSON.parse(JSON.stringify(nextOrders))
+    };
+
+    // Transition human grid (discharge nextPort + slide down)
+    const transitionedHumanGrid = processSailingTransition(sharedGrid, nextPort);
+
+    // 5. Simulate AI Benchmark Bots in parallel on their own vessels
+    const bays = OFFLINE_BAYS_BY_LEVEL[session.vesselLevel || 1];
+    const updatedBotPlayers = players.slice(1).map((bot, idx) => {
+      let botGrid = bot.grid ? JSON.parse(JSON.stringify(bot.grid)) : createEmptyGrid(bays);
+      bot.cargoPool = JSON.parse(JSON.stringify(currentPortOrders));
+      bot.pendingContainers = bot.pendingContainers || [];
+
+      // Process bot cargo selection & stowage
+      botGrid = processBotTurn(
+        bot,
+        botGrid,
+        currentPort,
+        currentActivePorts,
+        rngForPortCall(seed, week, `bot_${bot.personality}_${idx}`)
+      );
+
+      // Evaluate bot restows
+      const bRestowCheck = calculateRestows(botGrid, currentPort, currentActivePorts);
+      const bRestowMovements = bRestowCheck.restowMovementsCount;
+      const bRestowPenalty = bRestowMovements * 3000000;
+
+      // Evaluate bot rolling penalties
+      let bRollingPenalty = 0;
+      (bot.pendingContainers || []).forEach(c => {
+        const isComm = c.customerType === 'Committed';
+        bRollingPenalty += isComm ? (c.containerType === 'DRY' ? 16000000 : 24000000) : (c.containerType === 'DRY' ? 8000000 : 16000000);
+      });
+      (bot.cargoPool || []).forEach(o => {
+        if (o.customerType === 'Committed') {
+          bRollingPenalty += o.quantity * (o.containerType === 'DRY' ? 16000000 : 24000000);
+        }
+      });
+
+      const bTotalPenalties = bRestowPenalty + bRollingPenalty;
+      const bDischargeRev = calculateDischargeRevenue(botGrid, nextPort);
+      const bNetIncome = bDischargeRev - bTotalPenalties;
+      const bNewCash = bot.cash + bNetIncome;
+      const bNewPenalties = bot.accumulatedPenalties + bTotalPenalties;
+      const bNewRevenue = (bot.cumulativeGrossRevenue || 0) + bDischargeRev;
+
+      // Transition bot grid
+      const bTransitionedGrid = processSailingTransition(botGrid, nextPort);
+
+      const bEvaluation = {
+        week,
+        port: currentPort,
+        grossRevenue: bDischargeRev,
+        restowPenalty: bRestowPenalty,
+        rollingPenalty: bRollingPenalty,
+        netIncome: bNetIncome,
+        cashSnapshot: bNewCash
+      };
 
       return {
-        ...player,
-        cash: newCash,
-        accumulatedPenalties: newAccumulatedPenalties,
-        cumulativeGrossRevenue: newCumulativeGrossRevenue,
-        ready: false,
-        pendingContainers: isCurrentActive ? [] : player.pendingContainers, // Clear pending containers only for active player
-        performanceLog: updatedHistory,
-        lastWeeklyEvaluation: weeklyEvaluation,
-        // If it is next player's turn, initialize their cargoPool for the next port
-        cargoPool: (idx === nextActivePlayerIndex) ? JSON.parse(JSON.stringify(nextOrders)) : player.cargoPool
+        ...bot,
+        cash: bNewCash,
+        accumulatedPenalties: bNewPenalties,
+        cumulativeGrossRevenue: bNewRevenue,
+        pendingContainers: [],
+        cargoPool: [],
+        grid: bTransitionedGrid,
+        performanceLog: [...(bot.performanceLog || []), bEvaluation],
+        lastWeeklyEvaluation: bEvaluation
       };
     });
 
-    // 6. Unload next port containers and slide-down on the working grid
-    const transitionedGrid = processSailingTransition(workingGrid, nextPort);
-
-    let finalPlayers = updatedPlayers;
+    let finalPlayers = [updatedHumanPlayer, ...updatedBotPlayers];
 
     if (isGameOver) {
-      finalPlayers = updatedPlayers.map(player => {
+      finalPlayers = finalPlayers.map(player => {
         const rating = computePlayerRating(player.cash);
-        // Only the human captain goes on the leaderboard - a bot finishing
-        // its branch isn't a captain's achievement.
         if (!player.isBot) {
           recordLeaderboardEntry(player.name, player.cash, player.accumulatedPenalties, rating, 'OFFLINE');
         }
@@ -1548,7 +1605,7 @@ app.post('/api/game/offline/depart', (req, res) => {
     session.week = nextWeek;
     session.currentPort = nextPort;
     session.activePorts = PORTS;
-    session.sharedGrid = transitionedGrid;
+    session.sharedGrid = transitionedHumanGrid;
     session.players = finalPlayers;
     session.isGameOver = isGameOver;
 
