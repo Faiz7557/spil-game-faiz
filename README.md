@@ -43,6 +43,7 @@
 - [Shared Module](#-shared-module)
 - [Cara Instalasi & Menjalankan](#-cara-instalasi--menjalankan)
 - [Konfigurasi Environment](#-konfigurasi-environment)
+- [Roadmap & Rencana Pengerjaan Teknis (Technical Plan)](#-roadmap--rencana-pengerjaan-teknis-technical-plan)
 - [Riwayat Update Terkini](#-riwayat-update-terkini)
 - [Glosarium Istilah Industri](#-glosarium-istilah-industri)
 
@@ -921,6 +922,129 @@ JWT_SECRET=change-this-to-a-long-random-secret-in-production
 
 ---
 
+## 🚀 Roadmap & Rencana Pengerjaan Teknis (Technical Plan)
+
+> **Target Milestone Utama Proyek:**
+> - **Fitur Lengkap (Feature Complete v1.0.0):** Selesai pada **Minggu ke-3 Oktober 2026** (~21 Oktober 2026).
+> - **Fokus DRL (Sept 30 – 7 Okt):** 100% Finalisasi pemodelan, evaluasi empiris, dan pembungkusan inference service.
+> - **Fase Trial & Revisi (22 Okt dst):** Uji coba pengguna riil (*playtesting*), evaluasi usabilitas SUS, bugfix, dan rilis stabil.
+
+```
+                    TIMELINE ROADMAP PENGEMBANGAN SPIL-GAME
+┌─────────────────────────┬─────────────────────────┬─────────────────────────┬─────────────────────────┐
+│  MINGGU 1 (30 Sep - 7 Okt)│  MINGGU 2 (8 - 14 Okt)  │  MINGGU 3 (15 - 21 Okt) │   MINGGU 4+ (22 Okt+)   │
+├─────────────────────────┼─────────────────────────┼─────────────────────────┼─────────────────────────┤
+│ DRL 100% FINAL & FREEZE │ ENGINE & INTEGRASI GAME │ POLISH UI, SFX & PACK   │ TRIAL USER & REVISI     │
+│ • Selesaikan DQN S2     │ • DRL Inference Service │ • Audio/SFX Engine      │ • Sesi Playtest 3 Mode  │
+│ • Paired Selection DQN  │ • Bot DRL di Game Engine│ • Animasi Crane/Stowage │ • Kuesioner SUS         │
+│ • Evaluasi TEST & SENS  │ • Standardisasi Rute    │ • Visual Feedback Overst│ • Logging Telemetri     │
+│ • Solver Batas Atas MILP│ • Turn Timer & Reconnect│ • One-Click Launcher    │ • Balancing & Bugfix    │
+│ • DRL Microservice API  │ • Parity & Load Testing │ • Freeze Fitur v1.0.0   │ • Rilis Final v1.0.0    │
+└─────────────────────────┴─────────────────────────┴─────────────────────────┴─────────────────────────┘
+```
+
+### 1. Status Komponen Saat Ini (Baseline 30 September 2026)
+
+| Komponen | Status | Progres | Keterangan Teknis |
+|----------|:------:|:-------:|-------------------|
+| **DRL Environment & Reward Gate** | Selesai | 100% | Gymnasium env (`env.py`, `portcall.py`), action masking 37-bit, reward parity $\Delta \text{Rp } 0$ pada 2.160 episode. |
+| **Pelatihan DRL Stage 2** | Berjalan | 89% | PPO dan A2C tuntas 3 seed. DQN menyisakan 2 arm (`cmp_dqn_s2_t32_constant_seed2` & `cmp_dqn_s2_t32_plateau`). |
+| **Evaluasi Algoritma & Tabel Statistik** | Setengah Jadi | 70% | PPO & A2C selesai diuji di TEST 300 & SENS 150 seed. DQN masih model lama. Tabel `results/tables/` perlu regenerasi. |
+| **DRL Game Inference Bridge** | Belum Ada | 0% | Model DRL masih berupa `.zip` PyTorch/SB3; belum ada service inference untuk game. |
+| **Game Backend & Bot Engine** | Sebagian | 80% | Engine fisika kapal, aturan restow/rolling, dan bot heuristik aktif. Belum ada Bot DRL dan turn timer. |
+| **Sinkronisasi Rute Tambahan (BJM, JKT, BLI)** | Setengah Jadi | 50% | Rute terbuka saat capaian kas terpenuhi, tetapi tarif masih menggunakan fallback acak. |
+| **Game Frontend & UI/UX** | Sebagian | 75% | Simulator ISO 9711 dan dashboard lengkap. Belum ada audio (SFX), animasi crane, dan delay giliran bot. |
+| **Automasi & One-Click Runner** | Belum Ada | 0% | Belum ada script orkestrasi satu-klik untuk menjalankan Postgres, API DRL, Backend, dan Frontend. |
+| **Instrumen Trial Pengguna** | Belum Ada | 0% | Belum ada formulir evaluasi kegunaan sistem (SUS) dan skema pencatatan log telemetri pengguna. |
+
+---
+
+### 2. Rincian Teknis Mingguan (Sprint Breakdown)
+
+#### 📅 MINGGU 1 (30 September – 7 Oktober 2026): FOKUS PEMODELAN DRL 100% RAMPUNG
+* **Fokus Utama**: Menuntaskan pelatihan komparator DQN, menyeleksi model juara, mengeksekusi evaluasi empiris lengkap (TEST, SENS, MILP Upper Bound), dan membangun microservice inferensi DRL.
+* **Tugas Harian & Implementasi Teknis**:
+  - **Hari 1–2 (30 Sep – 1 Okt) — Penuntasan Komputasi DQN Stage 2**:
+    - Eksekusi pelatihan lanjutan via `research/rl/train_resumable.py` untuk `cmp_dqn_s2_t32_constant` (seed 2) dan `cmp_dqn_s2_t32_plateau` (seed 0, 1, 2) dengan anggaran 1,5 juta langkah dan toleransi plateau 6 evaluasi.
+    - Verifikasi integritas checkpoint `run.json` dan `best_model.zip`.
+  - **Hari 3 (2 Okt) — Seleksi Berpasangan (Paired Selection)**:
+    - Jalankan `python -m research.rl.select_arm --root research/results/rl_stage2 --seeds 20` untuk menghasilkan `selection_dqn.csv` dan `selection_dqn.png`.
+    - Kunci **Trio Model Juara**:
+      - `A5 (PPO)`: `s2_ppo_t26_cosine` (net-arch `[128, 128]`, $\text{lr}_0 = 3 \times 10^{-4}$).
+      - `P1 (A2C)`: `cmp_a2c_s2_t31_constant` (net-arch `[64, 64]`, $\text{lr}_0 = 2 \times 10^{-3}$).
+      - `P2 (DQN)`: Pemenang seleksi Stage 2.
+  - **Hari 4 (3 Okt) — Evaluasi Akhir TEST, SENS, dan Batas Atas MILP**:
+    - Evaluasi DQN pemenang pada 300 seed TEST nominal dan 150 seed $\times$ 24 strata SENS via `research/rl/evaluate.py`.
+    - Jalankan `research/dump-scenarios.mjs` dan `research/analysis/upper_bound.py` untuk menghitung batas atas kas relaksasi integer programming (MILP) per seed.
+  - **Hari 5–6 (4 – 5 Okt) — Regenerasi Tabel Statistik & Analisis Perilaku**:
+    - Jalankan `python research/analysis/stats.py` untuk memperbarui seluruh tabel: `deskriptif_pendapatan_bersih.csv`, `uji_friedman.csv`, `perbandingan_berpasangan.csv` (Kendall's $W$, uji Nemenyi CD, Holm $p$-values, effect size Vargha-Delaney $A$), `konsistensi_strata.csv`, dan `komputasi.csv`.
+    - Jalankan `python research/analysis/behavior.py` dan `plot_utilization.py` untuk memetakan utilisasi colokan REEFER, rasio penolakan kargo, dan pola pencegahan overstow.
+  - **Hari 7 (6 – 7 Okt) — Pembuatan DRL Game Inference Service**:
+    - Bangun berkas `research/rl/serve_policy.py` menggunakan FastAPI pada port `5055`.
+    - Endpoint POST `/predict`: Menerima JSON state kargo & grid kapal, mengubah ke vektor 87-dimensi + action mask 37-bit, dan mengembalikan aksi terpilih (waktu inferensi < 25 ms).
+    - **Definition of Done (DoD) Minggu 1**: Semua model DRL selesai dievaluasi, seluruh artefak data terkunci, dan service `/predict` siap diakses via HTTP.
+
+---
+
+#### 📅 MINGGU 2 (8 – 14 Oktober 2026): INTEGRASI GAME ENGINE & BACKEND
+* **Fokus Utama**: Menghubungkan model DRL ke dalam permainan SPIL-GAME sebagai lawan tanding aktif, menstandardisasi rute & tarif pelayaran, dan menjamin ketahanan multiplayer.
+* **Tugas Harian & Implementasi Teknis**:
+  - **Hari 8–9 (8 – 9 Okt) — Integrasi Bot DRL ke Game Server**:
+    - Tambahkan profil bot baru di `server/utils/botEngine.js`: `Bot DRL - Kapten AI SPIL (Deep RL PPO)`.
+    - Buat modul jembatan `server/utils/drlClient.js` yang mengirimkan request ke `http://localhost:5055/predict` dengan timeout 300 ms.
+    - Implementasikan **Circuit Breaker**: Jika service DRL mati atau lambat, otomatis *fallback* ke algoritma heuristik `SMART` tanpa menghentikan permainan.
+    - Modifikasi fungsi giliran bot di `server/server.js` agar mendukung eksekusi DRL secara mulus.
+  - **Hari 10–11 (10 – 11 Okt) — Standardisasi Rute Tambahan (BJM, JKT, BLI) & Tarif**:
+    - Lengkapi matriks tarif di `shared/gameConstants.js` untuk pelabuhan Banjarmasin (BJM), Jakarta (JKT), dan Bali (BLI) untuk tipe kargo DRY dan REEFER berdasarkan proporsi jarak dan tabel tarif resmi SPIL.
+    - Perbarui metadata `PORT_CODES_INFO` untuk rute 7 pelabuhan.
+    - Hapus logika acak *dummy fallback* di `server/utils/gameEngine.js:121` agar simulasi 100% deterministik.
+  - **Hari 12–14 (12 – 14 Okt) — Turn Timer & Ketahanan Multiplayer**:
+    - Pasang turn countdown timer di server (60 detik per fase) dengan broadcast WebSocket `turn_timer_tick` ke ruang bermain.
+    - Tangani *auto-submit* saat batas waktu habis untuk mencegah room menggantung jika ada pemain AFK.
+    - Uji coba ketahanan pemulihan sesi (*reconnect* browser) menggunakan client UUID di `localStorage`.
+    - Jalankan validasi konsistensi fisika kapal: `node server/verifyEngine.js` (24/24 lulus).
+    - **Definition of Done (DoD) Minggu 2**: Bot DRL dapat dimainkan langsung di game, tarif 7 pelabuhan baku, dan sesi multiplayer stabil.
+
+---
+
+#### 📅 MINGGU 3 (15 – 21 Oktober 2026): POLISH UI, AUDIO, & PACKAGING (FEATURE COMPLETE)
+* **Fokus Utama**: Mengintegrasikan efek suara (SFX), animasi visual pergerakan crane dan denda overstow, mempercantik antarmuka, serta membuat runner instalasi satu-perintah.
+* **Tugas Harian & Implementasi Teknis**:
+  - **Hari 15–17 (15 – 17 Okt) — Integrasi Audio & Sound Effects (SFX)**:
+    - Siapkan aset audio ringan format MP3 di `client/public/sounds/`:
+      - `container_drop.mp3`: Suara benturan logam saat kontainer ditempatkan ke slot.
+      - `restow_alarm.mp3`: Suara peringatan jika penempatan menyebabkan overstow/blocker.
+      - `ship_horn.mp3`: Peluit kapal saat tombol "Berangkat Berlayar" ditekan.
+      - `coins.mp3`: Efek kas saat menerima pembayaran kargo di pelabuhan tujuan.
+    - Buat utility `client/src/utils/soundEffects.js` dengan dukungan pengaturan volume dan tombol Mute di header `Dashboard.jsx`.
+  - **Hari 18–19 (18 – 19 Okt) — Visual Polish, Highlight Blocker, & Animasi Transisi**:
+    - Di `client/src/components/BayplanSimulator.jsx`, tambahkan *pulsing red highlight* dan badge denda `"Restow! -Rp 6 Jt"` pada kontainer yang memblokir kargo pelabuhan saat ini.
+    - Tambahkan jeda visual (*simulated thinking*) 1 detik saat bot berpikir di mode offline agar pemain dapat mengamati pergerakan AI.
+    - Tambahkan tab statistik komparasi di `GameOverModal.jsx`: Menampilkan grafik radar performa pemain vs Kapten DRL.
+  - **Hari 20–21 (20 – 21 Okt) — One-Click Launcher & Script Packaging**:
+    - Buat script orkestrasi `start-spil-game.bat` dan `start-spil-game.ps1` di root proyek yang otomatis menjalankan PostgreSQL healthcheck, DRL Inference Service (Port 5055), Backend Server (Port 5050), Client Vite (Port 5190), dan membuka browser secara otomatis.
+    - Tulis berkas panduan ringkas: `PANDUAN-MENJALANKAN-GAME.md`.
+    - **Definition of Done (DoD) Minggu 3**: **SPIL-GAME v1.0.0 FEATURE COMPLETE & LOCKED**.
+
+---
+
+#### 📅 MINGGU 4+ (22 Oktober 2026 dst): FASE TRIAL PENGGUNA & REVISI
+* **Fokus Utama**: Menguji game kepada pemain nyata, mengumpulkan umpan balik usabilitas, menyelesaikan perbaikan bug (*bugfixing*), dan merilis versi final stabil.
+* **Tugas & Implementasi Teknis**:
+  - **22 – 28 Oktober 2026 — Sesi Playtesting & Pengambilan Data**:
+    - Uji coba pada 3 skenario:
+      1. *Skenario A (Single Player vs Bot Heuristik)*: Menguji kejelasan aturan ISO 9711 dan navigasi antarmuka.
+      2. *Skenario B (Tantangan Kapten DRL)*: Menguji daya saing agen AI dan kepuasan pemain.
+      3. *Skenario C (Multiplayer 4 Pemain)*: Menguji kehandalan sinkronisasi Socket.IO dan persaingan perebutan pesanan kargo.
+    - Pengisian Kuesioner SUS (*System Usability Scale*) dengan target skor rata-rata $\ge 70$ (*Good/Acceptable*).
+    - Pencatatan telemetri sesi ke tabel PostgreSQL `trial_analytics` (waktu bermain, total restow, total rolling, laba bersih akhir).
+  - **29 Oktober – 5 November 2026 — Pengerjaan Revisi & Rilis Stabil**:
+    - Perbaikan bug dan *edge case* berdasarkan hasil trial.
+    - Penyesuaian keseimbangan ekonomi (*game balancing*) jika denda dirasa terlalu memberatkan pemula.
+    - Penguncian tag rilis final: `git tag -a v1.0.0 -m "Release v1.0.0: SPIL-GAME Full Edition with DRL Captain"`.
+
+---
+
 ## 📋 Riwayat Update Terkini
 
 Berdasarkan riwayat commit terakhir (terbaru ke terlama):
@@ -929,6 +1053,7 @@ Berdasarkan riwayat commit terakhir (terbaru ke terlama):
 
 | Tanggal | Perubahan |
 |---------|-----------|
+| **30 Sep** | **Roadmap Teknis End-to-End:** Rencana pengerjaan komprehensif 4 sprint (finalisasi DRL Stage 2 & freeze, integrasi Kapten AI DRL ke backend, audio SFX & visual polish, serta protokol trial user SUS) |
 | **22 Sep** | Test build & stabilisasi |
 | **15 Sep** | **Fondasi Redesain UI:** Orientasi bay/row sesuai ISO 9711-1, token warna port berbasis Okabe-Ito (aksesibilitas buta warna), semantic status colors, reduced motion support (WCAG 2.3.3) |
 | **14 Sep** | **Pemisahan kuota slot DRY vs REEFER**, label orientasi kapal ISO 9711, badge target rute Next/Later Port, audit pergerakan crane terminal, cleanup `.gitignore` (untrack research/Info/.claude) |

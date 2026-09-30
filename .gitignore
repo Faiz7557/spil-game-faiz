@@ -37,6 +37,8 @@ Thumbs.db
 *skripsi*
 *Skripsi*
 *.docx
+*.tmp
+~$*
 
 # Python Artifacts & Environments
 __pycache__/
