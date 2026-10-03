@@ -1,5 +1,5 @@
-import { formatRupiah, PORT_NAMES, getNextPort, PORT_CODES_INFO } from '../utils/gameHelpers';
-import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen, Clock } from 'lucide-react';
+import { formatRupiah, PORT_NAMES, getNextPort, PORT_CODES_INFO, TOTAL_GAME_WEEKS, HORIZON_WEEKS } from '../utils/gameHelpers';
+import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen, Clock, Compass, Ship, BarChart3 } from 'lucide-react';
 
 export default function Dashboard({ 
   week, 
@@ -12,7 +12,11 @@ export default function Dashboard({
   activePorts,
   turnTimer,
   onOpenTariff,
-  onOpenGlossary
+  onOpenGlossary,
+  onOpenTutorial,
+  onOpenISO,
+  onOpenAnalytics,
+  onOpenBadges
 }) {
   const nextPort = getNextPort(currentPort, activePorts);
   const playersList = players ? Object.values(players).sort((a, b) => b.cash - a.cash) : [];
@@ -98,14 +102,14 @@ export default function Dashboard({
           </div>
         )}
 
-        {/* Quick Action Buttons (Tarif & Glosarium) */}
+        {/* Quick Action Buttons (Tarif, Glosarium, ISO, Tutorial) */}
         <div className="flex items-center gap-2 self-start lg:self-auto flex-wrap">
           {onOpenTariff && (
             <button
               type="button"
               onClick={onOpenTariff}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
-              title="Buka Lembar Informasi Tarif Muatan PT. SPIL"
+              title="Buka Lembar Informasi Tarif Muatan PT. SPIL [T]"
             >
               <FileText className="w-3.5 h-3.5 text-emerald-600" />
               <span>Info Tarif</span>
@@ -117,10 +121,58 @@ export default function Dashboard({
               type="button"
               onClick={onOpenGlossary}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
-              title="Buka Glosarium & Standar Operasional SPIL Game"
+              title="Buka Glosarium & Standar Operasional SPIL Game [G]"
             >
               <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
               <span>Glosarium</span>
+            </button>
+          )}
+
+          {onOpenISO && (
+            <button
+              type="button"
+              onClick={onOpenISO}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 text-slate-700 hover:text-cyan-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              title="Buka Visualisator Standar ISO 9711 (Bay-Row-Tier) [I]"
+            >
+              <Ship className="w-3.5 h-3.5 text-cyan-600" />
+              <span>ISO 9711</span>
+            </button>
+          )}
+
+          {onOpenTutorial && (
+            <button
+              type="button"
+              onClick={onOpenTutorial}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              title="Buka Panduan & Tutorial Interaktif"
+            >
+              <Compass className="w-3.5 h-3.5 text-spil-green" />
+              <span>Tutorial</span>
+            </button>
+          )}
+
+          {onOpenAnalytics && (
+            <button
+              type="button"
+              onClick={onOpenAnalytics}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              title="Buka Laporan Audit Pembelajaran"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-slate-600" />
+              <span>Laporan</span>
+            </button>
+          )}
+
+          {onOpenBadges && (
+            <button
+              type="button"
+              onClick={onOpenBadges}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              title="Buka Galeri Lencana & Pencapaian"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-600" />
+              <span>Lencana</span>
             </button>
           )}
         </div>
@@ -157,13 +209,20 @@ export default function Dashboard({
               <span className="text-[9px] text-slate-400 font-black tracking-widest uppercase block mb-1">
                 SIKLUS WAKTU
               </span>
-              <span className="text-xl font-black text-slate-800">
-                Minggu {week} <span className="text-slate-400 text-xs font-bold uppercase">/ 8</span>
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-black text-slate-800">
+                  Minggu {week} <span className="text-slate-400 text-xs font-bold uppercase">/ {TOTAL_GAME_WEEKS}</span>
+                </span>
+                {week > HORIZON_WEEKS && (
+                  <span className="text-[9px] font-black bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                    Drain Phase
+                  </span>
+                )}
+              </div>
               <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
                 <div 
                   className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
-                  style={{ width: `${(week / 8) * 100}%` }}
+                  style={{ width: `${Math.min(100, (week / TOTAL_GAME_WEEKS) * 100)}%` }}
                 ></div>
               </div>
             </div>

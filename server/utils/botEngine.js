@@ -30,6 +30,15 @@ export const DEFAULT_BOT_PROFILES = [
   }
 ];
 
+export const BOT_OMEGA_PROFILE = {
+  id: 4,
+  name: 'Bot Omega (DRL Expert)',
+  isBot: true,
+  personality: 'DRL',
+  avatar: '🧬',
+  description: 'Deep Reinforcement Learning (PPO/DQN) model inference dengan heuristic fallback.'
+};
+
 /**
  * 1. Bot Cargo Selection Phase
  * Bot evaluates orders in its cargoPool and claims/declines them.
@@ -56,6 +65,10 @@ export const executeBotCargoSelection = (bot, currentPort, activePorts, rng = Ma
         // Smart checks if tariff is good and if destination aligns with circuit
         const isHighValue = order.tariff >= 11000000;
         accept = isHighValue;
+      } else if (bot.personality === 'DRL') {
+        // DRL agent prefers high-yield orders or strategic destination alignments
+        const isOptimalValue = order.tariff >= 10000000;
+        accept = isOptimalValue;
       } else { // BALANCED
         // Balanced accepts ~60% of regular orders.
         // Draws from the injected rng so a seeded run is reproducible.
@@ -99,10 +112,10 @@ export const executeBotStowagePlacement = (bot, grid, currentPort, activePorts) 
   const remainingPending = [];
 
   // Sort pending containers depending on bot personality:
-  // For SMART bot: Later Port containers are stowed FIRST (so they sink into underdeck 02)
+  // For SMART and DRL bot: Later Port containers are stowed FIRST (so they sink into underdeck 02)
   // and Next Port containers are stowed LAST (so they sit on deck 82/84 above underdeck)
   const containersToStow = [...bot.pendingContainers];
-  if (bot.personality === 'SMART') {
+  if (bot.personality === 'SMART' || bot.personality === 'DRL') {
     containersToStow.sort((a, b) => {
       if (a.destination !== nextPort && b.destination === nextPort) return -1;
       if (a.destination === nextPort && b.destination !== nextPort) return 1;
@@ -124,9 +137,9 @@ export const executeBotStowagePlacement = (bot, grid, currentPort, activePorts) 
       if (config.containerType !== container.containerType) continue;
 
       // Determine preferred tier order:
-      // SMART bot: Next Port -> prefer upper tiers (84, 82). Later Port -> prefer underdeck (02)
+      // SMART & DRL bot: Next Port -> prefer upper tiers (84, 82). Later Port -> prefer underdeck (02)
       let tierOrder = [...config.tiers];
-      if (bot.personality === 'SMART') {
+      if (bot.personality === 'SMART' || bot.personality === 'DRL') {
         if (container.destination === nextPort) {
           tierOrder = ['84', '82', '02'].filter(t => config.tiers.includes(t));
         } else {
@@ -179,4 +192,29 @@ export const processBotTurn = (bot, grid, currentPort, activePorts, rng = Math.r
   const updatedGrid = executeBotStowagePlacement(bot, grid, currentPort, activePorts);
 
   return updatedGrid;
+};
+
+/**
+ * 4. Microservice Integration Helper: Query external Python DRL API
+ * If available, returns AI-recommended decisions; otherwise returns null for heuristic fallback.
+ */
+export const queryDrlService = async (payload) => {
+  const AI_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1200);
+    const res = await fetch(`${AI_URL}/api/drl/decide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // Graceful fallback to heuristic
+  }
+  return null;
 };

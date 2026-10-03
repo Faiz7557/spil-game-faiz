@@ -1,7 +1,7 @@
 import { formatRupiah } from '../utils/gameHelpers';
-import { Ship, Award, RefreshCw, AlertOctagon, Trophy, ShieldAlert, FileSpreadsheet } from 'lucide-react';
+import { Ship, Award, RefreshCw, AlertOctagon, Trophy, ShieldAlert, FileSpreadsheet, BarChart3 } from 'lucide-react';
 
-export default function GameOverModal({ isOpen, cash, accumulatedPenalties, playerRating, history, players, onRestart }) {
+export default function GameOverModal({ isOpen, cash, accumulatedPenalties, playerRating, history, players, onRestart, onOpenAnalytics }) {
   if (!isOpen) return null;
   
   const isBankrupt = cash < 0;
@@ -28,10 +28,10 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
           
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 font-display">
-              {isBankrupt ? 'Operasi Pelayaran Dihentikan! Bangkrut' : 'Siklus Pelayaran 8-Minggu Selesai!'}
+              {isBankrupt ? 'Operasi Pelayaran Dihentikan! Bangkrut' : 'Siklus Pelayaran Selesai! (Termasuk Drain Phase)'}
             </h1>
             <p className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-widest">
-              Laporan Audit Resmi Stowage & Logistik Kapal
+              Laporan Audit Resmi Stowage & Logistik Kapal PT. SPIL
             </p>
           </div>
         </div>
@@ -187,8 +187,17 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
           </div>
         )}
 
-        {/* Restart Action */}
-        <div className="mt-2 flex justify-center border-t border-slate-100 pt-5">
+        {/* Action Buttons */}
+        <div className="mt-2 flex flex-col sm:flex-row justify-center items-center gap-3 border-t border-slate-100 pt-5">
+          {onOpenAnalytics && (
+            <button
+              onClick={onOpenAnalytics}
+              className="flex items-center justify-center gap-2 bg-slate-850 hover:bg-slate-900 text-white font-extrabold text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-md hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              Buka Laporan Audit Pembelajaran
+            </button>
+          )}
           <button
             onClick={onRestart}
             className="flex items-center justify-center gap-2 bg-spil-green hover:bg-spil-green-hover text-white font-extrabold text-xs px-8 py-3.5 rounded-xl uppercase tracking-widest shadow-md hover:scale-[1.02] active:scale-95 transition-all"

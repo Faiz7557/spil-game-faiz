@@ -16,25 +16,49 @@ import {
   calculateDischargeCount,
   processSailingTransition,
   rngForPortCall,
-  OFFLINE_BAYS_BY_LEVEL
+  OFFLINE_BAYS_BY_LEVEL,
+  HORIZON_WEEKS,
+  TOTAL_GAME_WEEKS,
+  DRAIN_WEEKS,
+  countFreeSlots,
+  countTotalSlots
 } from './utils/gameEngine.js';
-import { query } from './utils/db.js';
+import { query, closePool } from './utils/db.js';
 import { initializeDatabase } from './utils/initDb.js';
 import { processBotTurn, DEFAULT_BOT_PROFILES } from './utils/botEngine.js';
 import { hashPassword, verifyPassword, signToken, resolveIdentity, tokenWasRejected } from './utils/auth.js';
 
-
-
 const app = express();
 const PORT = process.env.PORT || 5050;
 
-app.use(cors());
-app.use(express.json());
+// Security headers middleware
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Configurable CORS
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+app.use(cors({ origin: corsOrigin }));
+app.use(express.json({ limit: '1mb' }));
+
+// General API rate limiter (protecting against DoS / excessive queries)
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Terlalu banyak permintaan API. Silakan coba lagi sebentar.' }
+});
+app.use('/api/', generalLimiter);
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: corsOrigin,
     methods: ["GET", "POST"]
   }
 });
@@ -148,6 +172,17 @@ const persistOfflineSession = (session) => {
 // Periodic cleanup for abandoned rooms and sessions in memory (runs every 30 minutes)
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Periodic audit of active timers vs rooms
+setInterval(() => {
+  const timerKeys = Object.keys(ROOM_TIMERS);
+  const roomKeys = Object.keys(ROOMS);
+  const orphanedTimers = timerKeys.filter(k => !ROOMS[k]);
+  if (orphanedTimers.length > 0) {
+    console.warn(`[Timer Audit] ${orphanedTimers.length} orphaned timer(s) found. Cleaning up...`);
+    orphanedTimers.forEach(k => stopTurnTimer(k));
+  }
+}, 5 * 60 * 1000);
 
 setInterval(() => {
   const now = Date.now();
@@ -271,9 +306,25 @@ const upsertSessionToDb = async (sessionId, sessionData) => {
 };
 
 
-// Express REST API fallback (optional health checks)
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'healthy', roomsConnected: Object.keys(ROOMS).length });
+// Health and Readiness Check endpoints (Deep verification of DB connectivity)
+app.get(['/health', '/api/health'], async (req, res) => {
+  let dbStatus = 'connected';
+  try {
+    await query('SELECT 1');
+  } catch {
+    dbStatus = 'disconnected';
+  }
+
+  const isHealthy = dbStatus === 'connected';
+  res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
+    status: isHealthy ? 'healthy' : 'degraded',
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+    activeRooms: Object.keys(ROOMS).length,
+    activeOfflineSessions: Object.keys(OFFLINE_SESSIONS).length,
+    uptimeSeconds: Math.floor(process.uptime())
+  });
 });
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
@@ -491,6 +542,7 @@ io.on('connection', (socket) => {
 
   // 3. Claim Cargo from Shared Cargo Pool
   socket.on('claim_cargo', ({ orderId }) => {
+    if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
@@ -539,6 +591,7 @@ io.on('connection', (socket) => {
 
   // 4. Decline Cargo from Shared Pool (Regular contracts only)
   socket.on('decline_cargo', ({ orderId }) => {
+    if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
@@ -561,6 +614,7 @@ io.on('connection', (socket) => {
   // owns each player's grid end to end, the client only ever says "place
   // this one container here" and re-renders from the broadcast that follows.
   socket.on('place_container', ({ containerId, bay, row, tier }) => {
+    if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
@@ -601,6 +655,7 @@ io.on('connection', (socket) => {
 
   // 6. Remove a container from the acting player's own grid back into the buffer
   socket.on('remove_container', ({ bay, row, tier }) => {
+    if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
@@ -633,6 +688,7 @@ io.on('connection', (socket) => {
   // both already live server-side from place_container/remove_container/
   // claim_cargo, so there is nothing left to trust from the request body.
   socket.on('player_ready', () => {
+    if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
@@ -668,6 +724,7 @@ io.on('connection', (socket) => {
 
   // 8. Player Unready (Cancels ready state)
   socket.on('player_unready', () => {
+    if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
@@ -676,6 +733,47 @@ io.on('connection', (socket) => {
     if (player) {
       player.ready = false;
       broadcastRoomState(roomCode);
+    }
+  });
+
+  // 8a. Chat message handler (Item 2.5)
+  socket.on('chat_message', ({ message }) => {
+    try {
+      const roomCode = socket.roomCode;
+      const room = ROOMS[roomCode];
+      if (!room) return;
+      const player = (socket.playerId && room.players[socket.playerId]) || { name: 'Penonton' };
+
+      const sanitized = String(message || '').slice(0, 200).trim();
+      if (!sanitized) return;
+
+      io.to(roomCode).emit('chat_message', {
+        playerId: socket.playerId || 'spectator',
+        playerName: player.name,
+        message: sanitized,
+        timestamp: Date.now()
+      });
+    } catch (err) {
+      console.error('Error handling chat_message:', err);
+    }
+  });
+
+  // 8b. Spectate room handler (Item 2.6)
+  socket.on('spectate_room', ({ roomCode }) => {
+    try {
+      const code = (roomCode || '').toUpperCase().trim();
+      const room = ROOMS[code];
+      if (!room) {
+        return socket.emit('error_message', 'Kamar tidak ditemukan untuk ditonton.');
+      }
+      socket.join(code);
+      socket.roomCode = code;
+      socket.isSpectator = true;
+      socket.emit('spectate_joined', { roomCode: code, state: room });
+      console.log(`[Spectator Joined] Socket ${socket.id} observing Room ${code}`);
+    } catch (err) {
+      console.error('Error spectating room:', err);
+      socket.emit('error_message', 'Gagal masuk sebagai penonton.');
     }
   });
 
@@ -971,9 +1069,10 @@ const executeSailingTransition = (roomCode) => {
   // Advance Room State
   room.week += 1;
   room.currentPort = nextPort;
+  room.isDrainPhase = room.week > HORIZON_WEEKS && room.week <= TOTAL_GAME_WEEKS;
 
   // Check game over
-  if (room.week > 8) {
+  if (room.week > TOTAL_GAME_WEEKS) {
     room.isGameOver = true;
     
     // Evaluate rating for all players and record each on the leaderboard -
@@ -985,9 +1084,10 @@ const executeSailingTransition = (roomCode) => {
     });
 
     console.log(`[Game Over Room ${roomCode}] Closed sirkuit.`);
+    room.globalCargoPool = [];
   } else {
     // Generate new shared orders for the room
-    room.globalCargoPool = generateOrders(room.currentPort, room.week);
+    room.globalCargoPool = room.isDrainPhase ? [] : generateOrders(room.currentPort, room.week);
   }
 
   // Broadcast the fresh room state & tell clients sailing is complete
@@ -1379,8 +1479,9 @@ app.post('/api/game/offline/depart', (req, res) => {
     const currentPortIndex = currentActivePorts.indexOf(currentPort);
     const nextPort = currentActivePorts[(currentPortIndex + 1) % currentActivePorts.length];
     const nextWeek = week + 1;
-    const isGameOver = nextWeek > 8;
-    const nextOrders = isGameOver
+    const isDrainPhase = nextWeek > HORIZON_WEEKS && nextWeek <= TOTAL_GAME_WEEKS;
+    const isGameOver = nextWeek > TOTAL_GAME_WEEKS;
+    const nextOrders = (isGameOver || isDrainPhase)
       ? []
       : generateOrders(nextPort, nextWeek, currentActivePorts, rngForPortCall(seed, nextWeek, nextPort));
 
@@ -1514,7 +1615,7 @@ app.post('/api/game/offline/depart', (req, res) => {
       pendingContainers: [],
       performanceLog: [...(humanPlayer.performanceLog || []), humanEvaluation],
       lastWeeklyEvaluation: humanEvaluation,
-      cargoPool: isGameOver ? [] : JSON.parse(JSON.stringify(nextOrders))
+      cargoPool: (isGameOver || isDrainPhase) ? [] : JSON.parse(JSON.stringify(nextOrders))
     };
 
     // Transition human grid (discharge nextPort + slide down)
@@ -1608,6 +1709,7 @@ app.post('/api/game/offline/depart', (req, res) => {
     session.sharedGrid = transitionedHumanGrid;
     session.players = finalPlayers;
     session.isGameOver = isGameOver;
+    session.isDrainPhase = isDrainPhase;
 
     persistOfflineSession(session);
 
@@ -1622,13 +1724,50 @@ app.post('/api/game/offline/depart', (req, res) => {
   }
 });
 
-// Start listening
-httpServer.listen(PORT, async () => {
-  console.log(`===================================================`);
-  console.log(`  SPIL Multiplayer Server running on port ${PORT} `);
-  console.log(`===================================================`);
-  await initializeDatabase();
-  await loadRoomsFromDb();
-  await loadSessionsFromDb();
-});
+// Server Boot Sequence & Graceful Shutdown
+let isShuttingDown = false;
+
+const startServer = async () => {
+  try {
+    console.log('[Server] Inisialisasi basis data dan migrasi Knex...');
+    await initializeDatabase();
+    await loadRoomsFromDb();
+    await loadSessionsFromDb();
+
+    httpServer.listen(PORT, () => {
+      console.log(`===================================================`);
+      console.log(`  🚢 SPIL Multiplayer Server running on port ${PORT} `);
+      console.log(`===================================================`);
+    });
+  } catch (err) {
+    console.error('Fatal error saat boot server:', err);
+    process.exit(1);
+  }
+};
+
+const gracefulShutdown = async (signal) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`\n[Server] Menerima sinyal ${signal}. Memulai graceful shutdown...`);
+
+  httpServer.close(async () => {
+    console.log('[Server] HTTP and Socket server berhasil ditutup.');
+    try {
+      await closePool();
+    } catch (err) {
+      console.error('[Server] Gagal menutup pool database:', err);
+    }
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    console.error('[Server] Graceful shutdown timeout (10s). Menghentikan paksa.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+startServer();
 

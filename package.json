@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "npm run lint --prefix client",
+    "build": "npm run build --prefix client",
     "install-all": "npm install && npm install --prefix server && npm install --prefix client",
     "server": "npm start --prefix server",
     "client": "npm run dev --prefix client",
@@ -10,6 +14,7 @@
     "pilot": "node research/run-pilot.mjs"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "vitest": "^5.0.3"
   }
 }

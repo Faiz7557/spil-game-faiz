@@ -1,15 +1,17 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// Falls back to a fixed dev-only value with a loud warning rather than
-// crashing the server, so a missing .env doesn't take down the whole app -
-// but this must never happen in production (see .env.example).
-const JWT_SECRET = process.env.JWT_SECRET || (() => {
-  console.warn('[Auth] WARNING: JWT_SECRET not set in .env - using an insecure default. Set JWT_SECRET before deploying.');
-  return 'insecure-dev-only-secret-do-not-use-in-production';
-})();
+if (!process.env.JWT_SECRET) {
+  console.error('\n=== FATAL ERROR ===');
+  console.error('JWT_SECRET is not set in .env file.');
+  console.error('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  console.error('Then add it to server/.env as: JWT_SECRET=<your-generated-secret>');
+  console.error('==================\n');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const TOKEN_EXPIRY = '30d';
+const TOKEN_EXPIRY = '7d';
 
 export const hashPassword = (password) => bcrypt.hash(password, 10);
 

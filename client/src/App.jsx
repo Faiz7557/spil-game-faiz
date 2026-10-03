@@ -6,10 +6,18 @@ import PerformanceModal from './components/PerformanceModal';
 import GameOverModal from './components/GameOverModal';
 import TariffModal from './components/TariffModal';
 import GlossaryModal from './components/GlossaryModal';
-import { validateGridPhysics, formatRupiah } from './utils/gameHelpers';
-import { AlertCircle, HelpCircle, Anchor, Play, Award, Users, LogIn, Monitor, Network } from 'lucide-react';
+import ISOVisualizerModal from './components/ISOVisualizerModal';
+import TutorialModal from './components/TutorialModal';
+import LearningAnalyticsModal from './components/LearningAnalyticsModal';
+import BadgeGalleryModal from './components/BadgeGalleryModal';
+import BotTurnAnimationModal from './components/BotTurnAnimationModal';
+import ChatPanel from './components/ChatPanel';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { validateGridPhysics, formatRupiah, HORIZON_WEEKS, TOTAL_GAME_WEEKS } from './utils/gameHelpers';
+import { evaluateEarnedBadges } from '../../shared/badgeDefinitions.js';
+import { AlertCircle, HelpCircle, Anchor, Play, Award, Users, LogIn, Monitor, Network, Eye } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5050';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '3000') ? 'http://localhost:5050' : '');
 
 // Stable per-browser identity, persisted across reloads and reconnects.
 // Used as the multiplayer player key (replacing socket.id, which changes on
@@ -77,7 +85,30 @@ export default function App() {
   const [lastWeeklyEvaluation, setLastWeeklyEvaluation] = useState(null);
   const [isTariffOpen, setIsTariffOpen] = useState(false);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
+  const [isISOOpen, setIsISOOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(() => !localStorage.getItem('spil_tutorial_completed'));
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [isBadgeGalleryOpen, setIsBadgeGalleryOpen] = useState(false);
+  const [earnedBadges, setEarnedBadges] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('spil_badges') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [isSpectator, setIsSpectator] = useState(false);
+  const [isBotAnimating, setIsBotAnimating] = useState(false);
+  const [pendingOfflineSession, setPendingOfflineSession] = useState(null);
   const socketRef = useRef(null);
+  const [activeSocket, setActiveSocket] = useState(null);
+
+  // Desktop keyboard shortcuts
+  useKeyboardShortcuts({
+    onToggleGlossary: () => setIsGlossaryOpen(prev => !prev),
+    onToggleTariff: () => setIsTariffOpen(prev => !prev),
+    onToggleISO: () => setIsISOOpen(prev => !prev),
+    onCancelSelection: () => {}
+  });
 
   // Unmount cleanup for sockets and timers
   useEffect(() => {
@@ -88,6 +119,7 @@ export default function App() {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
+        setActiveSocket(null);
       }
     };
   }, []);
@@ -117,6 +149,12 @@ export default function App() {
     
     const socket = io(API_BASE_URL);
     socketRef.current = socket;
+    setActiveSocket(socket);
+
+    socket.on('connect_error', () => {
+      showTemporaryAlert('Koneksi ke server terputus. Mencoba menghubungkan kembali...');
+      setLoading(false);
+    });
 
     // The server owns every online player's grid/pendingContainers end to
     // end (see place_container/remove_container/claim_cargo in server.js) -
@@ -137,6 +175,16 @@ export default function App() {
       setRoomCode(roomCode);
       setRoomState(state);
       setIsInRoom(true);
+      setIsSpectator(false);
+      setLoading(false);
+      localStorage.setItem('spil_room_code', roomCode);
+    });
+
+    socket.on('spectate_joined', ({ roomCode, state }) => {
+      setRoomCode(roomCode);
+      setRoomState(state);
+      setIsInRoom(true);
+      setIsSpectator(true);
       setLoading(false);
       localStorage.setItem('spil_room_code', roomCode);
     });
@@ -521,14 +569,15 @@ export default function App() {
       if (resData.authExpired) { handleAuthExpired(); return; }
       if (resData.success) {
         const session = resData.data;
-        // Weekly evaluation belongs to whoever was active BEFORE this depart -
-        // read it via the still-old activePlayerIndex closure, before
-        // applyOfflineSession moves activePlayerIndex to the next branch.
-        if (!session.isGameOver && session.players[activePlayerIndex]) {
-          setLastWeeklyEvaluation(session.players[activePlayerIndex].lastWeeklyEvaluation);
-          setShowWeeklyModal(true);
+        const prevIndex = activePlayerIndex;
+
+        const hasBots = offlinePlayers.some(p => p.isBot);
+        if (hasBots) {
+          setPendingOfflineSession(session);
+          setIsBotAnimating(true);
+        } else {
+          finishDepartOffline(session, prevIndex);
         }
-        applyOfflineSession(session);
       } else {
         showTemporaryAlert(resData.message || 'Transisi keberangkatan offline gagal.');
       }
@@ -540,15 +589,47 @@ export default function App() {
     }
   };
 
+  const finishDepartOffline = (session, prevIndex) => {
+    if (!session) return;
+    if (!session.isGameOver && session.players[prevIndex]) {
+      const evalData = session.players[prevIndex].lastWeeklyEvaluation;
+      setLastWeeklyEvaluation(evalData);
+      setShowWeeklyModal(true);
+      checkBadges(evalData, session, session.players);
+    } else if (session.isGameOver) {
+      checkBadges(session.players[0]?.lastWeeklyEvaluation, session, session.players);
+    }
+    applyOfflineSession(session);
+    setPendingOfflineSession(null);
+    setIsBotAnimating(false);
+  };
+
+  const checkBadges = (evalData, session, players) => {
+    const { allEarned, newlyEarned } = evaluateEarnedBadges(evalData, session, players, earnedBadges);
+    if (newlyEarned.length > 0) {
+      setEarnedBadges(allEarned);
+      try {
+        localStorage.setItem('spil_badges', JSON.stringify(allEarned));
+      } catch (err) {
+        console.error(err);
+      }
+      showTemporaryAlert(`🏆 Lencana Baru Terbuka: ${newlyEarned.map(b => b.title).join(', ')}!`);
+    }
+  };
+
+  // Spectate Room (Instructor / Observer)
+  const handleSpectateRoom = (e) => {
+    e.preventDefault();
+    if (!roomCodeInput.trim()) return;
+    const socket = connectSocket();
+    setLoading(true);
+    socket.emit('spectate_room', { roomCode: roomCodeInput.trim() });
+  };
+
   // Leave room or reset lobby
   const handleLeaveRoom = () => {
     if (socketRef.current) {
       const socket = socketRef.current;
-      // Wait for the server's ack before disconnecting: emitting then
-      // disconnecting immediately can close the transport before the
-      // 'leave_room' packet is flushed, silently dropping it and leaving a
-      // ghost seat in the room that never gets cleaned up. The timeout is a
-      // fallback in case the server/connection is already gone.
       let done = false;
       const finish = () => {
         if (done) return;
@@ -558,9 +639,11 @@ export default function App() {
       socket.emit('leave_room', finish);
       setTimeout(finish, 1000);
       socketRef.current = null;
+      setActiveSocket(null);
       localStorage.removeItem('spil_room_code');
     }
     setIsInRoom(false);
+    setIsSpectator(false);
     setRoomCode('');
     setRoomState(null);
     setTurnTimer(null);
@@ -866,7 +949,7 @@ export default function App() {
   }
 
   // --- RENDER 2: LOBBY FORM ---
-  if (gameMode === 'ONLINE' && (!isInRoom || !roomState || !roomState.players[myPlayerId])) {
+  if (gameMode === 'ONLINE' && (!isInRoom || !roomState || (!isSpectator && !roomState.players[myPlayerId]))) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up animate-fade-in" style={{ backgroundImage: "linear-gradient(to bottom, #450a0a, #991b1b, #450a0a)" }}>
         <div className="glass-panel max-w-md w-full p-8 text-center border-slate-200 shadow-2xl relative overflow-hidden">
@@ -923,6 +1006,17 @@ export default function App() {
               >
                 <LogIn className="w-4 h-4" />
                 Gabung
+              </button>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={handleSpectateRoom}
+                className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-3 px-4 rounded-xl uppercase tracking-wider text-xs border border-slate-300 transition-all hover:scale-[1.01] active:scale-95"
+              >
+                <Eye className="w-4 h-4 text-slate-600" />
+                Masuk sebagai Penonton (Spectator)
               </button>
             </div>
           </form>
@@ -1034,11 +1128,18 @@ export default function App() {
 
 
   // --- RENDER 3: ACTIVE GAME WORKSPACE (ONLINE & OFFLINE) ---
-  const activeOnlinePlayer = (gameMode === 'ONLINE' && roomState) ? roomState.players[myPlayerId] : null;
+  const firstOnlinePlayer = (gameMode === 'ONLINE' && roomState && Object.keys(roomState.players).length > 0)
+    ? Object.values(roomState.players)[0]
+    : null;
+  const activeOnlinePlayer = (gameMode === 'ONLINE' && roomState) 
+    ? (roomState.players[myPlayerId] || (isSpectator ? firstOnlinePlayer : null))
+    : null;
   const activeOfflinePlayer = (gameMode === 'OFFLINE' && offlinePlayers.length > 0) ? offlinePlayers[activePlayerIndex] : null;
 
   // Map room data based on mode
-  const activePlayerName = gameMode === 'ONLINE' ? (activeOnlinePlayer ? activeOnlinePlayer.name : '') : (activeOfflinePlayer ? activeOfflinePlayer.name : '');
+  const activePlayerName = gameMode === 'ONLINE' 
+    ? (isSpectator ? `Penonton (Mengamati ${firstOnlinePlayer ? firstOnlinePlayer.name : ''})` : (activeOnlinePlayer ? activeOnlinePlayer.name : '')) 
+    : (activeOfflinePlayer ? activeOfflinePlayer.name : '');
   const activePlayerCash = gameMode === 'ONLINE' ? (activeOnlinePlayer ? activeOnlinePlayer.cash : 0) : (activeOfflinePlayer ? activeOfflinePlayer.cash : 0);
   const activePlayerPenalties = gameMode === 'ONLINE' ? (activeOnlinePlayer ? activeOnlinePlayer.accumulatedPenalties : 0) : (activeOfflinePlayer ? activeOfflinePlayer.accumulatedPenalties : 0);
   const isReadyCurrent = gameMode === 'ONLINE' ? (activeOnlinePlayer ? activeOnlinePlayer.ready : false) : (activeOfflinePlayer ? activeOfflinePlayer.ready : false);
@@ -1060,8 +1161,26 @@ export default function App() {
 
   const currentSocketOrIndexId = gameMode === 'ONLINE' ? myPlayerId : activePlayerIndex;
 
+  // Drain Phase status detection
+  const isDrainPhase = (gameMode === 'ONLINE' ? roomState?.isDrainPhase : (offlineWeek > HORIZON_WEEKS && offlineWeek <= TOTAL_GAME_WEEKS)) ?? false;
+
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center max-w-[1400px] mx-auto">
+      {/* 0. Spectator Mode Notice Banner */}
+      {isSpectator && (
+        <div className="w-full mb-4 p-3 bg-purple-900/90 border border-purple-400 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg animate-slide-up">
+          <div className="flex items-center gap-2.5">
+            <Eye className="w-5 h-5 text-purple-300 animate-pulse" />
+            <span className="text-xs font-black uppercase tracking-wider">
+              Mode Penonton (Spectator) — Anda sedang mengamati Kamar {roomCode} secara real-time (Hanya Pantau / Read-only)
+            </span>
+          </div>
+          <span className="text-[10px] bg-purple-800 px-3 py-1 rounded-lg font-mono font-black border border-purple-400/50">
+            OBSERVER
+          </span>
+        </div>
+      )}
+
       {/* 1. Global Alert Banner */}
       {alertMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 animate-bounce">
@@ -1085,6 +1204,10 @@ export default function App() {
         turnTimer={gameMode === 'ONLINE' ? turnTimer : null}
         onOpenTariff={() => setIsTariffOpen(true)}
         onOpenGlossary={() => setIsGlossaryOpen(true)}
+        onOpenTutorial={() => setIsTutorialOpen(true)}
+        onOpenISO={() => setIsISOOpen(true)}
+        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+        onOpenBadges={() => setIsBadgeGalleryOpen(true)}
       />
 
       {/* 3. Bar Status Kompetisi Mode Offline (Human vs AI Benchmark Agents) */}
@@ -1143,24 +1266,26 @@ export default function App() {
           grid={activeGrid}
           currentPort={currentPort}
           pendingContainers={activePendingList}
-          onPlaceContainer={gameMode === 'ONLINE' ? handlePlaceContainer : handlePlaceContainerOffline}
-          onRemoveContainer={gameMode === 'ONLINE' ? handleRemoveContainer : handleRemoveContainerOffline}
+          onPlaceContainer={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handlePlaceContainer : handlePlaceContainerOffline)}
+          onRemoveContainer={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handleRemoveContainer : handleRemoveContainerOffline)}
           activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
           // Sidebar Overhaul Props:
           gameMode={gameMode}
           cargoPool={cargoPool}
-          onAcceptCargo={gameMode === 'ONLINE' ? handleClaimCargoOnline : handleClaimCargoOffline}
-          onDeclineCargo={gameMode === 'ONLINE' ? handleDeclineCargoOnline : handleDeclineCargoOffline}
+          onAcceptCargo={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handleClaimCargoOnline : handleClaimCargoOffline)}
+          onDeclineCargo={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handleDeclineCargoOnline : handleDeclineCargoOffline)}
           vesselLevel={offlineVesselLevel}
-          onUpgradeVessel={handleUpgradeVesselOffline}
+          onUpgradeVessel={isSpectator ? () => {} : handleUpgradeVesselOffline}
           cumulativeGrossRevenue={offlinePlayers[activePlayerIndex]?.cumulativeGrossRevenue || 0}
           activeOfflinePlayerName={activePlayerName}
-          onDepart={handleDepartOffline}
-          loading={loading}
+          onDepart={isSpectator ? () => {} : handleDepartOffline}
+          loading={loading || isSpectator}
           isGameOver={isGameOver}
           isReadyCurrent={isReadyCurrent}
-          onToggleReadyOnline={handleToggleReadyOnline}
+          onToggleReadyOnline={isSpectator ? () => {} : handleToggleReadyOnline}
           onOpenTariff={() => setIsTariffOpen(true)}
+          isDrainPhase={isDrainPhase}
+          onOpenISO={() => setIsISOOpen(true)}
         />
       </div>
 
@@ -1189,6 +1314,7 @@ export default function App() {
         }
         players={formattedPlayersList}
         onRestart={handleLeaveRoom}
+        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
       />
 
       {/* 8. Lembar Informasi Tarif PT. SPIL Modal */}
@@ -1202,6 +1328,57 @@ export default function App() {
       <GlossaryModal 
         isOpen={isGlossaryOpen} 
         onClose={() => setIsGlossaryOpen(false)} 
+      />
+
+      {/* 10. Visualisator Standar ISO 9711 Modal */}
+      <ISOVisualizerModal 
+        isOpen={isISOOpen} 
+        onClose={() => setIsISOOpen(false)} 
+      />
+
+      {/* 11. Panduan & Tutorial Interaktif Modal */}
+      <TutorialModal 
+        isOpen={isTutorialOpen} 
+        onClose={() => {
+          setIsTutorialOpen(false);
+          localStorage.setItem('spil_tutorial_completed', 'true');
+        }} 
+      />
+
+      {/* 12. Laporan Audit Pembelajaran Modal */}
+      <LearningAnalyticsModal 
+        isOpen={isAnalyticsOpen} 
+        onClose={() => setIsAnalyticsOpen(false)} 
+        players={offlinePlayers} 
+        humanPlayer={activeOfflinePlayer}
+        totalWeeks={TOTAL_GAME_WEEKS}
+      />
+
+      {/* 13. In-Game Chat Panel (Online Multiplayer) */}
+      {gameMode === 'ONLINE' && isInRoom && (
+        <ChatPanel 
+          socket={activeSocket} 
+          roomCode={roomCode} 
+          myPlayerId={myPlayerId} 
+        />
+      )}
+
+      {/* 14. Galeri Lencana & Pencapaian Modal */}
+      <BadgeGalleryModal 
+        isOpen={isBadgeGalleryOpen} 
+        onClose={() => setIsBadgeGalleryOpen(false)} 
+        earnedBadges={earnedBadges} 
+      />
+
+      {/* 15. Animasi Giliran Bot AI Modal */}
+      <BotTurnAnimationModal 
+        isOpen={isBotAnimating} 
+        onComplete={() => {
+          finishDepartOffline(pendingOfflineSession, activePlayerIndex);
+        }}
+        bots={offlinePlayers.filter(p => p.isBot)}
+        currentPort={currentPort}
+        nextPort={offlinePorts[(offlinePorts.indexOf(currentPort) + 1) % offlinePorts.length]}
       />
 
       {/* Footer Info Guidance */}

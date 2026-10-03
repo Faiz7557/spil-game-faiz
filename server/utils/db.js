@@ -13,28 +13,56 @@ pg.types.setTypeParser(pg.types.builtins.INT8, (value) => parseInt(value, 10));
 
 const { Pool } = pg;
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/spil_game';
+const getConnectionString = () => {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const host = process.env.DB_HOST || 'localhost';
+  const port = process.env.DB_PORT || '5432';
+  const user = process.env.DB_USER || 'postgres';
+  const password = process.env.DB_PASSWORD || 'postgres';
+  const database = process.env.DB_NAME || 'spil_game';
+  return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+};
+
+const connectionString = getConnectionString();
 
 console.log(`[Database] Connecting to: ${connectionString.replace(/:[^:@]+@/, ':***@')}`);
 
 export const pool = new Pool({
   connectionString,
-  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  max: parseInt(process.env.DB_POOL_MAX || '20', 10),
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000
 });
 
 // Test connection on startup
-pool.connect((err, client, release) => {
-  if (err) {
+export const testConnection = async () => {
+  try {
+    const client = await pool.connect();
+    console.log('[Database] Koneksi PostgreSQL berhasil terhubung.');
+    client.release();
+    return true;
+  } catch (err) {
     console.error('====================================================');
     console.error('  CRITICAL ERROR: Gagal terhubung ke PostgreSQL!');
     console.error('  Pastikan server PostgreSQL Anda berjalan dan');
     console.error('  variabel DATABASE_URL di .env sudah dikonfigurasi.');
     console.error('  Detail error:', err.message || err);
     console.error('====================================================');
-  } else {
-    console.log('[Database] Koneksi PostgreSQL berhasil terhubung.');
-    release();
+    return false;
   }
-});
+};
+
+// Initial non-blocking check
+testConnection();
 
 export const query = (text, params) => pool.query(text, params);
+
+export const closePool = async () => {
+  try {
+    await pool.end();
+    console.log('[Database] Pool koneksi ditutup secara bersih.');
+  } catch (err) {
+    console.error('[Database] Error saat menutup pool:', err.message || err);
+  }
+};

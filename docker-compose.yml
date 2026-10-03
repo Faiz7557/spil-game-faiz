@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: spil_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-spil_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spil_secret_password}
+      POSTGRES_DB: ${POSTGRES_DB:-spil_game}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spil_admin} -d ${POSTGRES_DB:-spil_game}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: spil_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: spil_server
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5050
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-spil_admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-spil_secret_password}
+      DB_NAME: ${POSTGRES_DB:-spil_game}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_SERVICE_URL: http://ai-service:8000
+      JWT_SECRET: ${JWT_SECRET:-spil_production_jwt_secret_key_long_and_secure}
+    ports:
+      - "5050:5050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: spil_client
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: spil_ai_service
+    restart: always
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
+  redis_data:

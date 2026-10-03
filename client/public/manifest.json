@@ -1,0 +1,18 @@
+{
+  "name": "SPIL Game: 4 Jalur - Simulator Logistik & Stowage Kapal",
+  "short_name": "SPIL Game",
+  "description": "Simulator penataan kontainer (stowage planning) berbasis aturan operasional maritim PT SPIL.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#103b22",
+  "theme_color": "#103b22",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

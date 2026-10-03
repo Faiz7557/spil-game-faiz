@@ -14,6 +14,9 @@
 
 // Ports circuit definition
 export const PORTS = ['SBY', 'MKS', 'JYP', 'MDN'];
+export const HORIZON_WEEKS = 8;
+export const DRAIN_WEEKS = 3;
+export const TOTAL_GAME_WEEKS = HORIZON_WEEKS + DRAIN_WEEKS;
 
 export const PORT_CODES_INFO = [
   { code: 'SBY', number: '01', name: 'Surabaya', fullName: 'Pelabuhan Tanjung Perak, Surabaya' },

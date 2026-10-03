@@ -13,7 +13,10 @@ export {
   REEFER_BAYS,
   getBayConfig,
   createEmptyGrid,
-  validateGridPhysics
+  validateGridPhysics,
+  HORIZON_WEEKS,
+  DRAIN_WEEKS,
+  TOTAL_GAME_WEEKS
 } from '../../shared/gameConstants.js';
 // `export ... from` re-exports but does not bind these locally, and several
 // functions below (generateOrders, calculateRestows) use them as defaults.
@@ -157,7 +160,10 @@ export const calculateRestows = (grid, currentPort, activePorts = PORTS) => {
       const stack = grid[bay][row];
       // Tiers ordered bottom to top: '02' (underdeck) -> '82' (on-deck lower) -> '84' (on-deck upper)
       // Check which tiers exist dynamically
-      const activeTiers = config.tiers.includes('02') ? ['02', '82', '84'] : ['82', '84'];
+      const activeTiers = [...config.tiers].sort((a, b) => {
+        const order = { '02': 0, '82': 1, '84': 2 };
+        return (order[a] ?? 99) - (order[b] ?? 99);
+      });
       
       let nextPortFound = false;
       
@@ -259,6 +265,7 @@ export const calculateRollingPenalties = (orders, grid, currentPort) => {
 };
 
 /**
+ * @deprecated Use calculateDischargeRevenue instead. Kept for research reference only.
  * Calculates gross revenue of all containers successfully loaded at this port
  * ('load' recognition - kept for reference/research use, not the shipped
  * convention; see calculateDischargeRevenue).
@@ -322,6 +329,36 @@ export const calculateDischargeCount = (grid, nextPort) => {
     });
   });
   return count;
+};
+
+/**
+ * Counts empty (unoccupied) slots for a specific container type.
+ */
+export const countFreeSlots = (grid, containerType) => {
+  let free = 0;
+  Object.keys(grid).forEach(bay => {
+    const config = getBayConfig(bay);
+    if (config.containerType !== containerType) return;
+    config.rows.forEach(row => {
+      config.tiers.forEach(tier => {
+        if (!grid[bay][row][tier]) free++;
+      });
+    });
+  });
+  return free;
+};
+
+/**
+ * Counts total slots for a specific container type.
+ */
+export const countTotalSlots = (grid, containerType) => {
+  let total = 0;
+  Object.keys(grid).forEach(bay => {
+    const config = getBayConfig(bay);
+    if (config.containerType !== containerType) return;
+    total += config.rows.length * config.tiers.length;
+  });
+  return total;
 };
 
 /**

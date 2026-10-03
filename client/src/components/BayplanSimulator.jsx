@@ -1,9 +1,10 @@
 import { useState, Fragment } from 'react';
-import { getBayConfig, formatRupiah, getNextPort } from '../utils/gameHelpers';
+import { getBayConfig, formatRupiah, getNextPort, previewPlacementOverstow } from '../utils/gameHelpers';
+import CapacityMeter from './CapacityMeter';
 import { 
   Ship, Info, ArrowDown, ShieldAlert, Sparkles, XCircle, Anchor, Lock,
   Play, PhoneCall, Check, Trash2, AlertCircle, ChevronDown, ChevronUp, TrendingUp, Users,
-  ChevronLeft, ChevronRight, FileText
+  ChevronLeft, ChevronRight, FileText, RotateCcw, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 
 export default function BayplanSimulator({ 
@@ -27,12 +28,15 @@ export default function BayplanSimulator({
   isGameOver,
   isReadyCurrent,
   onToggleReadyOnline,
-  onOpenTariff
+  onOpenTariff,
+  isDrainPhase = false,
+  onOpenISO
 }) {
   const [selectedPendingId, setSelectedPendingId] = useState(null);
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(false);
-  const [isGuideExpanded, setIsGuideExpanded] = useState(true);
+  const [isGuideExpanded, setIsGuideExpanded] = useState(false);
   const [activeOrderIndex, setActiveOrderIndex] = useState(0);
+  const [placedHistory, setPlacedHistory] = useState([]);
   const nextPort = getNextPort(currentPort, activePorts);
 
   // Local helper to determine if a container is a restow blocker in real-time
@@ -56,6 +60,19 @@ export default function BayplanSimulator({
     return false;
   };
 
+  // Handle place with history tracking for Undo
+  const handlePlaceAndTrack = (containerId, bay, row, tier) => {
+    setPlacedHistory(prev => [...prev, { containerId, bay, row, tier }]);
+    onPlaceContainer(containerId, bay, row, tier);
+  };
+
+  const handleUndo = () => {
+    if (placedHistory.length === 0) return;
+    const lastPlacement = placedHistory[placedHistory.length - 1];
+    onRemoveContainer(lastPlacement.bay, lastPlacement.row, lastPlacement.tier);
+    setPlacedHistory(prev => prev.slice(0, -1));
+  };
+
   // Drag and Drop handlers
   const handleDragStart = (e, containerId) => {
     e.dataTransfer.setData('text/plain', containerId);
@@ -70,7 +87,7 @@ export default function BayplanSimulator({
     const containerId = e.dataTransfer.getData('text/plain');
     if (containerId) {
       if (grid?.[bay]?.[row]?.[tier] !== null && grid?.[bay]?.[row]?.[tier] !== undefined) return;
-      onPlaceContainer(containerId, bay, row, tier);
+      handlePlaceAndTrack(containerId, bay, row, tier);
     }
   };
 
@@ -96,9 +113,10 @@ export default function BayplanSimulator({
       }
       // Slot occupied: Remove container and return to pending
       onRemoveContainer(bay, row, tier);
+      setPlacedHistory(prev => prev.filter(p => !(p.bay === bay && p.row === row && p.tier === tier)));
     } else if (activeSelectedContainer) {
       // Slot empty and container selected: Place container.
-      onPlaceContainer(selectedPendingId, bay, row, tier);
+      handlePlaceAndTrack(selectedPendingId, bay, row, tier);
     }
   };
 
@@ -256,6 +274,9 @@ export default function BayplanSimulator({
           </div>
         </div>
 
+        {/* Capacity Budgeting Meter Widget */}
+        <CapacityMeter grid={grid} pendingContainers={pendingContainers} />
+
         {/* ISO 9711 Guide Card (Collapsible, Beautified) */}
         <div className="glass-panel bg-white border border-slate-200/90 shadow-md hover:shadow-lg transition-all duration-300 rounded-2xl flex flex-col overflow-hidden">
           <button 
@@ -337,6 +358,16 @@ export default function BayplanSimulator({
               Pasar Kargo (Sales Call)
             </h3>
             <div className="flex items-center gap-1.5">
+              {onOpenISO && (
+                <button
+                  type="button"
+                  onClick={onOpenISO}
+                  className="text-[8px] font-black text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-md flex items-center gap-1 transition-all"
+                  title="Buka Visualisator Standar ISO 9711 (Bay-Row-Tier)"
+                >
+                  <Ship className="w-2.5 h-2.5 text-cyan-600" /> ISO
+                </button>
+              )}
               {onOpenTariff && (
                 <button
                   type="button"
@@ -353,7 +384,19 @@ export default function BayplanSimulator({
             </div>
           </div>
 
-          {cargoPool.length === 0 ? (
+          {isDrainPhase ? (
+            <div className="py-6 px-3 text-center bg-gradient-to-br from-amber-50 to-orange-50/50 rounded-2xl border border-amber-200 shadow-xs text-slate-800 animate-fade-in">
+              <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mb-2">
+                <Anchor className="w-5 h-5 animate-pulse" />
+              </div>
+              <h4 className="text-xs font-black uppercase text-amber-900 tracking-wider">
+                Fase Pelayaran Akhir (Drain Phase)
+              </h4>
+              <p className="text-[10px] text-slate-600 font-medium leading-relaxed mt-1">
+                Tidak ada pesanan kargo baru yang ditawarkan. Selesaikan pelayaran untuk mengakui pendapatan kargo yang masih ada di atas kapal.
+              </p>
+            </div>
+          ) : cargoPool.length === 0 ? (
             <div className="py-8 text-center text-slate-400 font-bold text-xs bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
               <Ship className="w-8 h-8 mx-auto text-slate-350 mb-2" />
               Pasar Kargo Kosong
@@ -503,6 +546,16 @@ export default function BayplanSimulator({
               Buffer Kargo
             </h3>
             <div className="flex items-center gap-2">
+              {placedHistory.length > 0 && (
+                <button 
+                  type="button"
+                  onClick={handleUndo}
+                  className="flex items-center gap-1 text-[8.5px] bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold px-2 py-0.5 rounded-md border border-amber-300 shadow-sm transition-all"
+                  title="Batalkan penempatan kontainer terakhir (Ctrl+Z)"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" /> Undo
+                </button>
+              )}
               <span className="text-[7.5px] font-black text-emerald-800 bg-emerald-50 border border-emerald-150/70 px-2 py-0.5 rounded-full shadow-inner">
                 {pendingContainers.length} Kontainer
               </span>
@@ -888,18 +941,35 @@ export default function BayplanSimulator({
                             const isTargetSelectedSlot = selectedPendingId && !container;
                             const isTransit = container && container.origin !== currentPort;
                             
+                            // Overstow & Type compatibility preview
+                            const isTypeCompatible = activeSelectedContainer 
+                              ? config.containerType === activeSelectedContainer.containerType 
+                              : true;
+
+                            const overstowPreview = (isTargetSelectedSlot && activeSelectedContainer && isTypeCompatible)
+                              ? previewPlacementOverstow(grid, bay, row, tier, activeSelectedContainer, currentPort, activePorts)
+                              : null;
+
+                            if (isTargetSelectedSlot) {
+                              if (!isTypeCompatible) {
+                                bgClass = 'bg-slate-100/70 border-slate-300 border-dashed text-slate-400 cursor-not-allowed';
+                              } else if (overstowPreview?.causesRestow) {
+                                bgClass = 'bg-rose-50/80 border-rose-400 border-dashed text-rose-800 animate-pulse';
+                                borderClass = 'border-rose-400 shadow-sm';
+                              } else {
+                                bgClass = 'bg-emerald-50/80 border-spil-green border-dashed text-emerald-800 animate-pulse';
+                                borderClass = 'border-emerald-500 shadow-sm';
+                              }
+                            }
+                            
                             return (
                               <div
                                 key={row}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, bay, row, tier)}
                                 onClick={() => handleSlotClick(bay, row, tier)}
-                                title={container ? (isTransit ? `Kargo Transit (${container.origin} → ${container.destination}) - Terkunci` : `Kargo dari ${container.origin} ke ${container.destination} - Klik untuk Bongkar`) : (isTargetSelectedSlot ? 'Klik untuk Letakkan Kontainer' : 'Slot Kosong')}
+                                title={container ? (isTransit ? `Kargo Transit (${container.origin} → ${container.destination}) - Terkunci` : `Kargo dari ${container.origin} ke ${container.destination} - Klik untuk Bongkar`) : (isTargetSelectedSlot ? (isTypeCompatible ? (overstowPreview?.causesRestow ? overstowPreview.explanation : 'Posisi penempatan optimal bebas denda restow.') : `Slot khusus ${config.containerType}`) : 'Slot Kosong')}
                                 className={`relative h-full rounded-xl border flex flex-col justify-center items-center cursor-pointer transition-all duration-200 select-none ${bgClass} ${borderClass} ${
-                                  isTargetSelectedSlot 
-                                    ? 'border-dashed border-spil-green bg-emerald-50/80 animate-pulse'
-                                    : ''
-                                } ${
                                   isRestowed 
                                     ? 'border-spil-red border-2 shadow-md animate-border-pulse' 
                                     : ''
@@ -947,6 +1017,32 @@ export default function BayplanSimulator({
                                       </div>
                                     )}
                                   </>
+                                ) : isTargetSelectedSlot ? (
+                                  !isTypeCompatible ? (
+                                    <span className="text-[7.5px] font-black text-slate-400 text-center px-1 leading-tight">
+                                      ⛔ Khusus {config.containerType}
+                                    </span>
+                                  ) : overstowPreview?.causesRestow ? (
+                                    <div className="flex flex-col items-center justify-center p-1 text-center select-none">
+                                      <span className="text-[7.5px] font-black text-rose-700 bg-rose-100 px-1 py-0.2 rounded flex items-center gap-0.5">
+                                        <AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />
+                                        +{overstowPreview.restowCount} Restow
+                                      </span>
+                                      <span className="text-[6.5px] text-rose-600 font-extrabold mt-0.5">
+                                        -Rp {formatRupiah(overstowPreview.penaltyCost).split('.')[0]} Jt
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center justify-center p-1 text-center select-none">
+                                      <span className="text-[7.5px] font-black text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                        <CheckCircle2 className="w-2.5 h-2.5 text-spil-green shrink-0" />
+                                        Optimal
+                                      </span>
+                                      <span className="text-[6.5px] text-emerald-600 font-bold mt-0.5">
+                                        Bebas Restow
+                                      </span>
+                                    </div>
+                                  )
                                 ) : (
                                   /* Empty slot placeholder */
                                   <span className="text-[9px] text-slate-400 font-extrabold opacity-60 tracking-wider">
