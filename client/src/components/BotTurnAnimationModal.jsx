@@ -51,10 +51,10 @@ export default function BotTurnAnimationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-scale-up p-6 text-center flex flex-col items-center">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-white/10 animate-scale-up p-6 text-center flex flex-col items-center transition-colors text-slate-800 dark:text-slate-100">
         {/* Animated Radar/Ship Icon */}
         <div className="relative mb-4">
-          <div className="w-20 h-20 rounded-3xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-4xl shadow-inner animate-bounce-slow">
+          <div className="w-20 h-20 rounded-3xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-4xl shadow-inner animate-bounce-slow">
             {activeBot.avatar || '🤖'}
           </div>
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
@@ -63,15 +63,15 @@ export default function BotTurnAnimationModal({
           </span>
         </div>
 
-        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full mb-2">
+        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 px-3 py-1 rounded-full mb-2">
           Simulasi Giliran AI Benchmark
         </span>
 
-        <h3 className="text-lg font-black text-slate-800 tracking-tight">
+        <h3 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">
           {activeBot.name} Sedang Menata Kapal
         </h3>
         
-        <p className="text-xs text-slate-500 font-medium mt-1 mb-4 leading-relaxed max-w-xs">
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 mb-4 leading-relaxed max-w-xs">
           {activeBot.personality === 'SMART' && 'Memfilter pesanan bernilai tinggi dan menyusun kargo Later-Port di posisi terdalam...'}
           {activeBot.personality === 'GREEDY' && 'Menerima semua kargo yang ditawarkan hingga kapasitas kapal penuh...'}
           {activeBot.personality === 'BALANCED' && 'Menyeimbangkan kuota risiko committed dan non-committed...'}
@@ -87,19 +87,19 @@ export default function BotTurnAnimationModal({
                 idx === currentBotIndex
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105'
                   : idx < currentBotIndex
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                  : 'bg-slate-50 text-slate-400 border-slate-200'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-white/10'
               }`}
             >
               <span>{b.avatar || '🤖'}</span>
               <span>{b.name.split(' ')[0]}</span>
-              {idx < currentBotIndex && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+              {idx < currentBotIndex && <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
             </div>
           ))}
         </div>
 
         {/* Progress bar */}
-        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-6 flex">
+        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden mb-6 flex">
           <div
             className="bg-indigo-600 h-full rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}
@@ -109,7 +109,7 @@ export default function BotTurnAnimationModal({
         {/* Skip button */}
         <button
           onClick={handleSkip}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider transition-all hover:scale-105"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs uppercase tracking-wider transition-all hover:scale-105"
         >
           <FastForward className="w-4 h-4" /> Lewati Animasi (Skip)
         </button>

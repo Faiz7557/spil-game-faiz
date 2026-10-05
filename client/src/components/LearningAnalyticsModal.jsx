@@ -62,7 +62,7 @@ export default function LearningAnalyticsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in print:bg-white print:p-0 print:static">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 animate-scale-up max-h-[92vh] flex flex-col print:shadow-none print:border-none print:max-h-none print:w-full">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 dark:border-white/10 animate-scale-up max-h-[92vh] flex flex-col print:shadow-none print:border-none print:max-h-none print:w-full transition-colors text-slate-800 dark:text-slate-100">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-spil-green px-6 py-5 text-white flex items-center justify-between shrink-0 print:bg-slate-900">
           <div className="flex items-center gap-3">
@@ -101,50 +101,50 @@ export default function LearningAnalyticsModal({
         <div className="p-6 overflow-y-auto space-y-6 print:overflow-visible">
           {/* Top KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl">
-              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide block">Saldo Akhir (Cash)</span>
-              <span className="text-lg font-black text-emerald-950 mt-1 block">
+            <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 rounded-2xl">
+              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide block">Saldo Akhir (Cash)</span>
+              <span className="text-lg font-black text-emerald-950 dark:text-white mt-1 block">
                 {formatRupiah(player?.cash)}
               </span>
-              <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">Modal Awal Rp 150 Jt</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-300 font-semibold mt-0.5 block">Modal Awal Rp 150 Jt</span>
             </div>
 
-            <div className="p-4 bg-blue-50/70 border border-blue-200/80 rounded-2xl">
-              <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block">Pendapatan Kotor</span>
-              <span className="text-lg font-black text-blue-950 mt-1 block">
+            <div className="p-4 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 rounded-2xl">
+              <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide block">Pendapatan Kotor</span>
+              <span className="text-lg font-black text-blue-950 dark:text-white mt-1 block">
                 {formatRupiah(totalGrossRevenue)}
               </span>
-              <span className="text-[10px] text-blue-600 font-semibold mt-0.5 block">Dari kargo ter-discharge</span>
+              <span className="text-[10px] text-blue-600 dark:text-blue-300 font-semibold mt-0.5 block">Dari kargo ter-discharge</span>
             </div>
 
-            <div className="p-4 bg-rose-50/70 border border-rose-200/80 rounded-2xl">
-              <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wide block">Total Denda Akumulasi</span>
-              <span className="text-lg font-black text-rose-950 mt-1 block">
+            <div className="p-4 bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 rounded-2xl">
+              <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wide block">Total Denda Akumulasi</span>
+              <span className="text-lg font-black text-rose-950 dark:text-white mt-1 block">
                 {formatRupiah(totalPenalties)}
               </span>
-              <span className="text-[10px] text-rose-600 font-semibold mt-0.5 block">Restow + Rolling</span>
+              <span className="text-[10px] text-rose-600 dark:text-rose-300 font-semibold mt-0.5 block">Restow + Rolling</span>
             </div>
 
-            <div className="p-4 bg-purple-50/70 border border-purple-200/80 rounded-2xl">
-              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wide block">Rating Kapten</span>
-              <span className="text-sm font-black text-purple-950 mt-1 block leading-tight">
+            <div className="p-4 bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/60 rounded-2xl">
+              <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide block">Rating Kapten</span>
+              <span className="text-sm font-black text-purple-950 dark:text-white mt-1 block leading-tight">
                 {player?.playerRating || 'Perwira Logistik Junior'}
               </span>
-              <span className="text-[10px] text-purple-600 font-semibold mt-0.5 block">Berdasarkan net profit</span>
+              <span className="text-[10px] text-purple-600 dark:text-purple-300 font-semibold mt-0.5 block">Berdasarkan net profit</span>
             </div>
           </div>
 
           {/* Benchmark Comparison Table vs Bots */}
           {players.length > 1 && (
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-spil-green" />
+            <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+              <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-spil-green dark:text-emerald-400" />
                 Perbandingan Performa: Anda vs AI Benchmark Agents
               </h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-white/10 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
                       <th className="py-2 px-3">Agen / Pemain</th>
                       <th className="py-2 px-3">Tipe Strategi</th>
                       <th className="py-2 px-3 text-right">Saldo Kas</th>
@@ -152,31 +152,31 @@ export default function LearningAnalyticsModal({
                       <th className="py-2 px-3 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                     {players.map((p, idx) => {
                       const isHuman = !p.isBot;
                       return (
-                        <tr key={p.id} className={isHuman ? 'bg-emerald-50/80 font-black' : 'text-slate-700'}>
+                        <tr key={p.id} className={isHuman ? 'bg-emerald-50/80 dark:bg-emerald-950/50 font-black' : 'text-slate-700 dark:text-slate-300'}>
                           <td className="py-2.5 px-3 flex items-center gap-2">
                             <span>{p.avatar || (isHuman ? '👤' : '🤖')}</span>
-                            <span className={isHuman ? 'text-spil-green' : 'text-slate-800'}>{p.name}</span>
+                            <span className={isHuman ? 'text-spil-green dark:text-emerald-400' : 'text-slate-800 dark:text-white'}>{p.name}</span>
                           </td>
-                          <td className="py-2.5 px-3 text-slate-500 text-[11px]">
+                          <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
                             {isHuman ? 'Chief Stowage Planner' : p.personality}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black">
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-white">
                             {formatRupiah(p.cash)}
                           </td>
-                          <td className="py-2.5 px-3 text-right text-rose-600 font-semibold">
+                          <td className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400 font-semibold">
                             {formatRupiah(p.accumulatedPenalties || 0)}
                           </td>
                           <td className="py-2.5 px-3 text-center">
                             {idx === 0 ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
                                 🥇 Peringkat 1
                               </span>
                             ) : (
-                              <span className="text-slate-400 text-[10px]">#{idx + 1}</span>
+                              <span className="text-slate-400 dark:text-slate-500 text-[10px]">#{idx + 1}</span>
                             )}
                           </td>
                         </tr>
@@ -190,8 +190,8 @@ export default function LearningAnalyticsModal({
 
           {/* AI Pedagogical Insights */}
           <div className="space-y-3">
-            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-500" />
+            <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-amber-500 dark:text-amber-400" />
               Catatan Evaluasi Edukatif & Rekomendasi Solusi
             </h4>
             <div className="space-y-2.5">
@@ -200,18 +200,18 @@ export default function LearningAnalyticsModal({
                   key={i}
                   className={`p-3.5 rounded-2xl border flex items-start gap-3 text-xs ${
                     ins.type === 'success'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                      : 'bg-amber-50 border-amber-200 text-amber-900'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
+                      : 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200'
                   }`}
                 >
                   {ins.type === 'success' ? (
-                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   ) : (
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   )}
                   <div>
                     <strong className="block font-black text-xs mb-0.5">{ins.title}</strong>
-                    <span className="leading-relaxed text-slate-700">{ins.desc}</span>
+                    <span className="leading-relaxed text-slate-700 dark:text-slate-300">{ins.desc}</span>
                   </div>
                 </div>
               ))}
@@ -220,13 +220,13 @@ export default function LearningAnalyticsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0 print:hidden">
-          <span className="text-[11px] text-slate-500 font-medium">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0 print:hidden">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
             PT. Salam Pacific Indonesia Lines — Serious Game CSPP Research
           </span>
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all"
           >
             Tutup Laporan
           </button>

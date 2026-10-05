@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="PlantPulse — evidence-backed reliability decision and follow-up workspace. CALIBER 2026 Case 2 prototype by Team Heisenberg." />
+    <title>PlantPulse · Reliability Workspace</title>
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/mascot.png" />
+    <link rel="apple-touch-icon" href="/mascot.png" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf8ee" />
+    <meta property="og:image" content="/mascot.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wdth,wght@100..125,500..900&family=Google+Sans+Flex:opsz,wght@6..144,100..1000&family=Google+Sans+Code:wght@300..800&display=swap" rel="stylesheet" />
+    <script>
+      // Apply the stored theme before first paint, so the page never flashes the wrong one. No choice yet: light.
+      (function () { var t; try { t = localStorage.getItem("plantpulse.theme"); } catch (e) {}
+        if (t !== "light" && t !== "dark") t = "light";
+        document.documentElement.dataset.theme = t; })();
+    </script>
+  </head>
+  <body>
+    <!--
+      THESIS: A control room for reliability follow-through: every figure is a recorded value that opens its source, and nothing closes without evidence. Refuses the fake-live KPI wall and the failure-prediction dashboard.
+      OWN-WORLD: Deep navy ground lit from the top left; smoked-glass panels with a hairline edge and lit top lip; one interactive blue; strict status vocabulary (red trip/overdue, amber alarm, green verified, cyan observed, violet = model output); hatching for anything simulated. IBM Plex Sans for UI, IBM Plex Mono for tags and source IDs, Archivo wide-heavy for landing display.
+      STORY: The manager sees recorded loss by month and plant, the engineer picks the case the Problem Tank ranks first, reads condition against limits and a cited brief, and the planner closes actions only through evidence and a reviewer.
+      FIRST VIEWPORT: Glass sidebar with the active-case switcher; workflow stepper with the next step; role tabs (View as) and Customize; five headline tiles with sparklines and rings; then the draggable widget grid.
+      FORM: Brief-pinned direction (user references: IndustryOS analytics, an OEE ops board, Syntrix FactoryCore); revision 2 of seed b1ee7431.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

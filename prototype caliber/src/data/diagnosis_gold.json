@@ -1,0 +1,11 @@
+{
+  "written": "2026-10-02",
+  "rule": "Gold = the library mode matching the root-cause statement on RCA slide 7/11. Written before any LLM diagnosis run; never edited after seeing results.",
+  "cases": {
+    "PU-2101B": { "mode": "PU-1", "rca_root_cause": "Premature mechanical seal failure caused by intermittent dry-running: suction cavitation during feed swings reduced NPSH and seal-flush flow dropped below the 6 L/min minimum, with no interlock to protect the seal." },
+    "KO-3201": { "mode": "CO-1", "rca_root_cause": "Journal-bearing babbitt distress caused by degraded oil-film strength from water ingress via a leaking lube-oil cooler tube, undetected due to absence of online water-in-oil monitoring, leading to rising vibration and a high-high trip." },
+    "PM-4405B": { "mode": "EM-1", "rca_root_cause": "Motor drive-end bearing failure caused by grease degradation from an over-extended, non-risk-based re-lubrication interval, undetected due to absence of bearing-temperature trending, resulting in bearing overheating and motor trip." },
+    "HE-3301": { "mode": "HX-1", "rca_root_cause": "Accelerated tube-side coke/polymer fouling driven by higher-than-design feed heavy-ends, allowed to progress by the absence of a dP-based cleaning trigger and fouling KPI, causing duty loss, high dP and a forced rate cut." },
+    "BL-5702": { "mode": "BL-1", "rca_root_cause": "High vibration from coupling misalignment aggravated by soft-foot and an over-aged elastomer coupling element, undetected because periodic alignment/soft-foot checks were absent from the PM and the vibration route interval was too long." }
+  }
+}

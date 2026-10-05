@@ -11,7 +11,7 @@ export default function BadgeGalleryModal({ isOpen, onClose, earnedBadges = [] }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-scale-up flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 dark:border-white/10 animate-scale-up flex flex-col max-h-[90vh] transition-colors">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-spil-red px-6 py-5 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -38,21 +38,21 @@ export default function BadgeGalleryModal({ isOpen, onClose, earnedBadges = [] }
         </div>
 
         {/* Progress Header Card */}
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200/80 flex items-center justify-between">
+        <div className="bg-slate-50 dark:bg-slate-800/80 px-6 py-4 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-lg shadow-sm">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-lg shadow-sm">
               🏆
             </div>
             <div>
-              <span className="text-xs font-black text-slate-800 uppercase tracking-wide block">
+              <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide block">
                 Progres Koleksi Lencana
               </span>
-              <span className="text-[11px] text-slate-500 font-semibold">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                 {earnedCount} dari {totalBadges} Penghargaan Terbuka ({progressPercent}%)
               </span>
             </div>
           </div>
-          <div className="w-36 bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
+          <div className="w-36 bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden flex">
             <div
               className="bg-gradient-to-r from-amber-400 to-yellow-600 h-full rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
@@ -70,16 +70,16 @@ export default function BadgeGalleryModal({ isOpen, onClose, earnedBadges = [] }
                 key={badge.id}
                 className={`p-4 rounded-2xl border transition-all duration-300 flex items-start gap-3.5 relative overflow-hidden ${
                   isEarned
-                    ? 'bg-white border-amber-300/80 shadow-md ring-1 ring-amber-400/20'
-                    : 'bg-slate-50/70 border-slate-200/80 opacity-60'
+                    ? 'bg-white dark:bg-slate-800/90 border-amber-300/80 dark:border-amber-400/40 shadow-md ring-1 ring-amber-400/20'
+                    : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-white/5 opacity-60'
                 }`}
               >
                 {/* Badge Icon */}
                 <div
                   className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border ${
                     isEarned
-                      ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 shadow-sm animate-pulse-slow'
-                      : 'bg-slate-100 border-slate-200 text-slate-400'
+                      ? 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/60 dark:to-amber-900/60 border-amber-300 dark:border-amber-500/40 shadow-sm animate-pulse-slow'
+                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-400'
                   }`}
                 >
                   {isEarned ? badge.icon : '🔒'}
@@ -88,24 +88,24 @@ export default function BadgeGalleryModal({ isOpen, onClose, earnedBadges = [] }
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400">
                       {badge.category}
                     </span>
                     {isEarned ? (
-                      <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                         <CheckCircle2 className="w-3 h-3" /> Terbuka
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                         <Lock className="w-3 h-3" /> Terkunci
                       </span>
                     )}
                   </div>
 
-                  <h4 className="text-xs font-black text-slate-800 leading-tight">
+                  <h4 className="text-xs font-black text-slate-800 dark:text-white leading-tight">
                     {badge.title}
                   </h4>
-                  <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1">
                     {badge.description}
                   </p>
                 </div>
@@ -115,10 +115,10 @@ export default function BadgeGalleryModal({ isOpen, onClose, earnedBadges = [] }
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-white/10 flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all"
           >
             Tutup Galeri
           </button>

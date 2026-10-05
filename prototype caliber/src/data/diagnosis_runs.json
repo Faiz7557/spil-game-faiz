@@ -1,0 +1,1886 @@
+{
+ "PU-2101B|8": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "PU-1",
+     "title": "Mechanical-seal failure from dry running or cavitation",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration is above the baseline band and discharge pressure is below it, matching two expected signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-1"
+       ]
+      },
+      {
+       "text": "Seal Flush Flow decreased from 6.529 L/min to 6.178 L/min, consistent with the expected falling flush flow.",
+       "refs": [
+        "E1:hist:2025-10-23",
+        "E1:hist:2025-12-18",
+        "FM:PU-1"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Seal Flush Flow remains inside the baseline band at z -2.29.",
+       "refs": [
+        "PP:diag:PU-2101B:w9"
+       ]
+      },
+      {
+       "text": "Seal Flush Flow is 6.178 L/min, above the low alarm of 5 L/min.",
+       "refs": [
+        "E1:hist:2025-12-18",
+        "E1:info:Seal Flush Flow"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-2",
+     "title": "Bearing lubrication degradation",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration and bearing temperature are above their baseline bands, matching the expected lubrication-degradation signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-2"
+       ]
+      },
+      {
+       "text": "Seal Flush Flow stays inside the baseline band, as expected for this mode.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Discharge Pressure is below the baseline band at z -5.96 rather than staying in band as expected.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-2"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-4",
+     "title": "Pump-driver misalignment",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration and bearing temperature are above their baseline bands, matching the expected misalignment signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-4"
+       ]
+      },
+      {
+       "text": "Seal Flush Flow stays inside the baseline band, as expected for this mode.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-4"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Discharge Pressure is below the baseline band at z -5.96 rather than staying in band as expected.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-4"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-3",
+     "title": "Impeller wear or internal recirculation",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Discharge Pressure is below the baseline band and Seal Flush Flow remains inside it, matching the expected signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Bearing Temp is above the baseline band at z 4.09 rather than staying in band as expected.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-3"
+       ]
+      },
+      {
+       "text": "PlantPulse scores PU-3 at 0.125 versus 0.375 for each of PU-1, PU-2 and PU-4.",
+       "refs": [
+        "PP:diag:PU-2101B:w9"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-5",
+     "title": "Seal-flush line plugging",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Seal Flush Flow decreased from 6.529 L/min to 6.178 L/min, consistent with the expected falling flush flow.",
+       "refs": [
+        "E1:hist:2025-10-23",
+        "E1:hist:2025-12-18",
+        "FM:PU-5"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Seal Flush Flow remains inside the baseline band while vibration, discharge pressure and bearing temperature are outside their bands, contrary to the expected plugging pattern.",
+       "refs": [
+        "PP:diag:PU-2101B:w9",
+        "FM:PU-5"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Inspect bearing oil level and condition.",
+    "separates": [
+     "PU-2",
+     "PU-1",
+     "PU-4"
+    ],
+    "if_positive": "Low or degraded oil would favor PU-2 over the other tied hypotheses, without excluding coexisting faults.",
+    "if_negative": "Good oil would weaken PU-2 and leave PU-1 and PU-4 unresolved.",
+    "refs": [
+     "FM:PU-2",
+     "FM:PU-1",
+     "FM:PU-4"
+    ]
+   },
+   "abstentions": [
+    "PU-1, PU-2 and PU-4 remain tied: PlantPulse assigns each 0.375, and the excerpts do not clearly separate them; their listing order is not a resolved ranking.",
+    "The library labels oil inspection and the PU-1 check low cost, but gives no actual costs; oil inspection is a low-cost discriminator, not a demonstrated uniquely cheapest test.",
+    "No suction pressure, NPSH margin or seal-plan minimum is supplied, so dry-running or cavitation risk cannot be established.",
+    "No oil inspection, vibration spectrum, coupling inspection, alignment measurement or pump-curve performance test is supplied.",
+    "The NORMAL status and alarm thresholds do not resolve the cause of the baseline deviations.",
+    "The other-asset event rows provide no causal evidence for PU-2101B.",
+    "No cause is confirmed, and the excerpts cannot establish whether one fault or multiple faults explain the symptoms."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration above and discharge pressure below their baseline bands, matching PU-1's expected rising vibration and falling pressure."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "The historical readings show flush flow declining from 6.529 to 6.178 L/min, consistent with PU-1's expected falling flush flow."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "PlantPulse explicitly reports Seal Flush Flow inside the baseline band at z -2.29."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "The measured flush flow of 6.178 L/min exceeds the stated low alarm threshold of 5 L/min."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration and bearing temperature above their baseline bands, matching the increases expected for PU-2."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "PlantPulse places Seal Flush Flow inside its baseline band, as expected for PU-2."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "PlantPulse reports discharge pressure below its baseline band at z -5.96, whereas PU-2 expects it to stay in band."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration and bearing temperature above their baseline bands, matching the increases expected for PU-4."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "PlantPulse places Seal Flush Flow inside its baseline band, as expected for PU-4."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "PlantPulse reports discharge pressure below its baseline band at z -5.96, whereas PU-4 expects it to stay in band."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "The reported below-band discharge pressure and in-band Seal Flush Flow match PU-3's expected falling pressure and in-band flush flow."
+   },
+   {
+    "index": 11,
+    "status": "supported",
+    "reason": "PlantPulse reports bearing temperature above its baseline band at z 4.09, whereas PU-3 expects it to stay in band."
+   },
+   {
+    "index": 12,
+    "status": "supported",
+    "reason": "PlantPulse explicitly assigns PU-3 a score of 0.125 and PU-1, PU-2, and PU-4 scores of 0.375 each."
+   },
+   {
+    "index": 13,
+    "status": "supported",
+    "reason": "The historical readings show flush flow declining from 6.529 to 6.178 L/min, consistent with PU-5's expected falling flush flow."
+   },
+   {
+    "index": 14,
+    "status": "supported",
+    "reason": "PlantPulse reports flush flow inside its band and the other three signals outside theirs, contrary to PU-5's expected in-band vibration, pressure, and temperature."
+   },
+   {
+    "index": 15,
+    "status": "partial",
+    "reason": "The excerpts support inspecting oil and using its condition to strengthen or weaken PU-2 without resolving the other modes, but do not establish that these hypotheses are tied."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:19:59.885Z",
+  "week": 8
+ },
+ "PU-2101B|14": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "PU-1",
+     "title": "Mechanical-seal failure from dry running or cavitation",
+     "standing": "leading",
+     "for": [
+      {
+       "text": "Falling seal-flush flow and discharge pressure with rising vibration match PU-1's expected signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-1"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks PU-1 highest with a score of 0.75.",
+       "refs": [
+        "PP:diag:PU-2101B:w15"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Seal Flush Flow is 5.257 L/min, above the low alarm of 5 L/min.",
+       "refs": [
+        "E1:hist:2026-01-29",
+        "E1:info:Seal Flush Flow"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-2",
+     "title": "Bearing lubrication degradation",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Rising vibration and bearing temperature match PU-2's expected signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-2"
+       ]
+      },
+      {
+       "text": "PlantPulse gives PU-2 and PU-4 equal scores of 0.25.",
+       "refs": [
+        "PP:diag:PU-2101B:w15"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Discharge pressure and seal-flush flow are below their baseline bands rather than staying in band as PU-2 expects.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-2"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-4",
+     "title": "Pump-driver misalignment",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Rising vibration and bearing temperature match PU-4's expected signals.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-4"
+       ]
+      },
+      {
+       "text": "PlantPulse gives PU-4 and PU-2 equal scores of 0.25.",
+       "refs": [
+        "PP:diag:PU-2101B:w15"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Discharge pressure and seal-flush flow are below their baseline bands rather than staying in band as PU-4 expects.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-4"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-3",
+     "title": "Impeller wear or internal recirculation",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Falling discharge pressure matches PU-3's expected signal.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Seal-flush flow is below baseline and bearing temperature is above baseline rather than staying in band as PU-3 expects.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-3"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "PU-5",
+     "title": "Seal-flush line plugging",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Falling seal-flush flow matches PU-5's expected signal.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-5"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Discharge pressure, vibration and bearing temperature are outside their baseline bands rather than staying in band as PU-5 expects.",
+       "refs": [
+        "PP:diag:PU-2101B:w15",
+        "FM:PU-5"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Perform the low-cost operating-data check: compare suction pressure with NPSH required during rate changes and logged seal-flush flow with the seal-plan minimum.",
+    "separates": [
+     "PU-1",
+     "PU-2",
+     "PU-4"
+    ],
+    "if_positive": "Inadequate NPSH margin and flush below the seal-plan minimum would strengthen PU-1's dry-running or cavitation explanation without establishing seal failure.",
+    "if_negative": "Adequate NPSH margin and flush would weaken this PU-1 mechanism and shift attention toward PU-2 and PU-4, which remain equally supported.",
+    "refs": [
+     "FM:PU-1",
+     "FM:PU-2",
+     "FM:PU-4"
+    ]
+   },
+   "abstentions": [
+    "The excerpts do not establish seal leakage, seal damage, dry running or cavitation.",
+    "Suction pressure, NPSH required and the seal-plan minimum are not supplied; the flush alarm threshold is not a substitute for that minimum.",
+    "Oil condition, ambient temperature, vibration spectra and alignment measurements are absent, so PU-2 and PU-4 cannot be separated.",
+    "The trends cannot establish whether one mechanism or multiple concurrent faults explain the symptoms.",
+    "The other-asset records provide no demonstrated causal link to PU-2101B."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "PlantPulse reports low seal-flush flow and discharge pressure with high vibration, matching PU-1's specified signal directions."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "PU-1's score of 0.75 exceeds every other score listed by PlantPulse."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The recorded seal-flush flow is 5.257 L/min, which is above the specified low alarm of 5 L/min."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration and bearing temperature above baseline, matching those two expected PU-2 signals."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "PlantPulse explicitly lists both PU-2 and PU-4 with scores of 0.25."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "PlantPulse places discharge pressure and seal-flush flow below baseline bands, whereas PU-2 expects both to stay in band."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration and bearing temperature above baseline, matching those two expected PU-4 signals."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse explicitly assigns identical scores of 0.25 to PU-4 and PU-2."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "PlantPulse places discharge pressure and seal-flush flow below baseline bands, whereas PU-4 expects both to stay in band."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "Discharge pressure is below its baseline band, consistent with PU-3's expected falling discharge pressure."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "PlantPulse reports seal-flush flow below baseline and bearing temperature above baseline, while PU-3 expects both to stay in band."
+   },
+   {
+    "index": 11,
+    "status": "supported",
+    "reason": "Seal-flush flow is below its baseline band, consistent with PU-5's expected falling seal-flush flow."
+   },
+   {
+    "index": 12,
+    "status": "supported",
+    "reason": "PlantPulse reports discharge pressure below baseline and vibration and bearing temperature above baseline, while PU-5 expects all three to stay in band."
+   },
+   {
+    "index": 13,
+    "status": "partial",
+    "reason": "The recommended check and its implications for dry-running risk are supported, but these excerpts do not establish that PU-2 and PU-4 currently remain equally supported."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:20:31.369Z",
+  "week": 14
+ },
+ "KO-3201|7": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "CO-4",
+     "title": "Shaft misalignment",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration and bearing temperature are above their baseline bands while water content and supply pressure remain inside, matching the expected misalignment pattern.",
+       "refs": [
+        "PP:diag:KO-3201:w8",
+        "FM:CO-4"
+       ]
+      },
+      {
+       "text": "PlantPulse assigns CO-4 a score of 0.5, tied with CO-1 and CO-5.",
+       "refs": [
+        "PP:diag:KO-3201:w8"
+       ]
+      }
+     ],
+     "against": []
+    },
+    {
+     "mode_id": "CO-5",
+     "title": "Bearing wear-out",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration and bearing temperature are above their baseline bands while water content and supply pressure remain inside, matching the expected wear-out pattern.",
+       "refs": [
+        "PP:diag:KO-3201:w8",
+        "FM:CO-5"
+       ]
+      },
+      {
+       "text": "PlantPulse assigns CO-5 a score of 0.5, tied with CO-1 and CO-4.",
+       "refs": [
+        "PP:diag:KO-3201:w8"
+       ]
+      }
+     ],
+     "against": []
+    },
+    {
+     "mode_id": "CO-1",
+     "title": "Journal-bearing distress from water contamination",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Water content rose from 292.849 ppm to 384.412 ppm alongside rising vibration and bearing temperature, consistent with the expected contamination pattern.",
+       "refs": [
+        "E2:hist:2026-01-07",
+        "E2:hist:2026-01-28",
+        "FM:CO-1"
+       ]
+      },
+      {
+       "text": "PlantPulse assigns CO-1 a score of 0.5, tied with CO-4 and CO-5.",
+       "refs": [
+        "PP:diag:KO-3201:w8"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Water content is inside the baseline band and measures 384.412 ppm, below the alarm of 500 ppm.",
+       "refs": [
+        "PP:diag:KO-3201:w8",
+        "E2:info:Lube Oil Water Content"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "CO-2",
+     "title": "Oil starvation from low lube-oil supply",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Supply pressure fell from 1.784 barg to 1.733 barg while vibration and bearing temperature rose, consistent with the expected supply-fault pattern.",
+       "refs": [
+        "E2:hist:2026-01-07",
+        "E2:hist:2026-01-28",
+        "FM:CO-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Supply pressure remains inside the baseline band and measures 1.733 barg, above the low-pressure alarm of 1.4 barg.",
+       "refs": [
+        "PP:diag:KO-3201:w8",
+        "E2:info:Lube Oil Supply Press"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "CO-3",
+     "title": "Rotor unbalance from deposits or fouling",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Elevated vibration with water content and supply pressure inside their baseline bands matches part of the expected unbalance pattern.",
+       "refs": [
+        "PP:diag:KO-3201:w8",
+        "FM:CO-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Bearing temperature is above the baseline band, whereas the unbalance entry expects it to stay in band.",
+       "refs": [
+        "PP:diag:KO-3201:w8",
+        "FM:CO-3"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Perform low-cost oil debris analysis by ferrography for babbitt particles.",
+    "separates": [
+     "CO-5",
+     "CO-4"
+    ],
+    "if_positive": "Babbitt debris would favor bearing wear-out over misalignment; bearing age versus design life would still need checking.",
+    "if_negative": "Clean oil would argue against wear-out and leave misalignment more supported, without establishing it.",
+    "refs": [
+     "FM:CO-5",
+     "FM:CO-4"
+    ]
+   },
+   "abstentions": [
+    "CO-4 and CO-5 fit the reported symptom bands equally; their ordering does not indicate a separated leader.",
+    "PlantPulse also ties CO-1 at the top; its lower placement here reflects water remaining inside the baseline band and below its alarm, not exclusion of contamination.",
+    "No vibration spectrum, axial vibration, alignment result, ferrography result, or bearing-age evidence is supplied.",
+    "No independent water assay, cooler pressure test, filter differential pressure, pump history, or pressure-control setting is supplied.",
+    "The excerpts do not establish a cause, contamination source, or bearing damage severity.",
+    "The listed events concern other assets and do not establish a failure mechanism for KO-3201."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "The computed baseline classifications match all four expected signals listed for misalignment."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "The computed scores explicitly give CO-4, CO-1, and CO-5 each a score of 0.5."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The computed baseline classifications match all four expected signals listed for bearing wear-out."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "The computed scores explicitly give CO-5, CO-1, and CO-4 each a score of 0.5."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "The historical readings show the stated water-content increase alongside higher vibration and bearing temperature, matching the contamination entry's expected directional changes."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "The computed scores explicitly give CO-1, CO-4, and CO-5 each a score of 0.5."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "The computed excerpt places water content at 384.412 ppm inside its baseline band, and the information excerpt sets its high alarm at 500 ppm."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "The historical readings show the stated pressure decrease with rising vibration and bearing temperature, consistent with those expected supply-fault signals."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "The computed excerpt places supply pressure at 1.733 barg inside its baseline band, above the stated low alarm of 1.4 barg."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "Elevated vibration and in-band water content and supply pressure match three of the unbalance entry's expected signals, supporting the explicitly partial pattern match."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "The computed excerpt identifies bearing temperature as above band, while the unbalance entry expects it to remain in band."
+   },
+   {
+    "index": 11,
+    "status": "supported",
+    "reason": "The excerpts support low-cost ferrography and an age check for wear-out, with clean oil arguing against wear-out and misalignment requiring its own vibration or alignment checks."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:21:06.360Z",
+  "week": 7
+ },
+ "KO-3201|9": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "CO-1",
+     "title": "Journal-bearing distress from water contamination of the lube oil",
+     "standing": "leading",
+     "for": [
+      {
+       "text": "Lube Oil Water Content is 501.213 ppm, above the alarm of 500 ppm, matching CO-1's expected water increase.",
+       "refs": [
+        "E2:hist:2026-02-11",
+        "E2:info:Lube Oil Water Content",
+        "FM:CO-1"
+       ]
+      },
+      {
+       "text": "The computed vibration and bearing-temperature increases match CO-1's expected signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-1"
+       ]
+      },
+      {
+       "text": "CO-1 allows supply pressure to move, whereas the other listed modes expect water to stay in band.",
+       "refs": [
+        "FM:CO-1",
+        "FM:CO-2",
+        "FM:CO-3",
+        "FM:CO-4",
+        "FM:CO-5"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "The falling supply pressure also matches CO-2 and does not uniquely identify contamination.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-2"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "CO-2",
+     "title": "Oil starvation from low lube-oil supply",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "The computed supply-pressure decrease, bearing-temperature increase and vibration increase match CO-2's expected signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Water is above the computed baseline band, contrary to CO-2's expected in-band water.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-2"
+       ]
+      },
+      {
+       "text": "Supply pressure of 1.635 barg remains above the low-pressure alarm of 1.4 barg.",
+       "refs": [
+        "E2:hist:2026-02-11",
+        "E2:info:Lube Oil Supply Press"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "CO-4",
+     "title": "Shaft misalignment",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "The computed vibration and bearing-temperature increases match CO-4's expected signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-4"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Water is above and supply pressure below their computed baseline bands, contrary to CO-4's expected in-band signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-4"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "CO-5",
+     "title": "Bearing wear-out from end-of-life fatigue",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "The computed vibration and bearing-temperature increases match CO-5's expected signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-5"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Water is above and supply pressure below their computed baseline bands, contrary to CO-5's expected in-band signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-5"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "CO-3",
+     "title": "Rotor unbalance from deposits or fouling",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "The computed vibration increase matches CO-3's expected vibration signal.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Bearing temperature and water are above and supply pressure below their computed baseline bands, contrary to CO-3's expected in-band signals.",
+       "refs": [
+        "PP:diag:KO-3201:w10",
+        "FM:CO-3"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Take one lube-oil sample for Karl Fischer water-content measurement, the initial low-cost check specified for CO-1.",
+    "separates": [
+     "CO-1",
+     "CO-2"
+    ],
+    "if_positive": "Water above the alarm of 500 ppm supports contamination or ingress over CO-2's expected in-band water; it does not locate the source or establish bearing distress.",
+    "if_negative": "Water in range weakens CO-1 and shifts attention toward CO-2's oil-supply checks.",
+    "refs": [
+     "FM:CO-1",
+     "FM:CO-2",
+     "E2:info:Lube Oil Water Content"
+    ]
+   },
+   "abstentions": [
+    "The excerpts do not establish a cause, bearing damage, or the source of any water ingress.",
+    "No independent water analysis, cooler pressure test, filter dP, pump-start history or pressure-control setting is supplied.",
+    "CO-4 and CO-5 are equally supported by the supplied symptoms; their relative order is not diagnostically meaningful.",
+    "No vibration spectrum, axial vibration, alignment measurement, debris analysis or bearing-age evidence is supplied.",
+    "Baseline-band departures are not equipment alarm exceedances; only water exceeds its listed alarm in the latest reading.",
+    "The unrelated-asset event rows do not establish a failure mechanism for KO-3201.",
+    "The library labels checks by cost category but does not provide measured costs for an absolute cheapest-test comparison."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "The excerpts report water at 501.213 ppm against a 500 ppm high alarm and identify rising water as an expected CO-1 signal."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration and bearing temperature above baseline, matching CO-1's expected increases."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "CO-1 permits supply-pressure movement, while CO-2 through CO-5 all expect water to stay in band."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "PlantPulse reports below-baseline supply pressure and CO-2 explicitly expects falling pressure, so that signal is not unique to contamination."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "The computed pressure decrease and temperature and vibration increases match the three corresponding CO-2 expectations."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "PlantPulse places water above its baseline band, whereas CO-2 expects water to remain in band."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "The reported supply pressure of 1.635 barg exceeds the specified low-pressure alarm threshold of 1.4 barg."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse reports elevated vibration and bearing temperature, both of which CO-4 expects to rise."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "The computed water increase and pressure decrease contradict CO-4's expectation that both remain in band."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "The computed vibration and bearing-temperature increases match CO-5's expected rising signals."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "PlantPulse places water above and pressure below baseline, while CO-5 expects both to stay in band."
+   },
+   {
+    "index": 11,
+    "status": "supported",
+    "reason": "The computed above-baseline vibration matches CO-3's expected vibration rise."
+   },
+   {
+    "index": 12,
+    "status": "supported",
+    "reason": "PlantPulse reports temperature and water above baseline and pressure below baseline, contradicting CO-3's in-band expectations for all three."
+   },
+   {
+    "index": 13,
+    "status": "supported",
+    "reason": "The excerpts specify the low-cost Karl Fischer sample, the 500 ppm alarm, ingress support from elevated water, source localization by cooler testing, and oil-supply follow-up when water is in range without treating water alone as proof of bearing distress."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:21:42.281Z",
+  "week": 9
+ },
+ "PM-4405B|8": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "EM-1",
+     "title": "Motor bearing grease degradation",
+     "standing": "leading",
+     "for": [
+      {
+       "text": "Bearing temperature and vibration are above baseline, matching the expected grease-degradation pattern.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-1"
+       ]
+      },
+      {
+       "text": "Motor current and winding temperature are also above baseline, which EM-1 allows.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-1"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks EM-1 highest with a score of 0.5.",
+       "refs": [
+        "PP:diag:PM-4405B:w9"
+       ]
+      }
+     ],
+     "against": []
+    },
+    {
+     "mode_id": "EM-3",
+     "title": "Overload from the driven pump or process",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Motor current and winding temperature are above baseline, matching the expected overload pattern.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-3"
+       ]
+      },
+      {
+       "text": "The bearing-temperature increase is compatible with EM-3.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Vibration is above baseline, whereas EM-3 expects vibration to stay in band.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-3"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "EM-4",
+     "title": "Motor-pump misalignment or soft foot",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration and bearing temperature are above baseline, matching the expected misalignment or soft-foot pattern.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-4"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Motor current and winding temperature are above baseline, whereas EM-4 expects both to stay in band.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-4"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "EM-2",
+     "title": "Stator winding insulation degradation",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Winding temperature and motor current are above baseline, matching the expected insulation-degradation pattern.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Bearing temperature and vibration are above baseline, whereas EM-2 expects both to stay in band.",
+       "refs": [
+        "PP:diag:PM-4405B:w9",
+        "FM:EM-2"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Perform a low-cost grease-condition inspection at the motor drive-end bearing.",
+    "separates": [
+     "EM-1",
+     "EM-3",
+     "EM-4"
+    ],
+    "if_positive": "Dry or degraded grease would strengthen EM-1, without establishing that the re-lubrication interval caused the degradation.",
+    "if_negative": "Good grease would weaken EM-1 and shift attention toward pump/process load or alignment.",
+    "refs": [
+     "FM:EM-1"
+    ]
+   },
+   "abstentions": [
+    "The symptom pattern favors EM-1, but no cause is confirmed.",
+    "The excerpts provide no grease-condition findings or re-lubrication history to establish lubrication failure or an excessive interval.",
+    "No pump flow/head comparison, process-change evidence, alignment measurements, or insulation-test results are provided.",
+    "The readings remain below the stated alarm thresholds; baseline deviations alone do not establish failure severity.",
+    "The listed events concern other assets and do not establish a cause for PM-4405B."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "PlantPulse reports bearing temperature and vibration above baseline, and EM-1 expects both to rise."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "PlantPulse reports motor current and winding temperature above baseline, and EM-1 allows both signals to move."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The reported EM-1 score of 0.5 exceeds all other listed scores."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "The reported elevations in motor current and winding temperature match the rises expected for those signals under EM-3."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "PlantPulse reports increased bearing temperature, and EM-3 allows bearing temperature to move."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "PlantPulse reports vibration above baseline, while EM-3 explicitly expects vibration to stay in band."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "The reported elevations in vibration and bearing temperature match the rises expected for those signals under EM-4."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse reports motor current and winding temperature above baseline, while EM-4 expects both to stay in band."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "The reported elevations in winding temperature and motor current match the rises expected for those signals under EM-2."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "PlantPulse reports bearing temperature and vibration above baseline, while EM-2 expects both to stay in band."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "EM-1 specifies a low-cost drive-end grease inspection, identifies degraded grease as evidence of lubrication failure rather than proof of interval causation, and directs attention to load or alignment if grease is good."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:22:13.962Z",
+  "week": 8
+ },
+ "PM-4405B|14": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "EM-1",
+     "title": "Motor bearing grease degradation",
+     "standing": "leading",
+     "for": [
+      {
+       "text": "Bearing temperature and vibration rise alongside current and winding temperature, matching all four EM-1 expected signals.",
+       "refs": [
+        "E3:hist:2026-02-18",
+        "E3:hist:2026-05-27",
+        "FM:EM-1"
+       ]
+      },
+      {
+       "text": "Bearing temperature is 76.498 °C against alarm 75, and vibration is 5.375 mm/s against alarm 5.",
+       "refs": [
+        "E3:hist:2026-05-27",
+        "E3:info:Motor DE Bearing Temp",
+        "E3:info:Motor Vibration"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks EM-1 highest with score 0.5.",
+       "refs": [
+        "PP:diag:PM-4405B:w15"
+       ]
+      }
+     ],
+     "against": []
+    },
+    {
+     "mode_id": "EM-3",
+     "title": "Overload from the driven pump or process",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Current and winding temperature rise, while bearing temperature also rises, consistent with EM-3 expected signals.",
+       "refs": [
+        "E3:hist:2026-02-18",
+        "E3:hist:2026-05-27",
+        "FM:EM-3"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks EM-3 second with score 0.375.",
+       "refs": [
+        "PP:diag:PM-4405B:w15"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Vibration is above the baseline band, whereas EM-3 expects vibration to stay in band.",
+       "refs": [
+        "PP:diag:PM-4405B:w15",
+        "FM:EM-3"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "EM-4",
+     "title": "Motor-pump misalignment or soft foot",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Vibration and bearing temperature rise, matching EM-4 expected mechanical signals.",
+       "refs": [
+        "E3:hist:2026-02-18",
+        "E3:hist:2026-05-27",
+        "FM:EM-4"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Current and winding temperature are above their baseline bands, whereas EM-4 expects both to stay in band.",
+       "refs": [
+        "PP:diag:PM-4405B:w15",
+        "FM:EM-4"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "EM-2",
+     "title": "Stator winding insulation degradation",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Winding temperature and current rise, matching EM-2 expected electrical signals.",
+       "refs": [
+        "E3:hist:2026-02-18",
+        "E3:hist:2026-05-27",
+        "FM:EM-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Bearing temperature and vibration are above their baseline bands, whereas EM-2 expects both to stay in band.",
+       "refs": [
+        "PP:diag:PM-4405B:w15",
+        "FM:EM-2"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Perform the library's low-cost drive-end bearing grease inspection for dry or degraded grease.",
+    "separates": [
+     "EM-1",
+     "EM-3",
+     "EM-4"
+    ],
+    "if_positive": "Dry or degraded grease would strengthen EM-1 over overload and alignment explanations, without establishing that the lubrication interval caused it.",
+    "if_negative": "Good grease would weaken EM-1 and shift attention toward pump/process load or alignment.",
+    "refs": [
+     "FM:EM-1"
+    ]
+   },
+   "abstentions": [
+    "The symptom fit separates EM-1 from the alternatives, but no cause is confirmed by these excerpts.",
+    "No grease condition, lubrication interval, duty or ambient evidence establishes the proposed lubrication mechanism.",
+    "No pump flow, head, curve comparison or process-change evidence establishes overload.",
+    "No alignment, soft-foot or insulation-test results establish or exclude those mechanisms.",
+    "The library labels both grease inspection and process comparison low cost but does not establish which is absolutely cheapest.",
+    "The listed maintenance events concern other assets and do not establish a cause for PM-4405B."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "All four measured values increase between the two dates, consistent with EM-1's expected rises in bearing temperature and vibration and possible changes in current and winding temperature."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "The latest readings and the respective alarm thresholds exactly match the claimed values."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The computed scores list EM-1 at 0.5, higher than every other mode."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "Current, winding temperature, and bearing temperature all increase, matching the three cited EM-3 signals, though this does not establish agreement with its separate vibration expectation."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "The computed scores place EM-3 at 0.375, second only to EM-1."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "PlantPulse explicitly identifies vibration as above the baseline band, while EM-3 explicitly expects it to stay in band."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "The historical readings show increases in vibration and bearing temperature, which are the two rising mechanical signals specified for EM-4."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse reports current and winding temperature above their baseline bands, whereas EM-4 expects both to stay in band."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "Winding temperature and current increase between the two readings, matching EM-2's expectations for those electrical signals."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "PlantPulse reports bearing temperature and vibration above their baseline bands, whereas EM-2 expects both to stay in band."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "EM-1 specifies a low-cost drive-end grease inspection, identifies dry or degraded grease as confirming lubrication failure, and directs attention to load or alignment if grease is good, without making that inspection alone proof of an excessive lubrication interval."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:22:48.600Z",
+  "week": 14
+ },
+ "HE-3301|7": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "HX-1",
+     "title": "Tube-side fouling driven by feed contaminants",
+     "standing": "leading",
+     "for": [
+      {
+       "text": "Tube-side dP is above the baseline band at 0.421 bar, matching HX-1 and opposing the dP patterns expected for HX-2 and HX-3.",
+       "refs": [
+        "PP:diag:HE-3301:w8",
+        "FM:HX-1",
+        "FM:HX-2",
+        "FM:HX-3"
+       ]
+      },
+      {
+       "text": "Heat Duty declined from 100.285 % design to 96.59 % design and Cold Outlet Temp declined from 120.151 °C to 116.945 °C, matching HX-1's thermal pattern.",
+       "refs": [
+        "E4:hist:2026-01-01",
+        "E4:hist:2026-02-19",
+        "FM:HX-1"
+       ]
+      },
+      {
+       "text": "Feed Heavy-ends increased from 1.169 % to 1.321 %, consistent with HX-1's expected direction.",
+       "refs": [
+        "E4:hist:2026-01-01",
+        "E4:hist:2026-02-19",
+        "FM:HX-1"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks HX-1 highest with a score of 0.25.",
+       "refs": [
+        "PP:diag:HE-3301:w8"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Feed Heavy-ends and Heat Duty remain inside the computed baseline band, so neither registers as a PlantPulse symptom.",
+       "refs": [
+        "PP:diag:HE-3301:w8"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "HX-2",
+     "title": "Shell-side utility fouling",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "The decline in Heat Duty and Cold Outlet Temp matches HX-2's expected thermal pattern.",
+       "refs": [
+        "E4:hist:2026-01-01",
+        "E4:hist:2026-02-19",
+        "FM:HX-2"
+       ]
+      },
+      {
+       "text": "Feed Heavy-ends remains inside the baseline band, as expected for HX-2.",
+       "refs": [
+        "PP:diag:HE-3301:w8",
+        "FM:HX-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Tube-side dP is above the baseline band rather than staying in band as HX-2 predicts.",
+       "refs": [
+        "PP:diag:HE-3301:w8",
+        "FM:HX-2"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "HX-3",
+     "title": "Flow bypassing through a passing valve or pass-partition leak",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "The decline in Heat Duty and Cold Outlet Temp matches HX-3's expected thermal pattern.",
+       "refs": [
+        "E4:hist:2026-01-01",
+        "E4:hist:2026-02-19",
+        "FM:HX-3"
+       ]
+      },
+      {
+       "text": "Feed Heavy-ends remains inside the baseline band, as expected for HX-3.",
+       "refs": [
+        "PP:diag:HE-3301:w8",
+        "FM:HX-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Tube-side dP rose from 0.355 bar to 0.421 bar rather than falling as HX-3 predicts.",
+       "refs": [
+        "E4:hist:2026-01-01",
+        "E4:hist:2026-02-19",
+        "FM:HX-3"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Perform the low-cost laboratory analysis of feed heavy ends and compare the result with the existing tube-side dP trend.",
+    "separates": [
+     "HX-1",
+     "HX-2",
+     "HX-3"
+    ],
+    "if_positive": "Evidence of rising heavy ends alongside rising tube-side dP would strengthen feed-driven tube-side fouling over shell-side fouling or bypassing.",
+    "if_negative": "Clean feed would weaken the feed-contaminant explanation and shift attention toward shell-side fouling or bypassing, although neither currently explains the rising tube-side dP pattern.",
+    "refs": [
+     "FM:HX-1",
+     "FM:HX-2",
+     "FM:HX-3",
+     "PP:diag:HE-3301:w8"
+    ]
+   },
+   "abstentions": [
+    "The excerpts do not establish that feed contaminants caused deposits or that any failure mode is confirmed.",
+    "No shell-side dP, utility temperature trends, bypass integrity results, or tube inspection findings are provided.",
+    "The latest condition status is NORMAL; the computed baseline deviations do not themselves establish an alarm or trip exceedance.",
+    "The other-asset event records contain no RCA packages and do not establish a cause for HE-3301."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "PlantPulse reports tube-side dP at 0.421 bar above baseline, consistent with HX-1's rising dP and contrary to HX-2's in-band and HX-3's falling dP expectations."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "The historical readings show both stated declines, matching HX-1's expected falling duty and outlet temperature."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The historical readings show heavy ends increasing from 1.169% to 1.321%, matching HX-1's expected rise."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "PlantPulse gives HX-1 a score of 0.25 versus zero for both other hypotheses."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "Both measurements are explicitly inside baseline and their absolute z-scores are below the stated symptom threshold of 3."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "The historical readings show declining duty and outlet temperature, both expected thermal signals for HX-2."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "PlantPulse places heavy ends inside baseline, matching HX-2's expected in-band heavy ends."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse reports tube-side dP above baseline while HX-2 expects dP to stay in band."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "The historical readings show declining duty and outlet temperature, matching HX-3's expected thermal signals."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "PlantPulse places heavy ends inside baseline, as HX-3 expects."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "The historical readings show dP increasing from 0.355 to 0.421 bar, opposite to HX-3's expected decline."
+   },
+   {
+    "index": 11,
+    "status": "supported",
+    "reason": "HX-1 explicitly recommends the low-cost feed analysis and its positive and negative interpretations, while the observed elevated dP conflicts with the alternative modes' expected dP patterns."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:23:19.427Z",
+  "week": 7
+ },
+ "HE-3301|10": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "HX-1",
+     "title": "Tube-side fouling driven by feed contaminants (heavy ends)",
+     "standing": "leading",
+     "for": [
+      {
+       "text": "Tube-side dP and feed heavy ends are above their baseline bands while duty and outlet temperature are below, matching all expected HX-1 signals.",
+       "refs": [
+        "PP:diag:HE-3301:w11",
+        "FM:HX-1"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks HX-1 at 1, versus HX-2 and HX-3 at 0.25.",
+       "refs": [
+        "PP:diag:HE-3301:w11"
+       ]
+      }
+     ],
+     "against": []
+    },
+    {
+     "mode_id": "HX-2",
+     "title": "Shell-side (utility-side) fouling",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Duty and outlet temperature are below their baseline bands, matching the thermal signals expected for HX-2.",
+       "refs": [
+        "PP:diag:HE-3301:w11",
+        "FM:HX-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Tube-side dP and feed heavy ends are above their baseline bands rather than staying in band as expected for HX-2.",
+       "refs": [
+        "PP:diag:HE-3301:w11",
+        "FM:HX-2"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "HX-3",
+     "title": "Flow bypassing through a passing bypass valve or pass-partition leak",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Duty and outlet temperature are below their baseline bands, matching the thermal signals expected for HX-3.",
+       "refs": [
+        "PP:diag:HE-3301:w11",
+        "FM:HX-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Tube-side dP rose from 0.355 bar to 0.496 bar rather than falling as expected for HX-3.",
+       "refs": [
+        "E4:hist:2026-01-01",
+        "E4:hist:2026-03-12",
+        "FM:HX-3"
+       ]
+      },
+      {
+       "text": "Feed heavy ends are above the baseline band rather than staying in band as expected for HX-3.",
+       "refs": [
+        "PP:diag:HE-3301:w11",
+        "FM:HX-3"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Perform the library's low-cost laboratory analysis of feed heavy ends and compare the result with the existing tube-side dP trend.",
+    "separates": [
+     "HX-1",
+     "HX-2",
+     "HX-3"
+    ],
+    "if_positive": "Elevated heavy ends corroborating the rise alongside tube-side dP would strengthen HX-1 over HX-2 and HX-3 without establishing the cause.",
+    "if_negative": "Clean feed would weaken HX-1 and shift attention toward shell-side fouling or bypassing, although the rising tube-side dP would remain unexplained.",
+    "refs": [
+     "FM:HX-1",
+     "FM:HX-2",
+     "FM:HX-3",
+     "PP:diag:HE-3301:w11"
+    ]
+   },
+   "abstentions": [
+    "The excerpts establish a symptom match, not the presence, location or composition of deposits.",
+    "No laboratory feed result, shell-side dP or utility-temperature trend, bypass integrity check, or tube inspection is supplied.",
+    "Concurrent mechanisms cannot be excluded from these readings.",
+    "The leakage and low-performance records concern other assets and provide no RCA evidence for HE-3301."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "PlantPulse reports all four baseline-band deviations, and their directions match all four expected HX-1 signals."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "The computed scores explicitly give HX-1 a score of 1 and HX-2 and HX-3 scores of 0.25 each."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The reported below-band duty and outlet temperature match the falling thermal signals specified for HX-2."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "PlantPulse places tube-side dP and feed heavy ends above baseline, whereas HX-2 expects both to stay in band."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "The reported below-band duty and outlet temperature match the falling thermal signals specified for HX-3."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "The dated readings show tube-side dP increasing from 0.355 to 0.496 bar, while HX-3 expects falling dP."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "PlantPulse reports above-band feed heavy ends, contrary to HX-3's expectation that they stay in band."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "The recommended test and conditional diagnostic shifts follow the library checks and expected signals, with appropriately cautious interpretation of evidence favoring HX-1 and the dP mismatch remaining for HX-2 and HX-3."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:23:45.430Z",
+  "week": 10
+ },
+ "BL-5702|7": {
+  "brief": {
+   "hypotheses": [
+    {
+     "mode_id": "BL-4",
+     "title": "Mechanical looseness at base or hold-down bolts",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Elevated vibration and harmonic_2x with coupling_offset inside the computed baseline band match the expected looseness pattern.",
+       "refs": [
+        "PP:diag:BL-5702:w8",
+        "FM:BL-4"
+       ]
+      },
+      {
+       "text": "PlantPulse ranks BL-4 highest with a score of 0.667.",
+       "refs": [
+        "PP:diag:BL-5702:w8"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Coupling Offset is 0.054 mm, above its alarm of 0.05 mm, despite remaining inside the computed baseline band.",
+       "refs": [
+        "E5:hist:2026-03-18",
+        "E5:info:Coupling Offset",
+        "PP:diag:BL-5702:w8"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "BL-1",
+     "title": "Coupling misalignment or soft foot",
+     "standing": "plausible",
+     "for": [
+      {
+       "text": "Overall Vibration, 2X Harmonic and Coupling Offset increased between the first and latest readings, matching the expected alignment-failure pattern.",
+       "refs": [
+        "E5:hist:2026-01-28",
+        "E5:hist:2026-03-18",
+        "FM:BL-1"
+       ]
+      },
+      {
+       "text": "Coupling Offset is 0.054 mm against an alarm of 0.05 mm.",
+       "refs": [
+        "E5:hist:2026-03-18",
+        "E5:info:Coupling Offset"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "PlantPulse places Coupling Offset inside the baseline band and scores BL-1 at 0.5, below BL-4 at 0.667.",
+       "refs": [
+        "PP:diag:BL-5702:w8"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "BL-2",
+     "title": "Impeller unbalance from deposits",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Elevated Overall Vibration and Coupling Offset inside the computed baseline band match part of the expected unbalance pattern.",
+       "refs": [
+        "PP:diag:BL-5702:w8",
+        "FM:BL-2"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "2X Harmonic is above the computed baseline band, whereas BL-2 expects harmonic_2x to stay in band.",
+       "refs": [
+        "PP:diag:BL-5702:w8",
+        "FM:BL-2"
+       ]
+      }
+     ]
+    },
+    {
+     "mode_id": "BL-3",
+     "title": "Rolling-bearing defect or lubrication problem",
+     "standing": "unlikely",
+     "for": [
+      {
+       "text": "Overall Vibration and Bearing Temp increased between the first and latest readings, consistent with part of the expected bearing-fault pattern.",
+       "refs": [
+        "E5:hist:2026-01-28",
+        "E5:hist:2026-03-18",
+        "FM:BL-3"
+       ]
+      }
+     ],
+     "against": [
+      {
+       "text": "Bearing Temp remains inside the computed baseline band at 62.862 °C, below its alarm of 80 °C.",
+       "refs": [
+        "PP:diag:BL-5702:w8",
+        "E5:info:Bearing Temp"
+       ]
+      }
+     ]
+    }
+   ],
+   "next_check": {
+    "test": "Check hold-down bolt torque and base condition using the library's low-cost looseness check.",
+    "separates": [
+     "BL-4",
+     "BL-1"
+    ],
+    "if_positive": "Loose hold-down bolts or a deficient base would favor BL-4 over BL-1, without establishing the sole cause.",
+    "if_negative": "A tight, sound base would reduce support for BL-4 and make the BL-1 laser alignment and soft-foot check the next priority.",
+    "refs": [
+     "FM:BL-4",
+     "FM:BL-1"
+    ]
+   },
+   "abstentions": [
+    "BL-4 and BL-1 are both plausible; the computed baseline classification favors looseness, but the offset trend and alarm exceedance prevent clear separation.",
+    "The excerpts provide no bolt-torque, base-condition, laser-alignment or soft-foot results, so neither top hypothesis is confirmed.",
+    "No running-speed spectrum, bearing envelope spectrum, grease inspection or impeller inspection is provided.",
+    "The library labels checks low cost but provides no comparative costs to establish which is strictly cheapest.",
+    "The other-asset event rows contain no RCA packages and do not establish a cause for BL-5702."
+   ]
+  },
+  "guard": [
+   {
+    "index": 0,
+    "status": "supported",
+    "reason": "The computed elevated vibration and 2X harmonic with coupling offset inside band match BL-4's stated expected signals."
+   },
+   {
+    "index": 1,
+    "status": "supported",
+    "reason": "BL-4's score of 0.667 is the highest of the four listed scores."
+   },
+   {
+    "index": 2,
+    "status": "supported",
+    "reason": "The excerpts give coupling offset as 0.054 mm, its high alarm as 0.05 mm, and its computed baseline classification as inside band."
+   },
+   {
+    "index": 3,
+    "status": "supported",
+    "reason": "All three measurements increase between the supplied earlier and latest readings, matching BL-1's expected rising signals."
+   },
+   {
+    "index": 4,
+    "status": "supported",
+    "reason": "The latest reading is 0.054 mm and the specified coupling-offset alarm is 0.05 mm."
+   },
+   {
+    "index": 5,
+    "status": "supported",
+    "reason": "PlantPulse explicitly places coupling offset inside band and lists BL-1 at 0.5 below BL-4 at 0.667."
+   },
+   {
+    "index": 6,
+    "status": "supported",
+    "reason": "Elevated vibration and in-band coupling offset match two of BL-2's expected signals, supporting the qualified partial-pattern claim."
+   },
+   {
+    "index": 7,
+    "status": "supported",
+    "reason": "PlantPulse classifies 2X harmonic as above band while BL-2 explicitly expects it to stay in band."
+   },
+   {
+    "index": 8,
+    "status": "supported",
+    "reason": "Vibration and bearing temperature both increase between the supplied readings, matching part of BL-3's expected pattern."
+   },
+   {
+    "index": 9,
+    "status": "supported",
+    "reason": "The computed bearing temperature is 62.862 °C inside band, which is below the stated 80 °C alarm."
+   },
+   {
+    "index": 10,
+    "status": "supported",
+    "reason": "The recommended checks and conditional prioritization rely on the library's looseness confirmation and exclusion criteria and its specified BL-1 alignment and soft-foot check."
+   }
+  ],
+  "model": "gpt-6.1-sol",
+  "run_at": "2026-10-02T14:24:23.586Z",
+  "week": 7
+ }
+}

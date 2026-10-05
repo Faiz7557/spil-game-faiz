@@ -63,7 +63,7 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
 
       {/* Expanded Chat Drawer */}
       {isOpen && (
-        <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 w-80 sm:w-96 overflow-hidden flex flex-col h-[420px] animate-scale-up">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-white/10 w-80 sm:w-96 overflow-hidden flex flex-col h-[420px] animate-scale-up transition-colors">
           {/* Header */}
           <div className="bg-slate-900 p-3.5 text-white flex items-center justify-between border-b border-slate-800">
             <div className="flex items-center gap-2">
@@ -79,12 +79,12 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
           </div>
 
           {/* Quick Reaction Chips */}
-          <div className="p-2 bg-slate-50 border-b border-slate-100 flex gap-1.5 overflow-x-auto scrollbar-none">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-white/10 flex gap-1.5 overflow-x-auto scrollbar-none">
             {QUICK_REACTIONS.map((reaction, i) => (
               <button
                 key={i}
                 onClick={() => handleSendMessage(reaction)}
-                className="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 whitespace-nowrap shadow-xs transition-colors shrink-0"
+                className="px-2.5 py-1 bg-white dark:bg-slate-800 dark:text-slate-200 dark:border-white/10 hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-300 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 whitespace-nowrap shadow-xs transition-colors shrink-0"
               >
                 {reaction}
               </button>
@@ -92,11 +92,11 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs bg-white dark:bg-slate-900">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center p-4">
-                <Users className="w-8 h-8 text-slate-300 mb-2" />
-                <p className="font-semibold text-xs text-slate-500">Belum ada pesan</p>
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-center p-4">
+                <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+                <p className="font-semibold text-xs text-slate-500 dark:text-slate-400">Belum ada pesan</p>
                 <p className="text-[10px] mt-0.5">Sapa kapten lain atau kirim reaksi cepat di atas!</p>
               </div>
             ) : (
@@ -107,14 +107,14 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
                     key={idx}
                     className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                   >
-                    <span className="text-[10px] text-slate-400 font-bold mb-0.5 px-1">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-0.5 px-1">
                       {isMe ? 'Anda' : m.playerName}
                     </span>
                     <div
                       className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-xs ${
                         isMe
                           ? 'bg-spil-green text-white rounded-br-xs font-semibold'
-                          : 'bg-slate-100 text-slate-800 rounded-bl-xs font-medium'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs font-medium'
                       }`}
                     >
                       {m.message}
@@ -132,7 +132,7 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center gap-2"
+            className="p-2.5 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-white/10 flex items-center gap-2"
           >
             <input
               type="text"
@@ -140,7 +140,7 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Ketik pesan..."
               maxLength={200}
-              className="flex-1 px-3 py-2 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-spil-green text-slate-800"
+              className="flex-1 px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 focus:outline-none focus:border-spil-green text-slate-800 dark:text-slate-100"
             />
             <button
               type="submit"

@@ -1,0 +1,109 @@
+/* Landing page. Tailwind does layout; this file holds the drawn objects (glass tags, stamps, claw), the grain and
+   the scroll-driven transforms that read --p from their section. Every class is lp-* so nothing collides with the
+   workspace styles. Colours come from the shared tokens in styles.css, so the page follows the dark / light theme. */
+html.is-landing, html.is-landing body { background: transparent; }
+html.is-landing body { color: var(--ink); background-image: none; }
+html.is-landing { scroll-behavior: smooth; scrollbar-color: rgb(var(--tint-rgb) / 0.3) var(--canvas); }
+/* both themes paint their ground on a fixed layer (Pipo mesh in light, the Mesh drift shader in dark) */
+@media (prefers-reduced-motion: reduce) { html.is-landing { scroll-behavior: auto; } }
+
+.lp { --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.62;
+  -webkit-font-smoothing: antialiased; overflow-x: clip; }
+
+.lp :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.lp a { text-underline-offset: 4px; text-decoration-thickness: 1px; }
+/* Archivo, opened wide and heavy: a nameplate riveted to a skid, not a startup headline. */
+.lp .font-display { font-family: var(--font-display); font-stretch: 118%; font-weight: 800; letter-spacing: -0.025em; color: var(--ink-hi); }
+
+/* Film grain, now unused: the Pipo mesh and the Mesh drift shader both bring their own. */
+.lp-grain { position: fixed; inset: 0; pointer-events: none; z-index: 70; opacity: 0.045; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.lp-grain { display: none; }
+
+/* Section bands: a smoked sheet over the shader in dark, a frosted sheet over the Pipo mesh in light. */
+.lp-band { background: rgba(0, 0, 0, 0.5); }
+:root[data-theme="light"] .lp-band { background: rgba(255, 255, 255, 0.42); backdrop-filter: blur(2px); }
+
+/* ---------- the case tag, the brand object: a glass plate with a punched hole and a lit status band ---------- */
+.lp-tag { position: relative; width: var(--w, 168px); color: var(--ink); border-radius: 12px; overflow: hidden; padding-bottom: 12px;
+  background: linear-gradient(180deg, rgb(var(--glass-rgb) / 0.12), rgb(var(--glass-rgb) / 0.03)), rgb(var(--surface-rgb) / 0.92);
+  border: 1px solid rgb(var(--accent-ink-rgb) / 0.28); backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+:root[data-theme="light"] .lp-tag { background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.86)); border-color: var(--line-strong); }
+.lp-tag-band { position: relative; height: 28px; display: flex; align-items: center; justify-content: flex-end; padding: 0 12px;
+  font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--danger-ink);
+  background: var(--danger-soft); border-bottom: 1px solid var(--line); }
+.lp-tag-band::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--danger); box-shadow: 0 0 16px var(--danger); }
+.lp-tag-band.is-amber { color: var(--caution-ink); background: var(--caution-soft); }
+.lp-tag-band.is-amber::before { background: var(--caution); box-shadow: 0 0 16px var(--caution); }
+.lp-tag-band.is-steel { color: var(--ink-2); background: rgb(var(--tint-rgb) / 0.06); }
+.lp-tag-band.is-steel::before { background: var(--ink-4); box-shadow: none; }
+.lp-tag-band.is-blue { color: var(--accent-ink); background: var(--accent-soft); }
+.lp-tag-band.is-blue::before { background: var(--accent); box-shadow: 0 0 16px var(--accent); }
+.lp-tag-band.is-violet { color: var(--ai-ink); background: var(--ai-soft); }
+.lp-tag-band.is-violet::before { background: var(--ai); box-shadow: 0 0 16px var(--ai); }
+.lp-tag-hole { position: absolute; left: 14px; top: 8px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--canvas); box-shadow: 0 0 0 2px rgb(var(--tint-rgb) / 0.45), inset 0 1px 2px rgb(var(--shade-rgb) / calc(0.8 * var(--shade-k))); }
+.lp-tag-body { padding: 11px 14px 0; }
+.lp-tag-no { font: 600 var(--no, 26px)/1 var(--font-mono); letter-spacing: -0.03em; color: var(--ink-hi); }
+.lp-tag-name { font: 600 var(--nm, 16px)/1.15 var(--font); letter-spacing: -0.015em; color: var(--ink-hi); text-wrap: balance; }
+.lp-tag-line { font-size: 12.5px; line-height: 1.35; margin-top: 5px; color: var(--ink-2); }
+.lp-tag-sign { margin-top: 10px; border-top: 1px dashed var(--line-strong); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 22px; }
+.lp-shadow-tag { filter: drop-shadow(0 22px 30px rgb(var(--shade-rgb) / calc(0.6 * var(--shade-k)))) drop-shadow(0 3px 5px rgb(var(--shade-rgb) / calc(0.4 * var(--shade-k)))); }
+
+.lp-stamp { display: inline-block; align-self: flex-start; border: 1.5px solid currentColor; border-radius: 5px; padding: 4px 7px 3px;
+  font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; transform: rotate(-3deg);
+  animation: lp-stamp 0.34s var(--ease) both; background: rgb(var(--canvas-rgb) / 0.4); }
+.lp-stamp.red { color: var(--danger-ink); }
+.lp-stamp.green { color: var(--ok-ink); }
+.lp-stamp.ink { color: var(--ink-soft); }
+.lp-stamp.amber { color: var(--caution-ink); }
+@keyframes lp-stamp { from { transform: rotate(-3deg) scale(1.45); opacity: 0; filter: blur(1.5px); } to { transform: rotate(-3deg) scale(1); opacity: 1; filter: blur(0); } }
+
+/* ---------- hero planes ---------- */
+.lp-hero { --p: 0; }
+.lp-far { transform: translate3d(0, calc(var(--p) * 60px), 0) scale(calc(1 + var(--p) * 0.05)); transform-origin: 50% 100%; }
+.lp-glow { transform: translate3d(0, calc(var(--p) * 30px), 0); opacity: calc(1 - var(--p) * 0.4); }
+:root[data-theme="light"] .lp-glow { opacity: calc(0.45 - var(--p) * 0.2); }
+.lp-frame-wrap { perspective: 1800px; }
+.lp-frame { transform-origin: 50% 0%; transform: translate3d(0, calc(var(--p) * -70px), 0) rotateX(calc(18deg - var(--p) * 18deg)) scale(calc(0.94 + var(--p) * 0.06)); }
+.lp-near { transform: translate3d(calc(var(--mx, 0) * 10px), calc(var(--p) * -150px), 0) rotate(calc(var(--mx, 0) * 2deg + var(--p) * 7deg)); transform-origin: 50% 0; }
+.lp-mid { transform: translate3d(calc(var(--mx, 0) * -8px), calc(var(--p) * -110px), 0); }
+.lp-mid-2 { transform: translate3d(calc(var(--mx, 0) * 6px), calc(var(--p) * -60px), 0); }
+.lp-copy { transform: translate3d(0, calc(var(--p) * -40px), 0); opacity: calc(1 - var(--p) * 1.3); }
+.lp-cord { background: linear-gradient(rgb(var(--tint-rgb) / 0.15), rgb(var(--tint-rgb) / 0.6)); }
+/* the light that falls on the product from above, as in the template */
+.lp-beam { background: conic-gradient(from 180deg at 50% 0%, transparent 38%, rgb(var(--accent-rgb) / 0.28) 46%, rgb(var(--accent-ink-rgb) / 0.5) 50%, rgb(var(--accent-rgb) / 0.28) 54%, transparent 62%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 85%); filter: blur(14px); }
+:root[data-theme="light"] .lp-beam { opacity: 0.35; }
+
+/* glass plates floating over the hero */
+.lp-float { border: 1px solid var(--line); background: rgb(var(--surface-rgb) / 0.8); backdrop-filter: blur(20px);
+  box-shadow: 0 30px 60px -20px rgb(var(--shade-rgb) / calc(0.9 * var(--shade-k))); }
+:root[data-theme="light"] .lp-float { background: rgba(255, 255, 255, 0.78); }
+
+/* ---------- workflow rail ---------- */
+.lp-rail { transform: translate3d(calc(var(--p, 0) * var(--travel, 0px) * -1), 0, 0); }
+
+/* ---------- claw ---------- */
+.lp-claw-arm { transition: transform 0.45s var(--ease); transform-box: fill-box; }
+.lp-claw.is-closed .lp-claw-arm.l { transform: rotate(14deg); transform-origin: 100% 0; }
+.lp-claw.is-closed .lp-claw-arm.r { transform: rotate(-14deg); transform-origin: 0 0; }
+
+/* ---------- evidence wall: a tilted plane of real citations ---------- */
+.lp-wall { perspective: 900px; }
+.lp-wall-plane { transform: translateX(-40px) translateZ(-60px) rotateX(18deg) rotateY(-12deg) rotateZ(14deg); transform-style: preserve-3d; }
+/* edge fades take the colour of whatever is behind the section */
+.lp-fade-t { background: linear-gradient(to bottom, var(--lp-fade, var(--canvas)), transparent); }
+.lp-fade-b { background: linear-gradient(to top, var(--lp-fade, var(--canvas)), transparent); }
+.lp-fade-l { background: linear-gradient(to right, var(--lp-fade, var(--canvas)), transparent); }
+.lp-fade-r { background: linear-gradient(to left, var(--lp-fade, var(--canvas)), transparent); }
+.lp { --lp-fade: rgba(2, 9, 7, 0.82); }
+:root[data-theme="light"] .lp { --lp-fade: rgba(250, 249, 239, 0.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-far, .lp-glow, .lp-frame, .lp-near, .lp-mid, .lp-mid-2, .lp-copy { transform: none !important; opacity: 1 !important; }
+  .lp-stamp { animation: none; }
+}
+@keyframes lp-chip { from { transform: scale(1.35); opacity: 0; filter: blur(1.5px); } }

@@ -1,0 +1,10 @@
+node_modules
+dist
+.vercel
+
+.vercel
+.env
+.env.local
+.env.*.local
+test-results
+playwright-report

@@ -8,58 +8,58 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 overflow-y-auto">
-      {/* Game Over Container - SPIL Light Theme */}
-      <div className="w-full max-w-4xl bg-white border border-slate-200/90 shadow-2xl rounded-3xl p-6 md:p-8 flex flex-col gap-6 max-h-[92vh] overflow-y-auto animate-slide-up relative">
+      {/* Game Over Container - SPIL Light & Dark Theme */}
+      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-white/10 shadow-2xl rounded-3xl p-6 md:p-8 flex flex-col gap-6 max-h-[92vh] overflow-y-auto animate-slide-up relative text-slate-800 dark:text-slate-100 transition-colors">
         
         {/* Branding Watermark */}
-        <div className="absolute top-4 right-4 text-[7px] text-slate-350 font-black tracking-widest select-none uppercase">
+        <div className="absolute top-4 right-4 text-[7px] text-slate-400 dark:text-slate-500 font-black tracking-widest select-none uppercase">
           Final Audit Record SPIL-LOG
         </div>
 
         {/* Header Ribbon */}
-        <div className="text-center flex flex-col items-center gap-3 border-b border-slate-100 pb-5">
+        <div className="text-center flex flex-col items-center gap-3 border-b border-slate-100 dark:border-white/10 pb-5">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center border shadow-md ${
             isBankrupt 
-              ? 'bg-rose-50 border-rose-200 text-spil-red animate-pulse' 
-              : 'bg-amber-50 border-amber-250 text-amber-500 animate-bounce'
+              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-spil-red dark:text-rose-400 animate-pulse' 
+              : 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-500 dark:text-amber-400 animate-bounce'
           }`}>
             {isBankrupt ? <AlertOctagon className="w-8 h-8" /> : <Trophy className="w-8 h-8" />}
           </div>
           
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 font-display">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white font-display">
               {isBankrupt ? 'Operasi Pelayaran Dihentikan! Bangkrut' : 'Siklus Pelayaran Selesai! (Termasuk Drain Phase)'}
             </h1>
-            <p className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-widest">
+            <p className="text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase mt-1 tracking-widest">
               Laporan Audit Resmi Stowage & Logistik Kapal PT. SPIL
             </p>
           </div>
         </div>
 
         {/* Player Rank & Rating Badge */}
-        <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-inner">
+        <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-inner">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-650 shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-150 dark:border-indigo-800 flex items-center justify-center text-indigo-650 dark:text-indigo-300 shrink-0">
               <Award className="w-6 h-6 animate-pulse" />
             </div>
             <div className="text-left">
-              <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block">
+              <span className="text-[8px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block">
                 Penilaian Rating Perwira Stowage
               </span>
-              <span className="text-base font-black text-slate-700 uppercase tracking-wide">
+              <span className="text-base font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide">
                 {playerRating || 'Stowage Inspector'}
               </span>
             </div>
           </div>
           
           <div className="text-right self-start md:self-auto shrink-0">
-            <span className="text-[8px] text-slate-400 font-black block uppercase tracking-wider mb-1">
+            <span className="text-[8px] text-slate-400 dark:text-slate-400 font-black block uppercase tracking-wider mb-1">
               Hasil Evaluasi Auditor
             </span>
             <span className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg border ${
               isBankrupt 
-                ? 'bg-rose-50 text-spil-red border-rose-200' 
-                : 'bg-emerald-50 text-emerald-700 border-emerald-250'
+                ? 'bg-rose-50 dark:bg-rose-950/60 text-spil-red dark:text-rose-300 border-rose-200 dark:border-rose-800' 
+                : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
             }`}>
               {isBankrupt ? 'Kegagalan Finansial & Operasional' : 'Operator Disetujui / Layak Jalan'}
             </span>
@@ -68,9 +68,9 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
 
         {/* Benchmark Final Podium (Human vs AI Bots) */}
         {players && Object.values(players).length > 1 && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5">
-            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-1.5 border-b border-slate-200 pb-2">
-              <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+          <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 rounded-2xl p-4.5">
+            <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-white/10 pb-2">
+              <Trophy className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
               Klasemen Akhir Pelayaran 8-Minggu (Human vs AI Benchmark)
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -83,12 +83,12 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
                       key={p.id || idx}
                       className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
                         isUser 
-                          ? 'bg-emerald-50/80 border-emerald-300 shadow-sm ring-2 ring-emerald-500/20' 
-                          : 'bg-white border-slate-200 shadow-xs'
+                          ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 shadow-sm ring-2 ring-emerald-500/20' 
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 shadow-xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-black uppercase text-slate-500">
+                        <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
                           {idx === 0 ? '🥇 Juara 1' : idx === 1 ? '🥈 Juara 2' : idx === 2 ? '🥉 Juara 3' : `#${idx + 1}`}
                         </span>
                         {isUser && (
@@ -97,10 +97,10 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-black text-slate-800 truncate mb-1">
+                      <span className="text-xs font-black text-slate-800 dark:text-white truncate mb-1">
                         {p.name}
                       </span>
-                      <span className={`text-sm font-black ${p.cash >= 0 ? 'text-emerald-700' : 'text-spil-red'}`}>
+                      <span className={`text-sm font-black ${p.cash >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-spil-red dark:text-rose-400'}`}>
                         {formatRupiah(p.cash)}
                       </span>
                     </div>
@@ -113,33 +113,33 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
         {/* Final Financial Breakdown Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Final Cash Reserves */}
-          <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl flex justify-between items-center relative overflow-hidden">
+          <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 p-5 rounded-xl flex justify-between items-center relative overflow-hidden">
             <div>
-              <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">
+              <span className="text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block mb-1">
                 Saldo Modal Akhir
               </span>
-              <span className={`text-2xl font-black ${isBankrupt ? 'text-spil-red' : 'text-emerald-700'}`}>
+              <span className={`text-2xl font-black ${isBankrupt ? 'text-spil-red dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
                 {formatRupiah(cash)}
               </span>
             </div>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm ${
-              isBankrupt ? 'bg-rose-50 border-rose-200 text-spil-red' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              isBankrupt ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-spil-red dark:text-rose-300' : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
             }`}>
               <Ship className="w-5 h-5" />
             </div>
           </div>
 
           {/* Cumulative Shifting Penalties */}
-          <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl flex justify-between items-center relative overflow-hidden">
+          <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 p-5 rounded-xl flex justify-between items-center relative overflow-hidden">
             <div>
-              <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mb-1">
+              <span className="text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block mb-1">
                 Total Denda Pelayaran
               </span>
-              <span className="text-2xl font-black text-spil-red">
+              <span className="text-2xl font-black text-spil-red dark:text-rose-400">
                 {formatRupiah(accumulatedPenalties)}
               </span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-spil-red shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-spil-red dark:text-rose-300 shadow-sm">
               <ShieldAlert className="w-5 h-5" />
             </div>
           </div>
@@ -147,15 +147,15 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
 
         {/* Historical Ledger Report */}
         {history && history.length > 0 && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5">
-            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3.5 flex items-center gap-1.5 border-b border-slate-200 pb-2.5">
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 rounded-2xl p-4.5">
+            <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest mb-3.5 flex items-center gap-1.5 border-b border-slate-200 dark:border-white/10 pb-2.5">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               Laporan Riwayat Buku Besar Pelayaran 8-Minggu
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse min-w-[550px]">
                 <thead>
-                  <tr className="text-slate-400 font-black border-b border-slate-250 pb-2.5 uppercase select-none text-[9px] tracking-wider">
+                  <tr className="text-slate-400 dark:text-slate-400 font-black border-b border-slate-200 dark:border-white/10 pb-2.5 uppercase select-none text-[9px] tracking-wider">
                     <th className="py-2">Minggu</th>
                     <th>Pelabuhan</th>
                     <th>Unit Rolled</th>
@@ -166,17 +166,17 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
                     <th className="text-right">Net Income</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                   {history.map((log, idx) => (
-                    <tr key={idx} className="text-slate-655 font-bold hover:bg-slate-50/50">
-                      <td className="py-3 text-slate-500 font-extrabold">Minggu {log.week}</td>
-                      <td className="uppercase text-slate-800 font-black">{log.port}</td>
+                    <tr key={idx} className="text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                      <td className="py-3 text-slate-500 dark:text-slate-400 font-extrabold">Minggu {log.week}</td>
+                      <td className="uppercase text-slate-800 dark:text-white font-black">{log.port}</td>
                       <td>{log.rolledCount}x</td>
-                      <td className="text-spil-red">{log.rollingPenalty > 0 ? formatRupiah(log.rollingPenalty) : 'Rp 0'}</td>
+                      <td className="text-spil-red dark:text-rose-400">{log.rollingPenalty > 0 ? formatRupiah(log.rollingPenalty) : 'Rp 0'}</td>
                       <td>{log.restowCount}x</td>
-                      <td className="text-spil-red">{log.restowPenalty > 0 ? formatRupiah(log.restowPenalty) : 'Rp 0'}</td>
-                      <td className="text-emerald-700">+{formatRupiah(log.grossRevenue)}</td>
-                      <td className={`text-right font-black ${log.netIncome >= 0 ? 'text-emerald-700' : 'text-spil-red'}`}>
+                      <td className="text-spil-red dark:text-rose-400">{log.restowPenalty > 0 ? formatRupiah(log.restowPenalty) : 'Rp 0'}</td>
+                      <td className="text-emerald-700 dark:text-emerald-400">+{formatRupiah(log.grossRevenue)}</td>
+                      <td className={`text-right font-black ${log.netIncome >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-spil-red dark:text-rose-400'}`}>
                         {log.netIncome >= 0 ? '+' : ''}{formatRupiah(log.netIncome)}
                       </td>
                     </tr>
@@ -188,11 +188,11 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
         )}
 
         {/* Action Buttons */}
-        <div className="mt-2 flex flex-col sm:flex-row justify-center items-center gap-3 border-t border-slate-100 pt-5">
+        <div className="mt-2 flex flex-col sm:flex-row justify-center items-center gap-3 border-t border-slate-100 dark:border-white/10 pt-5">
           {onOpenAnalytics && (
             <button
               onClick={onOpenAnalytics}
-              className="flex items-center justify-center gap-2 bg-slate-850 hover:bg-slate-900 text-white font-extrabold text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-md hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-extrabold text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-md hover:scale-[1.02] active:scale-95 transition-all"
             >
               <BarChart3 className="w-4 h-4 text-emerald-400" />
               Buka Laporan Audit Pembelajaran

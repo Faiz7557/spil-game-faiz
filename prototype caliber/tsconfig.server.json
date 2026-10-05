@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["node", "vite/client"], "lib": ["ES2022", "DOM", "DOM.Iterable"], "noEmit": true },
+  "include": ["api", "server", "src/domain", "supabase/seed", "evals", "scripts"]
+}

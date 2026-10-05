@@ -1,0 +1,150 @@
+/*
+ * Tailwind v4 over the PlantPulse design system (styles.css, the `legacy` layer). No preflight: styles.css owns
+ * the base. The legacy layer sits below `utilities`, so a Tailwind class always wins over a vocabulary class
+ * (.btn, .panel, .badge...) on the same element.
+ */
+@layer theme, base, legacy, reset, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "./styles.css" layer(legacy);
+
+@source "./";
+
+/* shadcn tokens, mapped onto the control-room palette */
+:root {
+  --background: var(--ground);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel-2);
+  --muted: var(--panel-2);
+  --muted-foreground: var(--ink-3);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --primary: var(--accent);
+  --primary-foreground: var(--on-accent);
+  --secondary: var(--panel-3);
+  --secondary-foreground: var(--ink);
+  --ring: var(--accent);
+
+  --sidebar: rgb(var(--ground-rgb) / 0.72);
+  --sidebar-foreground: var(--ink-2);
+  --sidebar-muted: var(--ink-3);
+  --sidebar-accent: rgb(var(--tint-rgb) / 0.08);
+  --sidebar-accent-foreground: var(--ink-hi);
+  --sidebar-border: var(--line);
+  --sidebar-primary: var(--accent);
+  --sidebar-ring: var(--accent);
+}
+:root[data-theme="light"] { --sidebar: rgba(255, 255, 255, 0.55); --sidebar-accent: rgb(var(--tint-rgb) / 0.06); }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-ground: var(--ground);
+  --color-ground-2: var(--ground-2);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-hot: var(--line-hot);
+  --color-ink-hi: var(--ink-hi);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-5: var(--ink-5);
+  --color-fg: rgb(var(--fg-rgb));
+  --color-canvas: var(--canvas);
+  --color-canvas-2: var(--canvas-2);
+  --color-surface: var(--surface);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-soft: var(--danger-soft);
+  --color-caution: var(--caution);
+  --color-caution-ink: var(--caution-ink);
+  --color-caution-soft: var(--caution-soft);
+  --color-ok: var(--ok);
+  --color-ok-ink: var(--ok-ink);
+  --color-ok-soft: var(--ok-soft);
+  --color-info: var(--info);
+  --color-info-ink: var(--info-ink);
+  --color-info-soft: var(--info-soft);
+  --color-ai: var(--ai);
+  --color-ai-ink: var(--ai-ink);
+  --color-ai-soft: var(--ai-soft);
+  /* old names still referenced by a few components */
+  --color-trail: var(--accent);
+  --color-manila: var(--panel-3);
+  --color-manila-ink: var(--ink);
+
+  --font-sans: var(--font);
+  --font-stamp: var(--font-mono);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: marquee var(--duration, 40s) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration, 40s) linear infinite;
+  --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
+  --animate-rise: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pp-pop { from { opacity: 0; transform: scale(0.97) translateY(-4px); } }
+@keyframes pp-fade { from { opacity: 0; } }
+@keyframes pp-slide-in { from { transform: translateX(-24px); opacity: 0; } }
+@keyframes pp-tab-in { from { opacity: 0; transform: translateX(var(--tab-from, 0)); } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(calc(-100% - var(--gap))); } }
+@keyframes marquee-vertical { from { transform: translateY(0); } to { transform: translateY(calc(-100% - var(--gap))); } }
+@keyframes border-beam { 100% { offset-distance: 100%; } }
+
+/* The minimal reset preflight would have given, limited to Tailwind-built surfaces (.tw). */
+@layer base {
+  .tw *, .tw *::before, .tw *::after { border-width: 0; border-style: solid; border-color: var(--color-border); }
+}
+@layer reset {
+  .tw button:not(.btn, .cite, .chip, .tag, .suggestion):not(.seg > button), .tw input:not(.input), .tw kbd { font: inherit; color: inherit; }
+  .tw button:not(.btn, .cite, .chip, .tag, .suggestion):not(.seg > button) { background: transparent; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: inherit; }
+  .tw a:not(.btn) { color: inherit; text-decoration: none; }
+  .tw img, .tw svg, .tw video, .tw canvas { display: block; max-width: 100%; }
+  .tw p, .tw h1, .tw h2, .tw h3, .tw h4, .tw ol, .tw ul, .tw dl, .tw dd, .tw figure, .tw blockquote { margin: 0; }
+  .tw ol, .tw ul { padding: 0; list-style: none; }
+  /* A grid with no column utility would size its implicit column to its widest child and push the page sideways on
+     phones. Default to one shrinkable column; any grid-cols-* utility (a higher layer) still wins. */
+  .tw .grid:not(.g-2, .g-3, .g-main, .g-queue), .tw.grid:not(.g-2, .g-3, .g-main, .g-queue) { grid-template-columns: minmax(0, 1fr); }
+}
+/* Recharts: theme its DOM so every chart speaks the same language */
+.recharts-wrapper, .recharts-surface { outline: none; }
+.recharts-cartesian-axis-tick text, .recharts-polar-angle-axis-tick text { fill: var(--ink-3); font: 11px var(--font); }
+.recharts-cartesian-grid line { stroke: rgb(var(--tint-rgb) / 0.09); }
+.recharts-reference-line-label { font: 500 10.5px var(--font-mono); }
+.recharts-tooltip-cursor { fill: rgb(var(--tint-rgb) / 0.06); }
+.recharts-sector, .recharts-rectangle { outline: none; }

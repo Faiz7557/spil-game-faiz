@@ -1,5 +1,6 @@
 import { formatRupiah, PORT_NAMES, getNextPort, PORT_CODES_INFO, TOTAL_GAME_WEEKS, HORIZON_WEEKS } from '../utils/gameHelpers';
-import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen, Clock, Compass, Ship, BarChart3 } from 'lucide-react';
+import { Calendar, Wallet, AlertTriangle, ArrowRight, Anchor, CheckCircle2, Trophy, FileText, BookOpen, Clock, Compass, Ship, BarChart3, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
 
 export default function Dashboard({ 
   week, 
@@ -16,17 +17,24 @@ export default function Dashboard({
   onOpenTutorial,
   onOpenISO,
   onOpenAnalytics,
-  onOpenBadges
+  onOpenBadges,
+  theme: propTheme,
+  toggleTheme: propToggle
 }) {
   const nextPort = getNextPort(currentPort, activePorts);
   const playersList = players ? Object.values(players).sort((a, b) => b.cash - a.cash) : [];
   
+  const hookTheme = useTheme();
+  const theme = propTheme || hookTheme.theme;
+  const toggleTheme = propToggle || hookTheme.toggleTheme;
+  const isDark = theme === 'dark';
+  
   return (
     <header className="w-full flex flex-col gap-5 mb-6 animate-slide-up">
       {/* Top Banner: Corporate Header */}
-      <div className="w-full bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col lg:flex-row justify-between items-center gap-5 shadow-sm relative overflow-hidden">
+      <div className="w-full bg-white dark:bg-slate-900 border border-black/[0.06] dark:border-white/10 rounded-[20px] p-5 flex flex-col lg:flex-row justify-between items-center gap-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] dark:shadow-xl relative overflow-hidden transition-colors">
         {/* Subtle Background Pattern */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-slate-50/50 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         
         {/* Logo & Game Info */}
         <div className="flex items-center gap-4 w-full lg:w-auto">
@@ -39,7 +47,7 @@ export default function Dashboard({
               <path 
                 d="M 10 5 Q 30 15, 50 5 T 90 5 L 85 45 Q 65 45, 45 55 T 5 45 Z" 
                 fill="#D21E20" 
-                stroke="#B5181A"
+                stroke="#B5181A" 
                 strokeWidth="1.5"
               />
               <rect x="3" y="2" width="4" height="60" fill="#94a3b8" rx="1" />
@@ -61,13 +69,13 @@ export default function Dashboard({
           </div>
           
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center gap-2 font-display">
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white flex items-center gap-2 font-display transition-colors">
               SPIL Game: 4 Jalur 
-              <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full uppercase tracking-wider">
+              <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 rounded-full uppercase tracking-wider">
                 Active Session
               </span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-extrabold tracking-wider uppercase mt-0.5">
+            <p className="text-[10px] text-slate-400 dark:text-slate-400 font-extrabold tracking-wider uppercase mt-0.5">
               Portal Perencanaan Stowage & Manajemen Pelayaran
             </p>
           </div>
@@ -75,9 +83,9 @@ export default function Dashboard({
 
         {/* Room / Mode Indicator */}
         {roomCode && (
-          <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl self-start lg:self-auto shrink-0 shadow-inner">
-            <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider">KODE ROOM:</span>
-            <span className={`text-sm font-black uppercase tracking-widest ${roomCode.includes('LOCAL') ? 'text-emerald-700' : 'text-indigo-600'}`}>
+          <div className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800/80 border border-black/[0.06] dark:border-white/10 px-4 py-2.5 rounded-xl self-start lg:self-auto shrink-0 shadow-xs">
+            <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">KODE ROOM:</span>
+            <span className={`text-sm font-black uppercase tracking-widest ${roomCode.includes('LOCAL') ? 'text-emerald-700 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
               {roomCode}
             </span>
           </div>
@@ -85,12 +93,12 @@ export default function Dashboard({
 
         {/* Turn Countdown Timer */}
         {turnTimer && (
-          <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border shadow-sm transition-all duration-300 self-start lg:self-auto shrink-0 ${
+          <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border shadow-xs transition-all duration-300 self-start lg:self-auto shrink-0 ${
             turnTimer.remainingSeconds <= 10 
-              ? 'bg-rose-50 border-rose-300 text-rose-700 animate-pulse' 
+              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400 animate-pulse' 
               : turnTimer.remainingSeconds <= 20
-              ? 'bg-amber-50 border-amber-300 text-amber-800'
-              : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+              ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-400'
+              : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400'
           }`}>
             <Clock className="w-4 h-4 shrink-0" />
             <div className="flex flex-col">
@@ -102,16 +110,16 @@ export default function Dashboard({
           </div>
         )}
 
-        {/* Quick Action Buttons (Tarif, Glosarium, ISO, Tutorial) */}
+        {/* Quick Action Buttons & Theme Toggle */}
         <div className="flex items-center gap-2 self-start lg:self-auto flex-wrap">
           {onOpenTariff && (
             <button
               type="button"
               onClick={onOpenTariff}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-black/[0.06] dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-700 text-slate-700 dark:text-slate-200 hover:text-emerald-800 dark:hover:text-emerald-300 text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:scale-[1.02] active:scale-95"
               title="Buka Lembar Informasi Tarif Muatan PT. SPIL [T]"
             >
-              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+              <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Info Tarif</span>
             </button>
           )}
@@ -120,10 +128,10 @@ export default function Dashboard({
             <button
               type="button"
               onClick={onOpenGlossary}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-black/[0.06] dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-700 text-slate-700 dark:text-slate-200 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:scale-[1.02] active:scale-95"
               title="Buka Glosarium & Standar Operasional SPIL Game [G]"
             >
-              <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+              <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span>Glosarium</span>
             </button>
           )}
@@ -132,10 +140,10 @@ export default function Dashboard({
             <button
               type="button"
               onClick={onOpenISO}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 text-slate-700 hover:text-cyan-800 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 border border-black/[0.06] dark:border-white/10 hover:border-cyan-300 dark:hover:border-cyan-700 text-slate-700 dark:text-slate-200 hover:text-cyan-800 dark:hover:text-cyan-300 text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:scale-[1.02] active:scale-95"
               title="Buka Visualisator Standar ISO 9711 (Bay-Row-Tier) [I]"
             >
-              <Ship className="w-3.5 h-3.5 text-cyan-600" />
+              <Ship className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
               <span>ISO 9711</span>
             </button>
           )}
@@ -144,10 +152,10 @@ export default function Dashboard({
             <button
               type="button"
               onClick={onOpenTutorial}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:scale-[1.02] active:scale-95"
               title="Buka Panduan & Tutorial Interaktif"
             >
-              <Compass className="w-3.5 h-3.5 text-spil-green" />
+              <Compass className="w-3.5 h-3.5 text-spil-green dark:text-emerald-400" />
               <span>Tutorial</span>
             </button>
           )}
@@ -156,10 +164,10 @@ export default function Dashboard({
             <button
               type="button"
               onClick={onOpenAnalytics}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-black/[0.06] dark:border-white/10 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:scale-[1.02] active:scale-95"
               title="Buka Laporan Audit Pembelajaran"
             >
-              <BarChart3 className="w-3.5 h-3.5 text-slate-600" />
+              <BarChart3 className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
               <span>Laporan</span>
             </button>
           )}
@@ -168,21 +176,35 @@ export default function Dashboard({
             <button
               type="button"
               onClick={onOpenBadges}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black uppercase tracking-wider transition-all shadow-sm hover:scale-[1.02] active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:scale-[1.02] active:scale-95"
               title="Buka Galeri Lencana & Pencapaian"
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-600" />
+              <Trophy className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span>Lencana</span>
             </button>
           )}
+
+          {/* Theme Toggle Button in Header */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-black/[0.08] dark:border-white/15 bg-white dark:bg-slate-800/90 text-slate-700 dark:text-amber-400 hover:scale-105 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title={isDark ? "Beralih ke Mode Terang (Light Mode)" : "Beralih ke Mode Gelap (Dark Mode)"}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-700" />}
+            <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">
+              {isDark ? "Terang" : "Gelap"}
+            </span>
+          </button>
         </div>
 
         {/* Port Sailing Voyage Timeline */}
-        <div className="flex items-center gap-3 bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80 w-full lg:w-auto shadow-sm">
-          <div className="flex items-center gap-1.5 text-slate-500 text-[9px] font-black uppercase tracking-wider pl-1">
-            <Anchor className="w-3.5 h-3.5 text-spil-green" /> Port
+        <div className="flex items-center gap-3 bg-slate-50/70 dark:bg-slate-800/60 p-2.5 rounded-xl border border-black/[0.06] dark:border-white/10 w-full lg:w-auto shadow-xs">
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider pl-1">
+            <Anchor className="w-3.5 h-3.5 text-spil-green dark:text-emerald-400" /> Port
           </div>
-          <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-spil-green text-white shadow-sm flex items-center gap-1 select-none">
+          <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-spil-green text-white shadow-xs flex items-center gap-1 select-none">
             {PORT_CODES_INFO[currentPort]?.fullLabel || currentPort}
             <span className="text-[9px] font-medium text-emerald-100">({PORT_NAMES[currentPort]})</span>
           </span>
@@ -192,9 +214,9 @@ export default function Dashboard({
             <ArrowRight className="w-4 h-4 text-slate-400 animate-bounce-horizontal" />
           </div>
           
-          <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-indigo-650 text-white shadow-sm flex items-center gap-1 select-none">
+          <span className="px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-indigo-600 text-white shadow-xs flex items-center gap-1 select-none">
             {PORT_CODES_INFO[nextPort]?.fullLabel || nextPort}
-            <span className="text-[9px] font-medium text-indigo-150">({PORT_NAMES[nextPort]})</span>
+            <span className="text-[9px] font-medium text-indigo-200">({PORT_NAMES[nextPort]})</span>
           </span>
         </div>
       </div>
@@ -204,68 +226,68 @@ export default function Dashboard({
         {/* Left Side: Stats cards */}
         <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Week Tracker Card */}
-          <div className="glass-panel p-5 flex items-center justify-between border-l-4 border-l-indigo-600 bg-white hover:shadow-md transition-all duration-300">
+          <div className="glass-panel p-5 flex items-center justify-between border-l-4 border-l-indigo-600 hover:shadow-md transition-all duration-300">
             <div>
               <span className="text-[9px] text-slate-400 font-black tracking-widest uppercase block mb-1">
                 SIKLUS WAKTU
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-black text-slate-800">
+                <span className="text-xl font-black text-slate-800 dark:text-white">
                   Minggu {week} <span className="text-slate-400 text-xs font-bold uppercase">/ {TOTAL_GAME_WEEKS}</span>
                 </span>
                 {week > HORIZON_WEEKS && (
-                  <span className="text-[9px] font-black bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                  <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                     Drain Phase
                   </span>
                 )}
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2.5 overflow-hidden">
                 <div 
                   className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
                   style={{ width: `${Math.min(100, (week / TOTAL_GAME_WEEKS) * 100)}%` }}
                 ></div>
               </div>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-650 shadow-sm">
+            <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-xs">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
 
           {/* Cash Balance Card */}
-          <div className="glass-panel p-5 flex items-center justify-between border-l-4 border-l-spil-green bg-white hover:shadow-md transition-all duration-300">
+          <div className="glass-panel p-5 flex items-center justify-between border-l-4 border-l-spil-green hover:shadow-md transition-all duration-300">
             <div>
               <span className="text-[9px] text-slate-400 font-black tracking-widest uppercase block mb-1">
                 SALDO KAPTEN
               </span>
-              <span className={`text-xl font-black tracking-tight ${cash >= 0 ? 'text-spil-green' : 'text-spil-red'}`}>
+              <span className={`text-xl font-black tracking-tight ${cash >= 0 ? 'text-spil-green dark:text-emerald-400' : 'text-spil-red dark:text-red-400'}`}>
                 {formatRupiah(cash)}
               </span>
               <span className="text-[8px] text-slate-400 font-bold block mt-2 uppercase">Target: Rp 300.000.000+</span>
             </div>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-sm ${
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-xs ${
               cash >= 0 
-                ? 'bg-emerald-50 border-emerald-150 text-spil-green' 
-                : 'bg-rose-50 border-rose-150 text-spil-red animate-pulse'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-spil-green dark:text-emerald-400' 
+                : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-spil-red dark:text-red-400 animate-pulse'
             }`}>
               <Wallet className="w-5 h-5" />
             </div>
           </div>
 
           {/* Accumulated Penalties Card */}
-          <div className="glass-panel p-5 flex items-center justify-between border-l-4 border-l-spil-red bg-white hover:shadow-md transition-all duration-300">
+          <div className="glass-panel p-5 flex items-center justify-between border-l-4 border-l-spil-red hover:shadow-md transition-all duration-300">
             <div>
               <span className="text-[9px] text-slate-400 font-black tracking-widest uppercase block mb-1">
                 AKUMULASI DENDA
               </span>
-              <span className={`text-xl font-black tracking-tight ${accumulatedPenalties > 0 ? 'text-spil-red' : 'text-slate-400'}`}>
+              <span className={`text-xl font-black tracking-tight ${accumulatedPenalties > 0 ? 'text-spil-red dark:text-red-400' : 'text-slate-400'}`}>
                 {formatRupiah(accumulatedPenalties)}
               </span>
               <span className="text-[8px] text-slate-400 font-bold block mt-2 uppercase">Denda Shifting & Rolling</span>
             </div>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-sm ${
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-xs ${
               accumulatedPenalties > 0 
-                ? 'bg-rose-50 border-rose-150 text-spil-red animate-shake' 
-                : 'bg-slate-50 border-slate-200 text-slate-400'
+                ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-spil-red dark:text-red-400 animate-shake' 
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'
             }`}>
               <AlertTriangle className="w-5 h-5" />
             </div>
@@ -273,10 +295,10 @@ export default function Dashboard({
         </div>
 
         {/* Right Side: Shared Papan Peringkat (Leaderboard) */}
-        <div className="lg:col-span-1 glass-panel p-4 bg-white flex flex-col justify-between border-l-4 border-l-indigo-650 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-50/20 rounded-full blur-xl pointer-events-none"></div>
+        <div className="lg:col-span-1 glass-panel p-4 flex flex-col justify-between border-l-4 border-l-indigo-600 shadow-xs relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-50/20 dark:bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
           <div>
-            <span className="text-[9px] text-slate-450 font-black tracking-widest uppercase block mb-3 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+            <span className="text-[9px] text-slate-400 font-black tracking-widest uppercase block mb-3 flex items-center gap-1.5 border-b border-black/[0.06] dark:border-white/10 pb-1.5">
               <Trophy className="w-3.5 h-3.5 text-amber-500" /> Papan Peringkat
             </span>
             
@@ -297,20 +319,20 @@ export default function Dashboard({
                     key={p.id} 
                     className={`flex items-center justify-between text-xs p-2 rounded-xl border transition-all duration-200 ${
                       isMe 
-                        ? 'bg-indigo-50/70 border-indigo-250 font-black text-indigo-900 shadow-sm scale-[0.99]' 
-                        : 'bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-indigo-50/70 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 font-black text-indigo-900 dark:text-indigo-200 shadow-xs scale-[0.99]' 
+                        : 'bg-slate-50/50 dark:bg-slate-800/50 border-black/[0.06] dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
                       {rankBadge}
                       <span className="truncate max-w-[75px] font-bold" title={p.name}>{p.name}</span>
                       {p.ready && (
-                        <span className="flex items-center text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full p-0.5" title="Siap Berlayar">
+                        <span className="flex items-center text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-full p-0.5" title="Siap Berlayar">
                           <CheckCircle2 className="w-3 h-3 fill-emerald-600 text-white" />
                         </span>
                       )}
                     </div>
-                    <span className={`font-extrabold shrink-0 text-[11px] ${p.cash >= 0 ? 'text-emerald-700' : 'text-spil-red'}`}>
+                    <span className={`font-extrabold shrink-0 text-[11px] ${p.cash >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-spil-red dark:text-red-400'}`}>
                       {Math.abs(p.cash) >= 1000000000 
                         ? `${(p.cash / 1000000000).toFixed(1)}M` 
                         : `${(p.cash / 1000000).toFixed(0)}Jt`}

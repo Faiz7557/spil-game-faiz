@@ -12,12 +12,19 @@ import LearningAnalyticsModal from './components/LearningAnalyticsModal';
 import BadgeGalleryModal from './components/BadgeGalleryModal';
 import BotTurnAnimationModal from './components/BotTurnAnimationModal';
 import ChatPanel from './components/ChatPanel';
+import LandingPage from './landing/LandingPage';
+import GridPulse from './components/ui/GridPulse';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useTheme } from './hooks/useTheme';
 import { validateGridPhysics, formatRupiah, HORIZON_WEEKS, TOTAL_GAME_WEEKS } from './utils/gameHelpers';
 import { evaluateEarnedBadges } from '../../shared/badgeDefinitions.js';
 import { AlertCircle, HelpCircle, Anchor, Play, Award, Users, LogIn, Monitor, Network, Eye } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '3000') ? 'http://localhost:5050' : '');
+const API_BASE_URL = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && window.location.port !== '3000' && window.location.port !== '5050' && (window.location.port === '5190' || window.location.port === '5173' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? `http://${window.location.hostname}:5050`
+    : ''
+);
 
 // Stable per-browser identity, persisted across reloads and reconnects.
 // Used as the multiplayer player key (replacing socket.id, which changes on
@@ -45,6 +52,7 @@ const getStoredAuthUser = () => {
 };
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [gameMode, setGameMode] = useState(null); // 'OFFLINE' | 'ONLINE' | 'AUTH' | 'LEADERBOARD' | null
 
   // --- ACCOUNT STATE ---
@@ -728,151 +736,72 @@ export default function App() {
   // of RENDER 3's derived values.
   const myPlayerId = authUser ? `user_${authUser.userId}` : CLIENT_ID;
 
-  // --- RENDER 1: MODE SELECTION ---
+  // --- RENDER 1: LANDING PAGE (Caliber-inspired scrollytelling) ---
   if (gameMode === null) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up" style={{ backgroundImage: "linear-gradient(to bottom, #103b22, #2E7D4E, #103b22)" }}>
-        <div className="glass-panel max-w-2xl w-full p-8 md:p-10 text-center border-slate-200 shadow-2xl relative overflow-hidden">
-          {/* Subtle branding decorative background */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-rose-500/5 rounded-full blur-2xl pointer-events-none"></div>
-
-          {/* Account status */}
-          <div className="absolute top-4 right-4 text-xs">
-            {authUser ? (
-              <div className="flex items-center gap-2 text-slate-500 font-bold">
-                <span>👤 {authUser.username}</span>
-                <button onClick={handleLogout} className="text-rose-500 hover:text-rose-600 uppercase text-[10px] font-extrabold">Keluar Akun</button>
-              </div>
-            ) : (
-              <button onClick={handleOpenAuth} className="flex items-center gap-1.5 text-slate-500 hover:text-spil-green font-extrabold uppercase text-[10px]">
-                <LogIn className="w-3.5 h-3.5" /> Login / Daftar
-              </button>
-            )}
-          </div>
-
-          {/* SPIL Corporate SVG Waving Red Flag Header */}
-          <div className="w-24 h-16 flex items-center justify-center mx-auto mb-6 shrink-0">
-            <svg viewBox="0 0 100 65" className="w-full h-full drop-shadow-md select-none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M 10 5 Q 30 15, 50 5 T 90 5 L 85 45 Q 65 45, 45 55 T 5 45 Z" fill="#D21E20" stroke="#B5181A" strokeWidth="1.5" />
-              <rect x="3" y="2" width="4" height="60" fill="#94a3b8" rx="1" />
-              <circle cx="5" cy="2" r="3" fill="#64748b" />
-              <text x="45" y="30" fill="#FFFFFF" fontSize="18" fontWeight="900" fontFamily="'Outfit', 'Inter', sans-serif" textAnchor="middle" transform="rotate(6, 45, 30)" letterSpacing="1">SPIL</text>
-            </svg>
-          </div>
-
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800 mb-2 font-display">
-            SPIL GAME: 4 JALUR
-          </h1>
-          <p className="text-slate-500 text-xs md:text-sm mb-10 font-bold uppercase tracking-widest border-b border-slate-100 pb-6">
-            Simulator Logistik, Stowage & Pelayaran Kontainer
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Opsi 1: Mabar Offline */}
-            <button
-              onClick={() => setGameMode('OFFLINE')}
-              className="glass-panel-interactive p-6 flex flex-col items-center text-center gap-4 border border-slate-200/80 hover:border-spil-green hover:shadow-xl transition-all duration-300 rounded-2xl group bg-slate-50/50 hover:bg-white"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-spil-green-light flex items-center justify-center text-spil-green group-hover:scale-110 transition-transform duration-300">
-                <Monitor className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-800 text-base mb-1.5 group-hover:text-spil-green transition-colors">Mabar Offline (Lokal)</h3>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Bermain bergantian (Pass & Play) bersama **4 pemain di satu layar** secara bergilir tanpa butuh internet.
-                </p>
-              </div>
-            </button>
-
-            {/* Opsi 2: Mabar Online */}
-            <button
-              onClick={() => setGameMode('ONLINE')}
-              className="glass-panel-interactive p-6 flex flex-col items-center text-center gap-4 border border-slate-200/80 hover:border-spil-red hover:shadow-xl transition-all duration-300 rounded-2xl group bg-slate-50/50 hover:bg-white"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-spil-red-light flex items-center justify-center text-spil-red group-hover:scale-110 transition-transform duration-300">
-                <Network className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-800 text-base mb-1.5 group-hover:text-spil-red transition-colors">Mabar Online (Room)</h3>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Buat atau gabung kamar online kompetitif secara **real-time bersama teman** di perangkat yang berbeda.
-                </p>
-              </div>
-            </button>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <button
-              onClick={handleOpenLeaderboard}
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-amber-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
-            >
-              <Award className="w-4 h-4" /> Papan Peringkat
-            </button>
-            <button
-              onClick={() => setIsTariffOpen(true)}
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-emerald-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
-            >
-              📋 Lembar Tarif SPIL
-            </button>
-            <button
-              onClick={() => setIsGlossaryOpen(true)}
-              className="inline-flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 font-extrabold text-xs uppercase tracking-widest transition-colors"
-            >
-              📖 Glosarium & Panduan
-            </button>
-          </div>
-        </div>
-
-        {/* Informational Modals for Landing Page */}
+      <>
+        <LandingPage
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onSelectOffline={() => setGameMode('OFFLINE')}
+          onSelectOnline={() => setGameMode('ONLINE')}
+          onOpenLeaderboard={handleOpenLeaderboard}
+          onOpenAuth={handleOpenAuth}
+          onOpenTariff={() => setIsTariffOpen(true)}
+          onOpenGlossary={() => setIsGlossaryOpen(true)}
+          authUser={authUser}
+          onLogout={handleLogout}
+        />
+        {/* Informational Modals accessible from Landing Page */}
         <TariffModal isOpen={isTariffOpen} onClose={() => setIsTariffOpen(false)} currentPort="SBY" />
         <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
-      </div>
+      </>
     );
   }
 
   // --- RENDER: LOGIN / REGISTER ---
   if (gameMode === 'AUTH') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up" style={{ backgroundImage: "linear-gradient(to bottom, #103b22, #2E7D4E, #103b22)" }}>
-        <div className="glass-panel max-w-sm w-full p-8 text-center border-slate-200 shadow-2xl relative overflow-hidden">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 font-extrabold hover:text-slate-600 uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
+        <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
+        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-sm w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
 
-          <div className="w-14 h-14 rounded-2xl bg-spil-green-light border border-green-100 flex items-center justify-center text-spil-green mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-spil-green-light dark:bg-emerald-950/60 border border-green-100 dark:border-emerald-800 flex items-center justify-center text-spil-green dark:text-emerald-400 mx-auto mb-4">
             <LogIn className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-black text-slate-800 mb-1 uppercase tracking-wider">
+          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">
             {authMode === 'login' ? 'Masuk ke Akun' : 'Daftar Akun Baru'}
           </h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 pb-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             Lacak Profil & Peringkat Anda
           </p>
 
           <form className="space-y-4 text-left" onSubmit={handleAuthSubmit}>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 tracking-wider">Nama Pengguna</label>
+              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider">Nama Pengguna</label>
               <input
                 type="text"
                 placeholder="3-20 karakter, huruf/angka/underscore"
                 value={authUsernameInput}
                 onChange={(e) => setAuthUsernameInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
                 maxLength={20}
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 tracking-wider">Kata Sandi</label>
+              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider">Kata Sandi</label>
               <input
                 type="password"
                 placeholder="Minimal 6 karakter"
                 value={authPasswordInput}
                 onChange={(e) => setAuthPasswordInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
               />
             </div>
 
             {authError && (
-              <p className="text-xs text-rose-600 font-bold bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{authError}</p>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-lg px-3 py-2">{authError}</p>
             )}
 
             <button
@@ -886,12 +815,12 @@ export default function App() {
             <button
               type="button"
               onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
-              className="w-full text-center text-[10px] text-slate-400 font-bold uppercase hover:text-slate-600"
+              className="w-full text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase hover:text-slate-600 dark:hover:text-slate-200"
             >
               {authMode === 'login' ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Masuk di sini'}
             </button>
           </form>
-        </div>
+        </article>
       </div>
     );
   }
@@ -899,15 +828,16 @@ export default function App() {
   // --- RENDER: GLOBAL LEADERBOARD ---
   if (gameMode === 'LEADERBOARD') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up" style={{ backgroundImage: "linear-gradient(to bottom, #1a1200, #4a3200, #1a1200)" }}>
-        <div className="glass-panel max-w-2xl w-full p-8 text-center border-slate-200 shadow-2xl relative overflow-hidden">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 font-extrabold hover:text-slate-600 uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
+        <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
+        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-2xl w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
 
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto mb-4">
             <Award className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-black text-slate-800 mb-1 uppercase tracking-wider">Papan Peringkat Global</h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 pb-4">Kapten Terbaik Berdasarkan Saldo Akhir</p>
+          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">Papan Peringkat Global</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Kapten Terbaik Berdasarkan Saldo Akhir</p>
 
           {leaderboardData === null && (
             <p className="text-xs text-slate-400 font-bold uppercase py-8">Memuat peringkat...</p>
@@ -919,7 +849,7 @@ export default function App() {
             <div className="text-left overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-[10px] text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                  <tr className="text-[10px] text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                     <th className="py-2 px-2 text-left">#</th>
                     <th className="py-2 px-2 text-left">Kapten</th>
                     <th className="py-2 px-2 text-left">Mode</th>
@@ -929,21 +859,21 @@ export default function App() {
                 </thead>
                 <tbody>
                   {leaderboardData.map((entry, idx) => (
-                    <tr key={idx} className="border-b border-slate-50">
+                    <tr key={idx} className="border-b border-slate-50 dark:border-slate-800">
                       <td className="py-2 px-2 font-black text-slate-400">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                       </td>
-                      <td className="py-2 px-2 font-extrabold text-slate-800">{entry.player_name}</td>
-                      <td className="py-2 px-2 text-slate-500 font-bold">{entry.mode === 'ONLINE' ? 'Online' : 'Offline'}</td>
-                      <td className="py-2 px-2 text-slate-500 font-medium">{entry.player_rating}</td>
-                      <td className={`py-2 px-2 text-right font-black ${entry.cash < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>{formatRupiah(entry.cash)}</td>
+                      <td className="py-2 px-2 font-extrabold text-slate-800 dark:text-white">{entry.player_name}</td>
+                      <td className="py-2 px-2 text-slate-500 dark:text-slate-400 font-bold">{entry.mode === 'ONLINE' ? 'Online' : 'Offline'}</td>
+                      <td className="py-2 px-2 text-slate-500 dark:text-slate-400 font-medium">{entry.player_rating}</td>
+                      <td className={`py-2 px-2 text-right font-black ${entry.cash < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatRupiah(entry.cash)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
+        </article>
       </div>
     );
   }
@@ -951,26 +881,27 @@ export default function App() {
   // --- RENDER 2: LOBBY FORM ---
   if (gameMode === 'ONLINE' && (!isInRoom || !roomState || (!isSpectator && !roomState.players[myPlayerId]))) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up animate-fade-in" style={{ backgroundImage: "linear-gradient(to bottom, #450a0a, #991b1b, #450a0a)" }}>
-        <div className="glass-panel max-w-md w-full p-8 text-center border-slate-200 shadow-2xl relative overflow-hidden">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 font-extrabold hover:text-slate-600 uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up animate-fade-in relative">
+        <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
+        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-md w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
           
-          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-spil-red mx-auto mb-4 animate-bounce">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 flex items-center justify-center text-spil-red dark:text-rose-400 mx-auto mb-4 animate-bounce">
             <Network className="w-7 h-7" />
           </div>
           
-          <h2 className="text-xl font-black text-slate-800 mb-1 uppercase tracking-wider">Mabar Online (Open Room)</h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 pb-4">Mode Kompetisi Real-Time</p>
+          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">Mabar Online (Open Room)</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Mode Kompetisi Real-Time</p>
           
           <form className="space-y-4 text-left">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 tracking-wider">Nama Planner / Kapten</label>
+              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider">Nama Planner / Kapten</label>
               <input
                 type="text"
                 placeholder="Masukkan nama kapten..."
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-spil-red font-bold text-sm bg-slate-50/50"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-red font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
                 maxLength={12}
               />
             </div>
@@ -978,7 +909,7 @@ export default function App() {
             <div className="pt-2">
               <button
                 onClick={handleCreateRoom}
-                className="w-full flex items-center justify-center gap-2 bg-spil-red hover:bg-spil-red-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 bg-spil-red hover:bg-spil-red-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
               >
                 <Users className="w-4 h-4" />
                 Buat Kamar Baru (Host)
@@ -986,9 +917,9 @@ export default function App() {
             </div>
 
             <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-slate-200"></div>
+              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
               <span className="flex-shrink mx-4 text-slate-400 font-extrabold text-[10px] tracking-widest uppercase">ATAU GABUNG</span>
-              <div className="flex-grow border-t border-slate-200"></div>
+              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
             </div>
 
             <div className="flex gap-2">
@@ -997,12 +928,12 @@ export default function App() {
                 placeholder="Kode Kamar..."
                 value={roomCodeInput}
                 onChange={(e) => setRoomCodeInput(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-spil-red font-bold text-sm uppercase text-center tracking-widest bg-slate-50/50"
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-red font-bold text-sm uppercase text-center tracking-widest bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
                 maxLength={4}
               />
               <button
                 onClick={handleJoinRoom}
-                className="bg-slate-800 hover:bg-slate-900 text-white font-extrabold px-6 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-95 transition-all duration-200"
+                className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-extrabold px-6 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 Gabung
@@ -1013,55 +944,56 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleSpectateRoom}
-                className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-3 px-4 rounded-xl uppercase tracking-wider text-xs border border-slate-300 transition-all hover:scale-[1.01] active:scale-95"
+                className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold py-3 px-4 rounded-xl uppercase tracking-wider text-xs border border-slate-300 dark:border-slate-700 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
               >
-                <Eye className="w-4 h-4 text-slate-600" />
+                <Eye className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                 Masuk sebagai Penonton (Spectator)
               </button>
             </div>
           </form>
 
           {alertMessage && (
-            <div className="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-spil-red text-[11px] font-bold">
+            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-bold">
               {alertMessage}
             </div>
           )}
-        </div>
+        </article>
       </div>
     );
   }
 
   if (gameMode === 'OFFLINE' && !isOfflineGameStarted) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up" style={{ backgroundImage: "linear-gradient(to bottom, #103b22, #2E7D4E, #103b22)" }}>
-        <div className="glass-panel max-w-xl w-full p-8 text-center border-slate-200 shadow-2xl relative overflow-hidden">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 font-extrabold hover:text-slate-600 uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
+        <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
+        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-xl w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
           
-          <div className="w-14 h-14 rounded-2xl bg-spil-green-light border border-green-100 flex items-center justify-center text-spil-green mx-auto mb-4 animate-bounce">
+          <div className="w-14 h-14 rounded-2xl bg-spil-green-light dark:bg-emerald-950/60 border border-green-100 dark:border-emerald-800 flex items-center justify-center text-spil-green dark:text-emerald-400 mx-auto mb-4 animate-bounce">
             <Monitor className="w-7 h-7" />
           </div>
           
-          <h2 className="text-xl font-black text-slate-800 mb-1 uppercase tracking-wider">Single Player vs Bot AI</h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 pb-4">Mode Offline Skripsi: Bermain Bertanding Melawan 3 AI Agent</p>
+          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">Single Player vs Bot AI</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Mode Offline Skripsi: Bermain Bertanding Melawan 3 AI Agent</p>
 
           {resumableSession && (
-            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-left">
-              <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Permainan Belum Selesai Ditemukan</p>
-              <p className="text-xs text-slate-600 font-bold mb-3">
+            <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-left">
+              <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-1">Permainan Belum Selesai Ditemukan</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-bold mb-3">
                 {resumableSession.players[0]?.name || 'Kapten'} · Minggu {resumableSession.week}/8 · Port {resumableSession.currentPort} · Saldo {formatRupiah(resumableSession.players[0]?.cash)}
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleResumeOfflineGame}
-                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-sm"
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-sm cursor-pointer"
                 >
                   Lanjutkan Permainan
                 </button>
                 <button
                   type="button"
                   onClick={() => setResumableSession(null)}
-                  className="text-[10px] text-slate-400 font-bold uppercase hover:text-slate-600 px-3"
+                  className="text-[10px] text-slate-400 font-bold uppercase hover:text-slate-600 dark:hover:text-slate-200 px-3 cursor-pointer"
                 >
                   Mulai Baru
                 </button>
@@ -1070,9 +1002,9 @@ export default function App() {
           )}
 
           {!resumableSession && (
-          <form className="space-y-5 text-left">
+          <form className="space-y-5 text-left" onSubmit={handleStartOfflineGame}>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 tracking-wider border-l-2 border-spil-green pl-2">NAMA KAPTEN ANDA (HUMAN PLAYER):</label>
+              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider border-l-2 border-spil-green pl-2">NAMA KAPTEN ANDA (HUMAN PLAYER):</label>
               <input
                 type="text"
                 placeholder="Masukkan Nama Anda..."
@@ -1082,37 +1014,38 @@ export default function App() {
                   newNames[0] = e.target.value;
                   setOfflinePlayersNames(newNames);
                 }}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
                 maxLength={12}
               />
             </div>
 
             <div className="space-y-2 pt-1">
-              <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest block mb-2 border-l-2 border-indigo-500 pl-2">KAPTEN LAWAN (BOT AGENTS SKRIPSI):</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest block mb-2 border-l-2 border-indigo-500 pl-2">KAPTEN LAWAN (BOT AGENTS SKRIPSI):</span>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="bg-gradient-to-br from-indigo-50/70 to-white p-3 rounded-xl border border-indigo-150 shadow-sm">
-                  <span className="font-extrabold text-indigo-900 block text-[11px] mb-0.5">🤖 Bot Alpha (Smart AI)</span>
-                  <span className="text-[8px] text-indigo-600 font-bold uppercase tracking-wider block">Smart Restow Minimizer</span>
+                <div className="bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/60 dark:to-slate-800 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 shadow-xs">
+                  <span className="font-extrabold text-indigo-900 dark:text-indigo-200 block text-[11px] mb-0.5">🤖 Bot Alpha (Smart AI)</span>
+                  <span className="text-[8px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block">Smart Restow Minimizer</span>
                 </div>
                 
-                <div className="bg-gradient-to-br from-amber-50/70 to-white p-3 rounded-xl border border-amber-150 shadow-sm">
-                  <span className="font-extrabold text-amber-900 block text-[11px] mb-0.5">⚡ Bot Beta (Greedy AI)</span>
-                  <span className="text-[8px] text-amber-600 font-bold uppercase tracking-wider block">Revenue Maximizer</span>
+                <div className="bg-gradient-to-br from-amber-50/70 to-white dark:from-amber-950/60 dark:to-slate-800 p-3 rounded-xl border border-amber-200 dark:border-amber-800 shadow-xs">
+                  <span className="font-extrabold text-amber-900 dark:text-amber-200 block text-[11px] mb-0.5">⚡ Bot Beta (Greedy AI)</span>
+                  <span className="text-[8px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider block">Revenue Maximizer</span>
                 </div>
 
-                <div className="bg-gradient-to-br from-emerald-50/70 to-white p-3 rounded-xl border border-emerald-150 shadow-sm">
-                  <span className="font-extrabold text-emerald-900 block text-[11px] mb-0.5">⚖️ Bot Gamma (Balanced)</span>
-                  <span className="text-[8px] text-emerald-600 font-bold uppercase tracking-wider block">Balanced Strategy</span>
+                <div className="bg-gradient-to-br from-emerald-50/70 to-white dark:from-emerald-950/60 dark:to-slate-800 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                  <span className="font-extrabold text-emerald-900 dark:text-emerald-200 block text-[11px] mb-0.5">⚖️ Bot Gamma (Balanced)</span>
+                  <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider block">Balanced Strategy</span>
                 </div>
               </div>
             </div>
 
             <div className="pt-3">
               <button
+                type="button"
                 onClick={handleStartOfflineGame}
                 disabled={loading}
-                className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Play className="w-4 h-4 fill-white" />
                 {loading ? 'Menyiapkan Simulasi Bot...' : 'Mulai Tanding vs Bot AI'}
@@ -1121,7 +1054,13 @@ export default function App() {
           </form>
           )}
 
-        </div>
+          {alertMessage && (
+            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-bold">
+              {alertMessage}
+            </div>
+          )}
+
+        </article>
       </div>
     );
   }
@@ -1165,7 +1104,10 @@ export default function App() {
   const isDrainPhase = (gameMode === 'ONLINE' ? roomState?.isDrainPhase : (offlineWeek > HORIZON_WEEKS && offlineWeek <= TOTAL_GAME_WEEKS)) ?? false;
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center max-w-[1400px] mx-auto">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center max-w-[1400px] mx-auto relative">
+      {/* Universal SPIL Maritime Interactive Grid Backdrop */}
+      <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
+
       {/* 0. Spectator Mode Notice Banner */}
       {isSpectator && (
         <div className="w-full mb-4 p-3 bg-purple-900/90 border border-purple-400 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg animate-slide-up">
@@ -1193,6 +1135,8 @@ export default function App() {
 
       {/* 2. Top Dashboard & Leaderboard */}
       <Dashboard 
+        theme={theme}
+        toggleTheme={toggleTheme}
         week={currentWeek}
         currentPort={currentPort}
         cash={activePlayerCash}
@@ -1212,10 +1156,10 @@ export default function App() {
 
       {/* 3. Bar Status Kompetisi Mode Offline (Human vs AI Benchmark Agents) */}
       {gameMode === 'OFFLINE' && (
-        <div className="w-full glass-panel p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white border-l-4 border-l-spil-green shadow-sm">
+        <div className="w-full glass-panel p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border-l-4 border-l-spil-green shadow-xs">
           <div className="flex items-center gap-2">
-            <Users className="w-4.5 h-4.5 text-spil-green" />
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wide">Papan Skor Benchmark AI (Chief Planner vs Bots):</span>
+            <Users className="w-4.5 h-4.5 text-spil-green dark:text-emerald-400" />
+            <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Papan Skor Benchmark AI (Chief Planner vs Bots):</span>
           </div>
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
             {offlinePlayers.map((player) => {
@@ -1226,7 +1170,7 @@ export default function App() {
                   className={`flex-1 md:flex-initial flex items-center justify-center gap-2 text-xs font-extrabold px-4 py-2.5 rounded-xl uppercase tracking-wider border transition-all duration-300 ${
                     isUser 
                       ? 'bg-spil-green text-white border-spil-green shadow-md scale-[1.02]' 
-                      : 'bg-slate-50 border-slate-200/80 text-slate-700'
+                      : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full shrink-0 ${isUser ? 'bg-white animate-pulse' : 'bg-indigo-500'}`}></span>
@@ -1242,10 +1186,10 @@ export default function App() {
       <div className="w-full flex-1">
         <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
               🚢 {gameMode === 'ONLINE' ? `Grid Stowage Bayplan Lokal - ${activePlayerName}` : `Kapal Armada SPIL (Chief Stowage: ${activePlayerName})`}
             </h2>
-            <p className="text-xs text-emerald-100/90 font-bold mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-emerald-100/90 font-bold mt-0.5 transition-colors">
               {gameMode === 'ONLINE' 
                 ? 'Tata kargo klaiman Anda. Pelayaran akan diproses setelah seluruh kapten menekan tombol Siap Berlayar.'
                 : 'Tata muatan kontainer kapal Anda di setiap pelabuhan sirkuit. Maksimalkan profit dan kalahkan AI Benchmark!'}
@@ -1255,7 +1199,7 @@ export default function App() {
           <div className="flex gap-2 w-full sm:w-auto">
             <button
               onClick={handleLeaveRoom}
-              className="bg-slate-100 hover:bg-slate-200 border border-slate-350 text-slate-700 font-extrabold text-xs px-4 py-2.5 rounded-xl uppercase tracking-wider shadow-sm hover:scale-[1.02] ml-auto animate-fade-in"
+              className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-white/10 text-slate-700 dark:text-slate-200 font-extrabold text-xs px-4 py-2.5 rounded-xl uppercase tracking-wider shadow-xs hover:scale-[1.02] ml-auto transition-all cursor-pointer animate-fade-in"
             >
               Keluar
             </button>
@@ -1382,22 +1326,22 @@ export default function App() {
       />
 
       {/* Footer Info Guidance */}
-      <footer className="w-full mt-10 border-t border-emerald-700/50 pt-6 pb-2 text-center text-[10px] text-emerald-100/70 font-bold uppercase tracking-widest flex flex-col sm:flex-row justify-between items-center gap-4">
+      <footer className="w-full mt-10 border-t border-slate-200/90 dark:border-emerald-700/50 pt-6 pb-2 text-center text-[10px] text-slate-500 dark:text-emerald-100/70 font-bold uppercase tracking-widest flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors">
         <span>© Prototipe PT Salam Pacific Indonesia Lines (SPIL)</span>
-        <div className="flex items-center gap-4 text-emerald-200">
+        <div className="flex items-center gap-4 text-slate-600 dark:text-emerald-200">
           <span 
             onClick={() => setIsTariffOpen(true)} 
-            className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors"
+            className="flex items-center gap-1 hover:text-spil-green dark:hover:text-white cursor-pointer transition-colors"
             title="Buka Lembar Informasi Tarif Muatan"
           >
-            <Anchor className="w-3.5 h-3.5" /> Ports: 01 SBY - 02 MKS - 03 JYP - 04 MDN
+            <Anchor className="w-3.5 h-3.5 text-spil-green dark:text-emerald-400" /> Ports: 01 SBY - 02 MKS - 03 JYP - 04 MDN
           </span>
           <span 
             onClick={() => setIsGlossaryOpen(true)} 
-            className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors"
+            className="flex items-center gap-1 hover:text-spil-green dark:hover:text-white cursor-pointer transition-colors"
             title="Buka Glosarium & Panduan Operasional"
           >
-            <HelpCircle className="w-3.5 h-3.5" /> Panduan & Glosarium SPIL
+            <HelpCircle className="w-3.5 h-3.5 text-spil-green dark:text-emerald-400" /> Panduan & Glosarium SPIL
           </span>
         </div>
       </footer>

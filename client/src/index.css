@@ -4,29 +4,57 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    background-color: #2E7D4E;
-    @apply text-slate-800 antialiased font-sans overflow-x-hidden;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(210, 30, 32, 0.12) 0, transparent 45%),
-      radial-gradient(at 100% 0%, rgba(255, 255, 255, 0.08) 0, transparent 45%),
-      linear-gradient(to bottom, #1b5334, #2E7D4E, #1b5334);
-    background-attachment: fixed;
-  }
+:root {
+  --grid-hairline: rgba(0, 0, 0, 0.04);
 }
 
-/* Premium SPIL Light Card Panel Utilities */
+.dark {
+  --grid-hairline: rgba(255, 255, 255, 0.06);
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(210, 30, 32, 0.03) 0, transparent 40%),
+    radial-gradient(at 100% 0%, rgba(46, 125, 78, 0.05) 0, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(0, 114, 178, 0.03) 0, transparent 50%),
+    linear-gradient(to bottom, #f8fafc, #f1f5f9, #f8fafc);
+  background-attachment: fixed;
+  @apply antialiased font-sans overflow-x-hidden transition-colors duration-300;
+}
+
+html.dark body {
+  background-color: #06160e;
+  color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(210, 30, 32, 0.16) 0, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(46, 125, 78, 0.25) 0, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(0, 114, 178, 0.12) 0, transparent 55%),
+    linear-gradient(to bottom, #05140d, #0b2417, #05140d);
+  background-attachment: fixed;
+}
+
+/* Premium SPIL Modern Card Primitive Utilities */
 .glass-panel {
-  @apply bg-white border border-slate-200/90 rounded-2xl;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  @apply bg-white border border-slate-200/80 rounded-[20px] text-slate-800
+         dark:bg-slate-900/90 dark:border-white/10 dark:text-slate-100;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04), 0 8px 24px -4px rgba(0, 0, 0, 0.03);
+}
+html.dark .glass-panel {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .glass-panel-interactive {
-  @apply glass-panel hover:border-slate-300 transition-all duration-300;
+  @apply glass-panel transition-all duration-300;
 }
 .glass-panel-interactive:hover {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 16px -4px rgba(16, 24, 40, 0.06);
+}
+.dark .glass-panel-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5);
 }
 
 /* Mobile legibility floor. Several arbitrary text-[Npx] sizes in the
@@ -182,3 +210,227 @@
 .border-l-spil-red {
   border-left-color: #D21E20;
 }
+
+/* ===================================================================
+   LANDING PAGE STYLES (Caliber-inspired scroll-driven design)
+   =================================================================== */
+
+/* Smooth scrolling for the entire page when landing is active */
+html.landing-active {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced glass panels for landing */
+.lp-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.5rem;
+}
+
+.lp-glass-solid {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Floating animation for hero stat badges */
+@keyframes lp-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes lp-float-delayed {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.lp-float-1 {
+  animation: lp-float 4s ease-in-out infinite;
+}
+.lp-float-2 {
+  animation: lp-float-delayed 5s ease-in-out infinite 0.5s;
+}
+.lp-float-3 {
+  animation: lp-float 6s ease-in-out infinite 1s;
+}
+
+/* Animated border beam glow (for hero screenshot card) */
+@keyframes lp-border-beam {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.lp-border-beam {
+  position: relative;
+}
+.lp-border-beam::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(46, 125, 78, 0.6),
+    rgba(210, 30, 32, 0.3),
+    rgba(46, 125, 78, 0.1),
+    rgba(210, 30, 32, 0.6),
+    rgba(46, 125, 78, 0.3)
+  );
+  background-size: 300% 300%;
+  animation: lp-border-beam 6s ease infinite;
+  z-index: -1;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  padding: 2px;
+}
+
+/* Sticky scroll rail for workflow section */
+.lp-workflow-rail {
+  display: flex;
+  gap: 2rem;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+/* Section entrance transition */
+.lp-section-enter {
+  opacity: calc(var(--p, 0) * 3);
+  transform: translateY(calc((1 - min(1, var(--p, 0) * 3)) * 30px));
+  transition: opacity 0.1s, transform 0.1s;
+}
+
+/* Staggered card entrance */
+.lp-card-enter {
+  opacity: calc(var(--p, 0) * 4 - 0.5);
+  transform: translateY(calc(max(0, (1 - var(--p, 0) * 4 + 0.5)) * 20px));
+}
+
+.lp-card-enter-2 {
+  opacity: calc(var(--p, 0) * 4 - 0.7);
+  transform: translateY(calc(max(0, (1 - var(--p, 0) * 4 + 0.7)) * 20px));
+}
+
+.lp-card-enter-3 {
+  opacity: calc(var(--p, 0) * 4 - 0.9);
+  transform: translateY(calc(max(0, (1 - var(--p, 0) * 4 + 0.9)) * 20px));
+}
+
+/* White section wave/curve top */
+.lp-section-white {
+  background: white;
+  border-radius: 3rem 3rem 0 0;
+  position: relative;
+}
+
+/* Scroll progress bar (for nav) */
+.lp-progress-bar {
+  height: 2px;
+  background: linear-gradient(90deg, #2E7D4E, #D21E20);
+  transform-origin: left;
+  transition: transform 0.1s linear;
+}
+
+/* Container mockup cell styles */
+.lp-cell {
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 0.5rem;
+  transition: all 0.4s ease;
+}
+
+.lp-cell-filled {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Tutorial phase transitions */
+.lp-phase {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.lp-phase-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.lp-phase-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Bento grid card hover glow */
+.lp-bento-card {
+  transition: all 0.3s ease;
+}
+.lp-bento-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 30px rgba(46, 125, 78, 0.1);
+}
+
+/* Scroll hint pulse */
+@keyframes lp-scroll-hint {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(6px);
+  }
+}
+
+.lp-scroll-hint {
+  animation: lp-scroll-hint 2s ease-in-out infinite;
+}
+
+/* Override body background for landing page white sections */
+.lp-white-bg {
+  background-color: white;
+  background-image: none;
+}
+
+/* Infinite Horizontal Marquee (Pure CSS GPU Accelerated) */
+@keyframes lp-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: lp-marquee 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
