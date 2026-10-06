@@ -46,7 +46,7 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
   if (!socket) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+    <div className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40 flex flex-col items-end">
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button

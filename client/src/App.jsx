@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import Dashboard from './components/Dashboard';
+import GameShell from './components/game/GameShell';
 import BayplanSimulator from './components/BayplanSimulator';
 import PerformanceModal from './components/PerformanceModal';
 import GameOverModal from './components/GameOverModal';
@@ -18,7 +18,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTheme } from './hooks/useTheme';
 import { validateGridPhysics, formatRupiah, HORIZON_WEEKS, TOTAL_GAME_WEEKS } from './utils/gameHelpers';
 import { evaluateEarnedBadges } from '../../shared/badgeDefinitions.js';
-import { AlertCircle, HelpCircle, Anchor, Play, Award, Users, LogIn, Monitor, Network, Eye } from 'lucide-react';
+import { AlertCircle, Play, Award, Users, LogIn, Monitor, Network, Eye } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   typeof window !== 'undefined' && window.location.port !== '3000' && window.location.port !== '5050' && (window.location.port === '5190' || window.location.port === '5173' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -1104,116 +1104,48 @@ export default function App() {
   const isDrainPhase = (gameMode === 'ONLINE' ? roomState?.isDrainPhase : (offlineWeek > HORIZON_WEEKS && offlineWeek <= TOTAL_GAME_WEEKS)) ?? false;
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center max-w-[1400px] mx-auto relative">
-      {/* Universal SPIL Maritime Interactive Grid Backdrop */}
-      <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-
-      {/* 0. Spectator Mode Notice Banner */}
-      {isSpectator && (
-        <div className="w-full mb-4 p-3 bg-purple-900/90 border border-purple-400 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg animate-slide-up">
-          <div className="flex items-center gap-2.5">
-            <Eye className="w-5 h-5 text-purple-300 animate-pulse" />
-            <span className="text-xs font-black uppercase tracking-wider">
-              Mode Penonton (Spectator) — Anda sedang mengamati Kamar {roomCode} secara real-time (Hanya Pantau / Read-only)
-            </span>
-          </div>
-          <span className="text-[10px] bg-purple-800 px-3 py-1 rounded-lg font-mono font-black border border-purple-400/50">
-            OBSERVER
-          </span>
-        </div>
-      )}
-
-      {/* 1. Global Alert Banner */}
+    <>
+      {/* 1. Global alert toast */}
       {alertMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 animate-bounce">
-          <div className="bg-rose-50 border border-rose-200 text-spil-red px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 font-semibold">
-            <AlertCircle className="w-5 h-5 text-spil-red shrink-0" />
-            <span className="text-xs font-bold leading-relaxed">{alertMessage}</span>
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 w-[min(560px,90vw)] px-0" role="alert">
+          <div className="bg-g-inv text-g-inv-ink rounded-[10px] px-4 py-2.5 shadow-[0_10px_30px_var(--g-shadow)] flex items-center gap-3 text-[13px]">
+            <AlertCircle className="w-4 h-4 text-g-red shrink-0" />
+            <span className="leading-relaxed">{alertMessage}</span>
           </div>
         </div>
       )}
 
-      {/* 2. Top Dashboard & Leaderboard */}
-      <Dashboard 
-        theme={theme}
-        toggleTheme={toggleTheme}
+      {/* 2. Game page: navigation, sticky header and the bayplan workspace */}
+      <GameShell
+        gameMode={gameMode}
+        roomCode={roomCode}
+        isSpectator={isSpectator}
+        spectatorName={firstOnlinePlayer ? firstOnlinePlayer.name : ''}
+        playerName={isSpectator ? 'Penonton' : activePlayerName}
         week={currentWeek}
         currentPort={currentPort}
         cash={activePlayerCash}
         accumulatedPenalties={activePlayerPenalties}
-        roomCode={gameMode === 'ONLINE' ? roomCode : 'LOCAL PLAY'}
-        players={formattedPlayersList}
-        socketId={currentSocketOrIndexId}
         activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
         turnTimer={gameMode === 'ONLINE' ? turnTimer : null}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        badgeCount={earnedBadges.length}
         onOpenTariff={() => setIsTariffOpen(true)}
         onOpenGlossary={() => setIsGlossaryOpen(true)}
-        onOpenTutorial={() => setIsTutorialOpen(true)}
         onOpenISO={() => setIsISOOpen(true)}
+        onOpenTutorial={() => setIsTutorialOpen(true)}
         onOpenAnalytics={() => setIsAnalyticsOpen(true)}
         onOpenBadges={() => setIsBadgeGalleryOpen(true)}
-      />
-
-      {/* 3. Bar Status Kompetisi Mode Offline (Human vs AI Benchmark Agents) */}
-      {gameMode === 'OFFLINE' && (
-        <div className="w-full glass-panel p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border-l-4 border-l-spil-green shadow-xs">
-          <div className="flex items-center gap-2">
-            <Users className="w-4.5 h-4.5 text-spil-green dark:text-emerald-400" />
-            <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Papan Skor Benchmark AI (Chief Planner vs Bots):</span>
-          </div>
-          <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            {offlinePlayers.map((player) => {
-              const isUser = !player.isBot;
-              return (
-                <div
-                  key={player.id}
-                  className={`flex-1 md:flex-initial flex items-center justify-center gap-2 text-xs font-extrabold px-4 py-2.5 rounded-xl uppercase tracking-wider border transition-all duration-300 ${
-                    isUser 
-                      ? 'bg-spil-green text-white border-spil-green shadow-md scale-[1.02]' 
-                      : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${isUser ? 'bg-white animate-pulse' : 'bg-indigo-500'}`}></span>
-                  <span>{player.name}: {formatRupiah(player.cash)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 4. Main Simulator workspace grid */}
-      <div className="w-full flex-1">
-        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
-              🚢 {gameMode === 'ONLINE' ? `Grid Stowage Bayplan Lokal - ${activePlayerName}` : `Kapal Armada SPIL (Chief Stowage: ${activePlayerName})`}
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-emerald-100/90 font-bold mt-0.5 transition-colors">
-              {gameMode === 'ONLINE' 
-                ? 'Tata kargo klaiman Anda. Pelayaran akan diproses setelah seluruh kapten menekan tombol Siap Berlayar.'
-                : 'Tata muatan kontainer kapal Anda di setiap pelabuhan sirkuit. Maksimalkan profit dan kalahkan AI Benchmark!'}
-            </p>
-          </div>
-          
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={handleLeaveRoom}
-              className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-white/10 text-slate-700 dark:text-slate-200 font-extrabold text-xs px-4 py-2.5 rounded-xl uppercase tracking-wider shadow-xs hover:scale-[1.02] ml-auto transition-all cursor-pointer animate-fade-in"
-            >
-              Keluar
-            </button>
-          </div>
-        </div>
-
-        <BayplanSimulator 
+        onLeave={handleLeaveRoom}
+      >
+        <BayplanSimulator
           grid={activeGrid}
           currentPort={currentPort}
           pendingContainers={activePendingList}
           onPlaceContainer={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handlePlaceContainer : handlePlaceContainerOffline)}
           onRemoveContainer={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handleRemoveContainer : handleRemoveContainerOffline)}
           activePorts={gameMode === 'ONLINE' ? (roomState ? roomState.activePorts : null) : offlinePorts}
-          // Sidebar Overhaul Props:
           gameMode={gameMode}
           cargoPool={cargoPool}
           onAcceptCargo={isSpectator ? () => {} : (gameMode === 'ONLINE' ? handleClaimCargoOnline : handleClaimCargoOffline)}
@@ -1221,17 +1153,17 @@ export default function App() {
           vesselLevel={offlineVesselLevel}
           onUpgradeVessel={isSpectator ? () => {} : handleUpgradeVesselOffline}
           cumulativeGrossRevenue={offlinePlayers[activePlayerIndex]?.cumulativeGrossRevenue || 0}
-          activeOfflinePlayerName={activePlayerName}
           onDepart={isSpectator ? () => {} : handleDepartOffline}
           loading={loading || isSpectator}
           isGameOver={isGameOver}
           isReadyCurrent={isReadyCurrent}
           onToggleReadyOnline={isSpectator ? () => {} : handleToggleReadyOnline}
-          onOpenTariff={() => setIsTariffOpen(true)}
           isDrainPhase={isDrainPhase}
-          onOpenISO={() => setIsISOOpen(true)}
+          isSpectator={isSpectator}
+          players={formattedPlayersList}
+          playerId={currentSocketOrIndexId}
         />
-      </div>
+      </GameShell>
 
       {/* 6. Lembar Kinerja Mingguan modal popup */}
       <PerformanceModal 
@@ -1324,27 +1256,6 @@ export default function App() {
         currentPort={currentPort}
         nextPort={offlinePorts[(offlinePorts.indexOf(currentPort) + 1) % offlinePorts.length]}
       />
-
-      {/* Footer Info Guidance */}
-      <footer className="w-full mt-10 border-t border-slate-200/90 dark:border-emerald-700/50 pt-6 pb-2 text-center text-[10px] text-slate-500 dark:text-emerald-100/70 font-bold uppercase tracking-widest flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors">
-        <span>© Prototipe PT Salam Pacific Indonesia Lines (SPIL)</span>
-        <div className="flex items-center gap-4 text-slate-600 dark:text-emerald-200">
-          <span 
-            onClick={() => setIsTariffOpen(true)} 
-            className="flex items-center gap-1 hover:text-spil-green dark:hover:text-white cursor-pointer transition-colors"
-            title="Buka Lembar Informasi Tarif Muatan"
-          >
-            <Anchor className="w-3.5 h-3.5 text-spil-green dark:text-emerald-400" /> Ports: 01 SBY - 02 MKS - 03 JYP - 04 MDN
-          </span>
-          <span 
-            onClick={() => setIsGlossaryOpen(true)} 
-            className="flex items-center gap-1 hover:text-spil-green dark:hover:text-white cursor-pointer transition-colors"
-            title="Buka Glosarium & Panduan Operasional"
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-spil-green dark:text-emerald-400" /> Panduan & Glosarium SPIL
-          </span>
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }
