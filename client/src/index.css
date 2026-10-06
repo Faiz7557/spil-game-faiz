@@ -15,7 +15,7 @@
   --g-ink: #13212B;
   --g-ink2: #3A4A53;
   --g-muted: #52626C;
-  --g-faint: #8A979D;
+  --g-faint: #66757C;
   --g-tint: #F4F7F8;
   --g-tint2: #FAFBFC;
   --g-green: #2E7D4E;
@@ -48,6 +48,20 @@
   --g-hull: #1F3442;
   --g-structure: #B4C0C6;
 
+  /* Glass surfaces (game workspace) - light */
+  --g-glass-bg: linear-gradient(105deg, rgba(255, 255, 255, 0.97) 0%, rgba(244, 247, 248, 0.88) 100%);
+  --g-glass-bg-solid: linear-gradient(105deg, rgba(255, 255, 255, 0.97) 0%, rgba(244, 247, 248, 0.95) 100%);
+  --g-glass-shadow: 0 1px 2px rgba(19, 33, 43, 0.05), 0 16px 36px -16px rgba(19, 33, 43, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --g-edge: rgba(19, 33, 43, 0.08);
+  --g-hair: rgba(19, 33, 43, 0.07);
+  --g-inset: rgba(19, 33, 43, 0.035);
+  --g-inset-hover: rgba(19, 33, 43, 0.07);
+  --g-overlay: rgba(19, 33, 43, 0.45);
+  --g-stage-glow:
+    radial-gradient(60% 42% at 100% 0%, rgba(46, 125, 78, 0.13) 0, transparent 70%),
+    radial-gradient(48% 36% at 0% 8%, rgba(210, 30, 32, 0.06) 0, transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(0, 114, 178, 0.07) 0, transparent 70%);
+
   --p-sby: #0072B2; --p-sby-bg: #E3F0F8; --p-sby-ink: #00527F;
   --p-mks: #E69F00; --p-mks-bg: #FBF0D9; --p-mks-ink: #7A5300;
   --p-jyp: #009E73; --p-jyp-bg: #DDF2EB; --p-jyp-ink: #006B4E;
@@ -65,7 +79,7 @@
   --g-ink: #E7ECEE;
   --g-ink2: #C2CCD1;
   --g-muted: #9AA7AD;
-  --g-faint: #7E8B91;
+  --g-faint: #8D9AA0;
   --g-tint: #101618;
   --g-tint2: #171F22;
   --g-green: #2F8A5C;
@@ -97,6 +111,20 @@
   --g-wave-b: #1B3A4D;
   --g-hull: #26404F;
   --g-structure: #46545A;
+
+  /* Glass surfaces (game workspace) - dark */
+  --g-glass-bg: linear-gradient(105deg, rgba(255, 255, 255, 0.075) 0%, rgba(20, 26, 29, 0.9) 72%);
+  --g-glass-bg-solid: linear-gradient(105deg, rgba(34, 42, 46, 0.97) 0%, rgba(18, 23, 26, 0.97) 72%);
+  --g-glass-shadow: 0 20px 46px -18px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --g-edge: rgba(255, 255, 255, 0.08);
+  --g-hair: rgba(255, 255, 255, 0.08);
+  --g-inset: rgba(255, 255, 255, 0.06);
+  --g-inset-hover: rgba(255, 255, 255, 0.12);
+  --g-overlay: rgba(4, 8, 10, 0.66);
+  --g-stage-glow:
+    radial-gradient(60% 42% at 100% 0%, rgba(47, 138, 92, 0.2) 0, transparent 70%),
+    radial-gradient(48% 36% at 0% 8%, rgba(210, 30, 32, 0.1) 0, transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(0, 114, 178, 0.1) 0, transparent 70%);
 
   --p-sby: #3BA3E6; --p-sby-bg: #10222E; --p-sby-ink: #9BD4F2;
   --p-mks: #E8B145; --p-mks-bg: #2A2314; --p-mks-ink: #F0C878;
@@ -147,6 +175,76 @@ html.dark .glass-panel {
 .dark .glass-panel-interactive:hover {
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Glass primitives for the game workspace and its dialogs. Colours come from
+   the --g-* tokens above so one class serves light and dark. They sit in the
+   components layer, so a utility class (rounded-*, shadow-*) still overrides. */
+@layer components {
+  .g-stage {
+    background-color: var(--g-bg);
+    background-image: var(--g-stage-glow);
+    background-attachment: fixed;
+  }
+
+  .g-glass {
+    background: var(--g-glass-bg);
+    border: 1px solid var(--g-edge);
+    border-radius: 20px;
+    box-shadow: var(--g-glass-shadow);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Edge-attached bars and rails (sidebar, header, cargo rail): no radius, no
+     drop shadow, a more opaque fill because content scrolls underneath. */
+  .g-glass-rail {
+    background: var(--g-glass-bg-solid);
+    border-color: var(--g-edge);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Backdrop behind dialogs. */
+  .g-overlay {
+    background: var(--g-overlay);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Dialogs: larger radius, stronger blur. */
+  .g-glass-modal {
+    background: var(--g-glass-bg-solid);
+    border: 1px solid var(--g-edge);
+    border-radius: 28px;
+    box-shadow: var(--g-glass-shadow), 0 32px 80px -24px var(--g-shadow);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+
+  /* Cards, stat boxes and neutral chips that sit inside a glass panel. */
+  .g-inset {
+    background: var(--g-inset);
+    border: 1px solid var(--g-hair);
+    border-radius: 14px;
+  }
+
+  /* Secondary buttons: fully rounded, translucent, brighter on hover. */
+  .g-pill {
+    background: var(--g-inset);
+    border: 1px solid var(--g-hair);
+    border-radius: 9999px;
+    color: var(--g-ink);
+    transition: background-color 0.15s ease;
+  }
+  .g-pill:hover:not(:disabled) {
+    background: var(--g-inset-hover);
+  }
+
+  .g-divider {
+    border: 0;
+    border-top: 1px solid var(--g-hair);
+  }
 }
 
 /* Mobile legibility floor. Several arbitrary text-[Npx] sizes in the

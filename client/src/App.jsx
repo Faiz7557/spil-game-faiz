@@ -764,50 +764,50 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
         <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-sm w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+        <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-sm w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
 
           <div className="w-14 h-14 rounded-2xl bg-spil-green-light dark:bg-emerald-950/60 border border-green-100 dark:border-emerald-800 flex items-center justify-center text-spil-green dark:text-emerald-400 mx-auto mb-4">
             <LogIn className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">
+          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">
             {authMode === 'login' ? 'Masuk ke Akun' : 'Daftar Akun Baru'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">
             Lacak Profil & Peringkat Anda
           </p>
 
           <form className="space-y-4 text-left" onSubmit={handleAuthSubmit}>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider">Nama Pengguna</label>
+              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider">Nama Pengguna</label>
               <input
                 type="text"
                 placeholder="3-20 karakter, huruf/angka/underscore"
                 value={authUsernameInput}
                 onChange={(e) => setAuthUsernameInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
+                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-green font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
                 maxLength={20}
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider">Kata Sandi</label>
+              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider">Kata Sandi</label>
               <input
                 type="password"
                 placeholder="Minimal 6 karakter"
                 value={authPasswordInput}
                 onChange={(e) => setAuthPasswordInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
+                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-green font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
               />
             </div>
 
             {authError && (
-              <p className="text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-lg px-3 py-2">{authError}</p>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-lg px-3 py-2">{authError}</p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-semibold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 disabled:opacity-50"
             >
               {loading ? 'Memproses...' : (authMode === 'login' ? 'Masuk' : 'Daftar')}
             </button>
@@ -815,7 +815,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
-              className="w-full text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase hover:text-slate-600 dark:hover:text-slate-200"
+              className="w-full text-center text-[11px] text-g-muted font-semibold uppercase hover:text-g-ink"
             >
               {authMode === 'login' ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Masuk di sini'}
             </button>
@@ -830,26 +830,26 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
         <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-2xl w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+        <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-2xl w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
 
           <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto mb-4">
             <Award className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">Papan Peringkat Global</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Kapten Terbaik Berdasarkan Saldo Akhir</p>
+          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">Papan Peringkat Global</h2>
+          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">Kapten Terbaik Berdasarkan Saldo Akhir</p>
 
           {leaderboardData === null && (
-            <p className="text-xs text-slate-400 font-bold uppercase py-8">Memuat peringkat...</p>
+            <p className="text-xs text-g-muted font-semibold uppercase py-8">Memuat peringkat...</p>
           )}
           {leaderboardData !== null && leaderboardData.length === 0 && (
-            <p className="text-xs text-slate-400 font-bold uppercase py-8">Belum ada permainan yang selesai.</p>
+            <p className="text-xs text-g-muted font-semibold uppercase py-8">Belum ada permainan yang selesai.</p>
           )}
           {leaderboardData !== null && leaderboardData.length > 0 && (
             <div className="text-left overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-[10px] text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                  <tr className="text-[11px] text-g-muted uppercase tracking-wider border-b border-g-hair">
                     <th className="py-2 px-2 text-left">#</th>
                     <th className="py-2 px-2 text-left">Kapten</th>
                     <th className="py-2 px-2 text-left">Mode</th>
@@ -859,14 +859,14 @@ export default function App() {
                 </thead>
                 <tbody>
                   {leaderboardData.map((entry, idx) => (
-                    <tr key={idx} className="border-b border-slate-50 dark:border-slate-800">
-                      <td className="py-2 px-2 font-black text-slate-400">
+                    <tr key={idx} className="border-b border-g-hair">
+                      <td className="py-2 px-2 font-semibold text-g-muted">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                       </td>
-                      <td className="py-2 px-2 font-extrabold text-slate-800 dark:text-white">{entry.player_name}</td>
-                      <td className="py-2 px-2 text-slate-500 dark:text-slate-400 font-bold">{entry.mode === 'ONLINE' ? 'Online' : 'Offline'}</td>
-                      <td className="py-2 px-2 text-slate-500 dark:text-slate-400 font-medium">{entry.player_rating}</td>
-                      <td className={`py-2 px-2 text-right font-black ${entry.cash < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatRupiah(entry.cash)}</td>
+                      <td className="py-2 px-2 font-semibold text-g-ink">{entry.player_name}</td>
+                      <td className="py-2 px-2 text-g-muted font-medium">{entry.mode === 'ONLINE' ? 'Online' : 'Offline'}</td>
+                      <td className="py-2 px-2 text-g-muted font-medium">{entry.player_rating}</td>
+                      <td className={`py-2 px-2 text-right font-semibold ${entry.cash < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatRupiah(entry.cash)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -883,25 +883,25 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up animate-fade-in relative">
         <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-md w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+        <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-md w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
           
           <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 flex items-center justify-center text-spil-red dark:text-rose-400 mx-auto mb-4 animate-bounce">
             <Network className="w-7 h-7" />
           </div>
           
-          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">Mabar Online (Open Room)</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Mode Kompetisi Real-Time</p>
+          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">Mabar Online (Open Room)</h2>
+          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">Mode Kompetisi Real-Time</p>
           
           <form className="space-y-4 text-left">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider">Nama Planner / Kapten</label>
+              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider">Nama Planner / Kapten</label>
               <input
                 type="text"
                 placeholder="Masukkan nama kapten..."
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-red font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
+                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-red font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
                 maxLength={12}
               />
             </div>
@@ -909,7 +909,7 @@ export default function App() {
             <div className="pt-2">
               <button
                 onClick={handleCreateRoom}
-                className="w-full flex items-center justify-center gap-2 bg-spil-red hover:bg-spil-red-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 bg-spil-red hover:bg-spil-red-hover text-white font-semibold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
               >
                 <Users className="w-4 h-4" />
                 Buat Kamar Baru (Host)
@@ -917,9 +917,9 @@ export default function App() {
             </div>
 
             <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-              <span className="flex-shrink mx-4 text-slate-400 font-extrabold text-[10px] tracking-widest uppercase">ATAU GABUNG</span>
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+              <div className="flex-grow border-t border-g-hair"></div>
+              <span className="flex-shrink mx-4 text-g-muted font-semibold text-[11px] tracking-wider uppercase">ATAU GABUNG</span>
+              <div className="flex-grow border-t border-g-hair"></div>
             </div>
 
             <div className="flex gap-2">
@@ -928,12 +928,12 @@ export default function App() {
                 placeholder="Kode Kamar..."
                 value={roomCodeInput}
                 onChange={(e) => setRoomCodeInput(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-red font-bold text-sm uppercase text-center tracking-widest bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
+                className="flex-1 px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-red font-semibold text-sm uppercase text-center tracking-wider bg-g-inset text-g-ink placeholder:text-g-faint"
                 maxLength={4}
               />
               <button
                 onClick={handleJoinRoom}
-                className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-extrabold px-6 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
+                className="bg-g-inv text-g-inv-ink hover:opacity-90 font-semibold px-6 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 Gabung
@@ -944,16 +944,16 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleSpectateRoom}
-                className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold py-3 px-4 rounded-xl uppercase tracking-wider text-xs border border-slate-300 dark:border-slate-700 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 bg-g-inset hover:bg-g-inset-hover text-g-ink font-semibold py-3 px-4 rounded-xl uppercase tracking-wider text-xs border border-g-hair transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
               >
-                <Eye className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <Eye className="w-4 h-4 text-g-ink2" />
                 Masuk sebagai Penonton (Spectator)
               </button>
             </div>
           </form>
 
           {alertMessage && (
-            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-bold">
+            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-medium">
               {alertMessage}
             </div>
           )}
@@ -966,34 +966,34 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
         <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_48px_rgba(0,0,0,0.15)] dark:shadow-2xl max-w-xl w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+        <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-xl w-full p-8 text-center transition-colors">
+          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
           
           <div className="w-14 h-14 rounded-2xl bg-spil-green-light dark:bg-emerald-950/60 border border-green-100 dark:border-emerald-800 flex items-center justify-center text-spil-green dark:text-emerald-400 mx-auto mb-4 animate-bounce">
             <Monitor className="w-7 h-7" />
           </div>
           
-          <h2 className="text-xl font-black text-slate-800 dark:text-white mb-1 uppercase tracking-wider">Single Player vs Bot AI</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Mode Offline Skripsi: Bermain Bertanding Melawan 3 AI Agent</p>
+          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">Single Player vs Bot AI</h2>
+          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">Mode Offline Skripsi: Bermain Bertanding Melawan 3 AI Agent</p>
 
           {resumableSession && (
             <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-left">
-              <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-1">Permainan Belum Selesai Ditemukan</p>
-              <p className="text-xs text-slate-600 dark:text-slate-300 font-bold mb-3">
+              <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">Permainan Belum Selesai Ditemukan</p>
+              <p className="text-xs text-g-ink2 font-medium mb-3">
                 {resumableSession.players[0]?.name || 'Kapten'} · Minggu {resumableSession.week}/8 · Port {resumableSession.currentPort} · Saldo {formatRupiah(resumableSession.players[0]?.cash)}
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleResumeOfflineGame}
-                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-sm cursor-pointer"
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-sm cursor-pointer"
                 >
                   Lanjutkan Permainan
                 </button>
                 <button
                   type="button"
                   onClick={() => setResumableSession(null)}
-                  className="text-[10px] text-slate-400 font-bold uppercase hover:text-slate-600 dark:hover:text-slate-200 px-3 cursor-pointer"
+                  className="text-[11px] text-g-muted font-semibold uppercase hover:text-g-ink px-3 cursor-pointer"
                 >
                   Mulai Baru
                 </button>
@@ -1004,7 +1004,7 @@ export default function App() {
           {!resumableSession && (
           <form className="space-y-5 text-left" onSubmit={handleStartOfflineGame}>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5 tracking-wider border-l-2 border-spil-green pl-2">NAMA KAPTEN ANDA (HUMAN PLAYER):</label>
+              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider border-l-2 border-spil-green pl-2">NAMA KAPTEN ANDA (HUMAN PLAYER):</label>
               <input
                 type="text"
                 placeholder="Masukkan Nama Anda..."
@@ -1014,28 +1014,28 @@ export default function App() {
                   newNames[0] = e.target.value;
                   setOfflinePlayersNames(newNames);
                 }}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-spil-green font-bold text-sm bg-slate-50/50 dark:bg-slate-800/80 dark:text-white"
+                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-green font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
                 maxLength={12}
               />
             </div>
 
             <div className="space-y-2 pt-1">
-              <span className="text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest block mb-2 border-l-2 border-indigo-500 pl-2">KAPTEN LAWAN (BOT AGENTS SKRIPSI):</span>
+              <span className="text-[11px] text-g-muted font-semibold uppercase tracking-wider block mb-2 border-l-2 border-indigo-500 pl-2">KAPTEN LAWAN (BOT AGENTS SKRIPSI):</span>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/60 dark:to-slate-800 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 shadow-xs">
-                  <span className="font-extrabold text-indigo-900 dark:text-indigo-200 block text-[11px] mb-0.5">🤖 Bot Alpha (Smart AI)</span>
-                  <span className="text-[8px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block">Smart Restow Minimizer</span>
+                  <span className="font-semibold text-indigo-900 dark:text-indigo-200 block text-[11px] mb-0.5">🤖 Bot Alpha (Smart AI)</span>
+                  <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider block">Smart Restow Minimizer</span>
                 </div>
                 
                 <div className="bg-gradient-to-br from-amber-50/70 to-white dark:from-amber-950/60 dark:to-slate-800 p-3 rounded-xl border border-amber-200 dark:border-amber-800 shadow-xs">
-                  <span className="font-extrabold text-amber-900 dark:text-amber-200 block text-[11px] mb-0.5">⚡ Bot Beta (Greedy AI)</span>
-                  <span className="text-[8px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider block">Revenue Maximizer</span>
+                  <span className="font-semibold text-amber-900 dark:text-amber-200 block text-[11px] mb-0.5">⚡ Bot Beta (Greedy AI)</span>
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider block">Revenue Maximizer</span>
                 </div>
 
                 <div className="bg-gradient-to-br from-emerald-50/70 to-white dark:from-emerald-950/60 dark:to-slate-800 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-xs">
-                  <span className="font-extrabold text-emerald-900 dark:text-emerald-200 block text-[11px] mb-0.5">⚖️ Bot Gamma (Balanced)</span>
-                  <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider block">Balanced Strategy</span>
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-200 block text-[11px] mb-0.5">⚖️ Bot Gamma (Balanced)</span>
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider block">Balanced Strategy</span>
                 </div>
               </div>
             </div>
@@ -1045,7 +1045,7 @@ export default function App() {
                 type="button"
                 onClick={handleStartOfflineGame}
                 disabled={loading}
-                className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-extrabold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-semibold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Play className="w-4 h-4 fill-white" />
                 {loading ? 'Menyiapkan Simulasi Bot...' : 'Mulai Tanding vs Bot AI'}
@@ -1055,7 +1055,7 @@ export default function App() {
           )}
 
           {alertMessage && (
-            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-bold">
+            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-medium">
               {alertMessage}
             </div>
           )}

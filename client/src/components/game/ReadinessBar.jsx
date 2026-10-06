@@ -20,17 +20,17 @@ export default function ReadinessBar({ grid, pendingContainers, waitingRevenue, 
   const btn = {
     primary: 'border-g-green bg-g-green text-white hover:bg-g-green-hover',
     ready: 'border-g-green bg-g-green-bg text-g-green-ink',
-    disabled: 'border-g-sunk bg-g-tint text-g-faint cursor-not-allowed'
+    disabled: 'border-g-hair bg-g-inset text-g-faint cursor-not-allowed'
   }[disabled ? 'disabled' : variant];
 
   return (
-    <section className="bg-g-surface border border-g-line rounded-xl px-[18px] py-3.5 flex flex-wrap gap-x-[22px] gap-y-4 items-stretch">
+    <section className="g-glass px-[18px] py-3.5 flex flex-wrap gap-x-[22px] gap-y-4 items-stretch">
       <div className="flex-[0_1_230px] min-w-[200px]">
         <CapacityMeter grid={grid} pendingContainers={pendingContainers} waitingRevenue={waitingRevenue} />
       </div>
 
-      <div className="flex-[1_1_380px] min-w-0 flex flex-wrap content-center gap-x-[22px] gap-y-3.5 pl-5 border-l border-g-sunk max-md:pl-0 max-md:border-l-0">
-        {checks.map((c) => <Check key={c.key} {...c} />)}
+      <div className="flex-[1_1_380px] min-w-0 flex flex-wrap content-center gap-x-[22px] gap-y-3.5 pl-5 border-l border-g-hair max-md:pl-0 max-md:border-l-0">
+        {checks.map(({ key, ...c }) => <Check key={key} {...c} />)}
         <span className="basis-full text-xs text-g-muted">
           Estimasi denda bila berangkat sekarang:{' '}
           <b className={`font-plex font-medium ${totalPenalty ? 'text-g-danger' : 'text-g-green-ink'}`}>
@@ -43,7 +43,7 @@ export default function ReadinessBar({ grid, pendingContainers, waitingRevenue, 
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`min-w-[210px] flex-[1_1_220px] rounded-xl border px-[22px] py-3.5 flex flex-col justify-center items-start gap-0.5 text-left transition-colors ${btn}`}
+        className={`min-w-[210px] flex-[1_1_220px] rounded-2xl border px-[22px] py-3.5 flex flex-col justify-center items-start gap-0.5 text-left transition-colors ${btn}`}
       >
         <span className="text-base font-semibold tracking-[-.015em] whitespace-nowrap">{label}</span>
         <span className="text-xs opacity-90">{sub}</span>

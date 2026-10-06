@@ -162,13 +162,13 @@ export default function BayCrossSection({
   });
 
   return (
-    <section className="bg-g-surface border border-g-line rounded-xl px-[18px] pt-4 pb-3.5 flex flex-col gap-2.5 min-w-0">
+    <section className="g-glass px-[18px] pt-4 pb-3.5 flex flex-col gap-2.5 min-w-0">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
         <button
           type="button"
           onClick={onPrev}
           title="Bay ke arah haluan"
-          className="w-[34px] h-[34px] border border-g-line bg-g-surface hover:bg-g-tint rounded-lg text-[17px] leading-none"
+          className="w-[34px] h-[34px] g-pill text-[17px] leading-none"
         >
           ‹
         </button>
@@ -177,20 +177,20 @@ export default function BayCrossSection({
           type="button"
           onClick={onNext}
           title="Bay ke arah buritan"
-          className="w-[34px] h-[34px] border border-g-line bg-g-surface hover:bg-g-tint rounded-lg text-[17px] leading-none"
+          className="w-[34px] h-[34px] g-pill text-[17px] leading-none"
         >
           ›
         </button>
         <span className="font-plex text-[12.5px] text-g-muted">{bayIndex + 1} / {bayCount}</span>
         <TypeChip type={config.containerType} />
-        {bayIndex === 0 && <span className="text-[11px] text-g-muted border border-g-sunk rounded-[5px] px-1.5">Haluan</span>}
-        {bayIndex === bayCount - 1 && <span className="text-[11px] text-g-muted border border-g-sunk rounded-[5px] px-1.5">Buritan</span>}
+        {bayIndex === 0 && <span className="text-[11px] text-g-muted border border-g-hair rounded-[5px] px-1.5">Haluan</span>}
+        {bayIndex === bayCount - 1 && <span className="text-[11px] text-g-muted border border-g-hair rounded-[5px] px-1.5">Buritan</span>}
         <span className="ml-auto text-[12.5px] text-g-muted whitespace-nowrap">
           Tampak dari buritan · kiri = port · {selected ? `${validCount} slot valid` : 'pilih box di buffer'}
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-g-muted pb-2.5 border-b border-g-sunk whitespace-nowrap">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-g-muted pb-2.5 border-b border-g-hair whitespace-nowrap">
         {portsInLegend.map((port) => (
           <span key={port} className="flex items-center gap-1.5">
             <i className="w-2.5 h-2.5 rounded-[3px] inline-block" style={{ background: portVars(port).c }} />
@@ -257,7 +257,7 @@ export default function BayCrossSection({
             return (
               <div key={tier} className="contents">
                 {underdeck && (
-                  <div className="h-[22px] flex items-center gap-2.5 text-[10.5px] font-semibold tracking-[.1em] uppercase text-g-muted">
+                  <div className="h-[22px] flex items-center gap-2.5 text-[11px] font-semibold tracking-[.1em] uppercase text-g-muted">
                     <i className="flex-1 h-[3px] rounded-sm bg-g-faint block" />
                     <span>Palka</span>
                   </div>
@@ -277,7 +277,7 @@ export default function BayCrossSection({
       </div>
 
       <div
-        className="flex flex-wrap justify-between gap-2.5 text-[10.5px] tracking-[.09em] uppercase text-g-muted"
+        className="flex flex-wrap justify-between gap-2.5 text-[11px] tracking-[.09em] uppercase text-g-muted"
         style={{ marginLeft: tierW }}
       >
         <span className="whitespace-nowrap">Lambung port</span>

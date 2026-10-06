@@ -78,6 +78,10 @@ export default {
           'warn-bg': 'var(--g-warn-bg)',
           info: 'var(--g-info)',
           'info-bg': 'var(--g-info-bg)',
+          edge: 'var(--g-edge)',
+          hair: 'var(--g-hair)',
+          inset: 'var(--g-inset)',
+          'inset-hover': 'var(--g-inset-hover)',
           inv: 'var(--g-inv)',
           'inv-ink': 'var(--g-inv-ink)'
         },

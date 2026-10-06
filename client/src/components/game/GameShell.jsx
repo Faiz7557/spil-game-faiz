@@ -69,7 +69,7 @@ export default function GameShell({
 
   return (
     <div
-      className="min-h-screen grid grid-cols-[auto_minmax(0,1fr)] bg-g-bg text-g-ink font-sans text-sm"
+      className="min-h-screen grid grid-cols-[auto_minmax(0,1fr)] g-stage text-g-ink font-sans text-sm"
       style={{ '--g-header-h': `${headerSize.height || 64}px` }}
     >
       <GameSidebar

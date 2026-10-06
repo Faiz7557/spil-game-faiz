@@ -43,14 +43,13 @@ export default function Dashboard({
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-10 border-b border-g-line px-[clamp(12px,2vw,22px)] py-2.5 flex flex-wrap items-center gap-x-[22px] gap-y-3 backdrop-blur-md"
-      style={{ background: 'color-mix(in srgb, var(--g-surface) 94%, transparent)' }}
+      className="sticky top-0 z-10 g-glass-rail border-b border-g-edge px-[clamp(12px,2vw,22px)] py-2.5 flex flex-wrap items-center gap-x-[22px] gap-y-3"
     >
       {showMenuButton && (
         <button
           type="button"
           onClick={onOpenNav}
-          className="border border-g-line bg-g-surface rounded-lg px-2.5 py-1.5 text-[13px] flex items-center gap-1.5"
+          className="g-pill px-3 py-1.5 text-[13px] flex items-center gap-1.5"
         >
           <Menu className="w-3.5 h-3.5" /> Menu
         </button>
@@ -70,7 +69,7 @@ export default function Dashboard({
             const isNext = port === nextPort;
             const done = currentIdx > -1 && i < currentIdx;
             const p = portVars(port);
-            let style = { border: '1px solid var(--g-line)', color: 'var(--g-faint)' };
+            let style = { border: '1px solid var(--g-hair)', color: 'var(--g-faint)' };
             let suffix = done ? ' ✓' : '';
             if (isCurrent) {
               style = { border: `1px solid ${p.c}`, background: p.c, color: '#FFFFFF' };
@@ -98,7 +97,7 @@ export default function Dashboard({
             {turnTimer && (
               <span
                 className={`font-plex text-[13px] font-medium px-[9px] py-0.5 rounded-md border ${
-                  timerLow ? 'border-g-danger bg-g-danger-bg text-g-danger' : 'border-g-line bg-g-surface text-g-ink'
+                  timerLow ? 'border-g-danger bg-g-danger-bg text-g-danger' : 'border-g-hair bg-g-inset text-g-ink'
                 }`}
                 title="Batas waktu giliran"
               >
@@ -128,7 +127,7 @@ export default function Dashboard({
           type="button"
           onClick={onOpenTariff}
           title="Buka tarif muatan [T]"
-          className="border border-g-line bg-g-surface hover:bg-g-tint rounded-lg px-3 py-[7px] text-[13px]"
+          className="g-pill px-3.5 py-[7px] text-[13px]"
         >
           Referensi
         </button>
@@ -137,7 +136,7 @@ export default function Dashboard({
           onClick={toggleTheme}
           aria-label={isDark ? 'Beralih ke tema terang' : 'Beralih ke tema gelap'}
           title={isDark ? 'Tema terang' : 'Tema gelap'}
-          className="border border-g-line bg-g-surface hover:bg-g-tint rounded-lg px-3 py-[7px] text-[13px] flex items-center gap-1.5 whitespace-nowrap"
+          className="g-pill px-3.5 py-[7px] text-[13px] flex items-center gap-1.5 whitespace-nowrap"
         >
           {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           {isDark ? 'Tema terang' : 'Tema gelap'}

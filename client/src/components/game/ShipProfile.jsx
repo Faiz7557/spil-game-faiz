@@ -25,7 +25,7 @@ export default function ShipProfile({ bays, grid, getConfig, displayRows, select
     });
 
   return (
-    <section className="bg-g-surface border border-g-line rounded-xl px-[18px] pt-3.5 pb-4 flex flex-col gap-2.5 min-w-0">
+    <section className="g-glass px-[18px] pt-3.5 pb-4 flex flex-col gap-2.5 min-w-0">
       <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-2">
         <span className="font-medium text-sm whitespace-nowrap">
           KM SPIL {VESSEL_NAMES[bays.length] || 'Vessel'}
@@ -37,11 +37,11 @@ export default function ShipProfile({ bays, grid, getConfig, displayRows, select
       </div>
 
       <div className="flex items-end gap-2.5">
-        <span className="[writing-mode:vertical-rl] rotate-180 text-[10.5px] font-semibold tracking-[.12em] text-g-muted self-center">
+        <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-semibold tracking-[.12em] text-g-muted self-center">
           HALUAN
         </span>
 
-        <div className="relative flex-1 min-w-0 rounded-[10px] overflow-hidden h-[clamp(180px,19vw,230px)]" style={{ background: 'var(--g-sky)' }}>
+        <div className="relative flex-1 min-w-0 rounded-2xl overflow-hidden h-[clamp(180px,19vw,230px)]" style={{ background: 'var(--g-sky)' }}>
           {/* sea */}
           <div className="absolute inset-x-0 bottom-0 h-10" style={{ background: 'var(--g-sea)' }} />
           <span className="absolute left-[6%] right-[30%] bottom-4 h-px block" style={{ background: 'var(--g-wave-a)' }} />
@@ -75,9 +75,9 @@ export default function ShipProfile({ bays, grid, getConfig, displayRows, select
             }}
           >
             <span className="absolute left-[5%] top-3.5 font-plex text-[15px] font-semibold tracking-[.14em] text-white">SPIL</span>
-            <span className="absolute right-[4%] top-4 font-plex text-[10px] tracking-[.1em] text-[#B4C0C6]">KM SPIL CITRA</span>
+            <span className="absolute right-[4%] top-4 font-plex text-[11px] tracking-[.1em] text-[#B4C0C6]">KM SPIL CITRA</span>
             <div className="absolute inset-x-0 bottom-0 h-[18px] bg-g-red flex items-center px-[10%]">
-              <span className="font-plex text-[10px] tracking-[.08em] text-white whitespace-nowrap">SARAT 6,2 M</span>
+              <span className="font-plex text-[11px] tracking-[.08em] text-white whitespace-nowrap">SARAT 6,2 M</span>
             </div>
           </div>
 
@@ -131,7 +131,7 @@ export default function ShipProfile({ bays, grid, getConfig, displayRows, select
                     <span className="flex items-center justify-center gap-[5px] font-plex text-xs font-medium mt-[3px] text-white">
                       {bay}
                       {blockers > 0 && (
-                        <b className="bg-[#F04438] text-white text-[10.5px] font-semibold min-w-4 h-4 px-1 rounded inline-flex items-center justify-center">
+                        <b className="bg-[#F04438] text-white text-[11px] font-semibold min-w-4 h-4 px-1 rounded inline-flex items-center justify-center">
                           {blockers}
                         </b>
                       )}
@@ -143,7 +143,7 @@ export default function ShipProfile({ bays, grid, getConfig, displayRows, select
           </div>
         </div>
 
-        <span className="[writing-mode:vertical-rl] text-[10.5px] font-semibold tracking-[.12em] text-g-muted self-center">
+        <span className="[writing-mode:vertical-rl] text-[11px] font-semibold tracking-[.12em] text-g-muted self-center">
           BURITAN
         </span>
       </div>

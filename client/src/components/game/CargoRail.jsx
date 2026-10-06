@@ -8,7 +8,7 @@ function OfferCard({ order, hop, free, isNext, readOnly, onAccept, onDecline }) 
   const committed = order.customerType === 'Committed';
   const short = order.quantity > free;
   return (
-    <div className="border border-g-line rounded-[10px] px-3 py-[11px] flex flex-col gap-[7px] bg-g-surface">
+    <div className="g-inset rounded-2xl px-3 py-[11px] flex flex-col gap-[7px]">
       <div className="flex items-center gap-[7px] min-w-0">
         <ContractTag committed={committed} />
         <span className="text-[13.5px] font-medium whitespace-nowrap overflow-hidden text-ellipsis min-w-0" title={order.customerName}>
@@ -34,7 +34,7 @@ function OfferCard({ order, hop, free, isNext, readOnly, onAccept, onDecline }) 
             <button
               type="button"
               onClick={() => onDecline(order.id)}
-              className="border border-g-line bg-g-surface hover:bg-g-tint rounded-[7px] px-2.5 py-[5px] text-[12.5px] text-g-ink2"
+              className="g-pill px-3 py-[5px] text-[12.5px] text-g-ink2"
             >
               Tolak
             </button>
@@ -43,9 +43,9 @@ function OfferCard({ order, hop, free, isNext, readOnly, onAccept, onDecline }) 
             type="button"
             disabled={readOnly}
             onClick={() => onAccept(order.id)}
-            className={`rounded-[7px] border px-3 py-[5px] text-[12.5px] ${
+            className={`rounded-full border px-3.5 py-[5px] text-[12.5px] ${
               readOnly
-                ? 'border-g-sunk bg-g-tint text-g-faint cursor-not-allowed'
+                ? 'border-g-hair bg-g-inset text-g-faint cursor-not-allowed'
                 : 'border-g-green bg-g-green text-white font-medium hover:bg-g-green-hover'
             }`}
           >
@@ -60,7 +60,7 @@ function OfferCard({ order, hop, free, isNext, readOnly, onAccept, onDecline }) 
 function OffersPanel({ cargoPool, isDrainPhase, activePorts, currentPort, nextPort, freeSlots, gameMode, readOnly, onAccept, onDecline }) {
   if (isDrainPhase) {
     return (
-      <div className="border border-g-line bg-g-warn-bg rounded-[10px] p-4 text-center flex flex-col items-center gap-1.5">
+      <div className="border border-g-hair bg-g-warn-bg rounded-2xl p-4 text-center flex flex-col items-center gap-1.5">
         <Anchor className="w-5 h-5 text-g-warn" />
         <span className="text-[13.5px] font-medium text-g-warn-ink">Masa pengosongan</span>
         <span className="text-[12.5px] text-g-ink2 [text-wrap:pretty]">
@@ -78,7 +78,7 @@ function OffersPanel({ cargoPool, isDrainPhase, activePorts, currentPort, nextPo
   return (
     <>
       {gameMode === 'ONLINE' && (
-        <span className="text-xs text-g-info bg-g-info-bg rounded-[7px] px-[9px] py-1.5">
+        <span className="text-xs text-g-info bg-g-info-bg rounded-xl px-[9px] py-1.5">
           Pasar bersama · kontrak yang diklaim pemain lain hilang dari daftar
         </span>
       )}
@@ -109,7 +109,7 @@ function BufferPanel({ pendingContainers, selectedId, nextPort, readOnly, onSele
               type="button"
               onClick={onUndo}
               title="Batalkan penempatan terakhir (Ctrl+Z)"
-              className="flex items-center gap-1 text-xs border border-g-line bg-g-surface hover:bg-g-tint rounded-[7px] px-2.5 py-1 text-g-ink2"
+              className="flex items-center gap-1 text-xs g-pill px-3 py-1 text-g-ink2"
             >
               <RotateCcw className="w-3 h-3" /> Urungkan
             </button>
@@ -118,7 +118,7 @@ function BufferPanel({ pendingContainers, selectedId, nextPort, readOnly, onSele
             <button
               type="button"
               onClick={() => onSelect(null)}
-              className="text-xs border border-g-line bg-g-surface hover:bg-g-tint rounded-[7px] px-2.5 py-1 text-g-ink2"
+              className="text-xs g-pill px-3 py-1 text-g-ink2"
             >
               Batal pilih
             </button>
@@ -136,8 +136,8 @@ function BufferPanel({ pendingContainers, selectedId, nextPort, readOnly, onSele
             onClick={() => !readOnly && onSelect(on ? null : c.id)}
             aria-pressed={on}
             title={c.id}
-            className={`flex flex-col items-start gap-1 text-left w-full px-[11px] py-[9px] rounded-[9px] bg-g-surface ${
-              on ? 'border-2 border-g-green bg-g-green-bg' : 'border border-g-line hover:bg-g-tint'
+            className={`flex flex-col items-start gap-1 text-left w-full px-[11px] py-[9px] rounded-[14px] ${
+              on ? 'border-2 border-g-green bg-g-green-bg' : 'border border-g-hair bg-g-inset hover:bg-g-inset-hover'
             } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
           >
             <span className="flex items-center gap-1.5 w-full">
@@ -169,8 +169,8 @@ function PlayersPanel({ rows, gameMode }) {
       {rows.map((p) => (
         <div
           key={p.id}
-          className={`flex items-center gap-2.5 px-2.5 py-[9px] rounded-[9px] border ${
-            p.me ? 'border-g-green-line bg-g-green-bg' : 'border-g-sunk bg-g-surface'
+          className={`flex items-center gap-2.5 px-2.5 py-[9px] rounded-[14px] border ${
+            p.me ? 'border-g-green-line bg-g-green-bg' : 'border-g-hair bg-g-inset'
           }`}
         >
           <span className="font-plex text-xs text-g-muted w-4">{p.rank}</span>
@@ -195,7 +195,7 @@ function VesselPanel({ vesselLevel, gameMode, readOnly, onUpgradeVessel, cumulat
   const route = activePorts && activePorts.length ? activePorts : ['SBY', 'MKS', 'JYP', 'MDN'];
   return (
     <>
-      <div className="border border-g-line rounded-[10px] p-3 bg-g-surface flex flex-col gap-2">
+      <div className="g-inset rounded-2xl p-3 flex flex-col gap-2">
         <span className="font-medium text-[13.5px]">Upgrade kapal</span>
         <span className="text-[12.5px] text-g-muted [text-wrap:pretty]">{info}</span>
         {gameMode === 'OFFLINE' ? (
@@ -204,20 +204,20 @@ function VesselPanel({ vesselLevel, gameMode, readOnly, onUpgradeVessel, cumulat
               type="button"
               onClick={onUpgradeVessel}
               disabled={readOnly}
-              className="border border-g-green bg-g-green hover:bg-g-green-hover text-white rounded-lg px-3 py-2 text-[13px] font-medium flex items-center justify-between disabled:opacity-50"
+              className="border border-g-green bg-g-green hover:bg-g-green-hover text-white rounded-full px-4 py-2 text-[13px] font-medium flex items-center justify-between disabled:opacity-50"
             >
               Upgrade ke level {level + 1}
               <span className="font-plex text-xs">{level === 1 ? 'Rp 50 jt' : 'Rp 100 jt'}</span>
             </button>
           ) : (
-            <span className="text-xs text-g-green-ink bg-g-green-bg border border-g-green-line rounded-lg px-2.5 py-1.5 text-center">Ukuran maksimum</span>
+            <span className="text-xs text-g-green-ink bg-g-green-bg border border-g-green-line rounded-xl px-2.5 py-1.5 text-center">Ukuran maksimum</span>
           )
         ) : (
-          <span className="text-xs text-g-muted bg-g-tint border border-g-sunk rounded-lg px-2.5 py-1.5 text-center">Upgrade hanya tersedia di mode offline</span>
+          <span className="text-xs text-g-muted bg-g-inset border border-g-hair rounded-xl px-2.5 py-1.5 text-center">Upgrade hanya tersedia di mode offline</span>
         )}
       </div>
 
-      <div className="border border-g-line rounded-[10px] p-3 bg-g-surface flex flex-col gap-1.5">
+      <div className="g-inset rounded-2xl p-3 flex flex-col gap-1.5">
         <span className="font-medium text-[13.5px]">Rotasi sirkuit SPIL</span>
         {route.map((port) => {
           const isCurrent = port === currentPort;
@@ -225,8 +225,8 @@ function VesselPanel({ vesselLevel, gameMode, readOnly, onUpgradeVessel, cumulat
           return (
             <div
               key={port}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[13px] ${
-                isCurrent ? 'border-g-green-line bg-g-green-bg font-medium' : 'border-g-sunk'
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-[13px] ${
+                isCurrent ? 'border-g-green-line bg-g-green-bg font-medium' : 'border-g-hair'
               }`}
             >
               <PortChip port={port} />
@@ -239,7 +239,7 @@ function VesselPanel({ vesselLevel, gameMode, readOnly, onUpgradeVessel, cumulat
         })}
       </div>
 
-      <div className="border border-g-sunk rounded-[10px] px-3 py-2.5 bg-g-tint flex justify-between items-baseline gap-2">
+      <div className="g-inset rounded-2xl px-3 py-2.5 flex justify-between items-baseline gap-2">
         <span className="text-xs text-g-muted">Pendapatan kumulatif</span>
         <span className="font-plex text-[13px] text-g-green-ink">{rpJt(cumulativeGrossRevenue || 0)}</span>
       </div>
@@ -269,20 +269,20 @@ export default function CargoRail({
     { id: 'vessel', label: 'Kapal', badge: '' }
   ];
   return (
-    <aside className={`bg-g-surface border-l border-g-line flex flex-col min-w-0 ${className}`} aria-label="Panel kargo">
+    <aside className={`g-glass-rail border-l border-g-edge flex flex-col min-w-0 ${className}`} aria-label="Panel kargo">
       {drawer && (
-        <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-g-sunk">
+        <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-g-hair">
           <span className="font-medium">Panel kargo</span>
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto border border-g-line bg-g-surface rounded-[7px] px-2.5 py-1 text-[13px]"
+            className="ml-auto g-pill px-3 py-1 text-[13px]"
           >
             Tutup
           </button>
         </div>
       )}
-      <div className="flex gap-0.5 px-3 py-2.5 border-b border-g-sunk" role="tablist">
+      <div className="flex gap-1 px-3 py-2.5 border-b border-g-hair" role="tablist">
         {tabs.map((t) => {
           const on = tab === t.id;
           return (
@@ -292,8 +292,8 @@ export default function CargoRail({
               role="tab"
               aria-selected={on}
               onClick={() => onTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-[7px] px-1 py-[7px] text-[13px] ${
-                on ? 'bg-g-bg font-medium text-g-ink' : 'text-g-muted hover:bg-g-tint'
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-full px-1 py-[7px] text-[13px] ${
+                on ? 'bg-g-inset-hover ring-1 ring-inset ring-[var(--g-hair)] font-medium text-g-ink' : 'text-g-muted hover:bg-g-inset'
               }`}
             >
               {t.label}
@@ -310,7 +310,7 @@ export default function CargoRail({
         {tab === 'vessel' && <VesselPanel {...vessel} />}
       </div>
 
-      <div className="border-t border-g-sunk px-3.5 py-3 flex flex-col gap-1.5 bg-g-tint2">
+      <div className="border-t border-g-hair px-3.5 py-3 flex flex-col gap-1.5 bg-g-inset">
         <span className="font-plex text-[11px] tracking-[.1em] uppercase text-g-muted">Box dipilih</span>
         {selected && (
           <span className="flex items-center gap-1.5">

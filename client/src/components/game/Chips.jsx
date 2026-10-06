@@ -28,7 +28,7 @@ export function ContractTag({ committed }) {
       Committed
     </span>
   ) : (
-    <span className="text-[11px] px-1.5 py-px rounded-[5px] border bg-g-tint border-g-sunk text-g-muted shrink-0">
+    <span className="text-[11px] px-1.5 py-px rounded-[5px] border bg-g-inset border-g-hair text-g-muted shrink-0">
       Opsional
     </span>
   );
