@@ -307,6 +307,7 @@ export default function CTASection({
         className="lp-dialog text-left"
         aria-labelledby="mode-dialog-title"
         onClose={onCloseModeModal}
+        onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCloseModeModal(); } }}
         onClick={(e) => { if (e.target === e.currentTarget) onCloseModeModal(); }}
       >
         <div className="relative p-8 md:p-10">

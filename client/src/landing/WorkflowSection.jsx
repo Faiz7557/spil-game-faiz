@@ -258,6 +258,7 @@ export default function WorkflowSection() {
         className="lp-dialog"
         aria-labelledby="workflow-dialog-title"
         onClose={() => setOpenStep(null)}
+        onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setOpenStep(null); } }}
         onClick={(e) => { if (e.target === e.currentTarget) setOpenStep(null); }}
       >
         {openStep && (

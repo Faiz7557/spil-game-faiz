@@ -3,38 +3,38 @@ import {
   X, ChevronRight, ChevronLeft, Award, Compass, ShieldAlert, 
   Package, ArrowRight, Anchor, CheckCircle2 
 } from 'lucide-react';
+import Sheet from './ui/Sheet';
 
 const TUTORIAL_STEPS = [
   {
     step: 1,
-    title: 'Sirkuit Rotasi 4 Pelabuhan Utama',
-    subtitle: 'Rute Pelayaran Kapal Petikemas PT. SPIL',
+    title: 'Sirkuit rotasi 4 pelabuhan utama',
+    subtitle: 'Rute pelayaran kapal peti kemas PT SPIL',
     icon: Compass,
-    iconColor: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-400',
     content: (
-      <div className="space-y-3 text-[13px] text-g-ink2 leading-relaxed">
+      <div className="space-y-3 text-callout text-g-ink2 leading-relaxed">
         <p>
           Anda adalah <strong>Chief Stowage Planner</strong> kapal armada SPIL. Kapal Anda berlayar secara siklis tanpa henti melalui 4 pelabuhan:
         </p>
         <div className="flex items-center justify-between p-3 bg-g-inset border border-g-hair rounded-2xl font-medium text-g-ink text-center">
           <div className="flex-1">
-            <span className="block text-emerald-600 dark:text-emerald-400 font-semibold text-sm">SBY</span>
-            <span className="text-[11px] text-g-muted">Surabaya</span>
+            <span className="block font-plex font-medium text-callout" style={{ color: 'var(--p-sby-ink)' }}>SBY</span>
+            <span className="text-caption text-g-muted">Surabaya</span>
           </div>
           <ArrowRight className="w-4 h-4 text-g-muted" />
           <div className="flex-1">
-            <span className="block text-blue-600 dark:text-blue-400 font-semibold text-sm">MKS</span>
-            <span className="text-[11px] text-g-muted">Makassar</span>
+            <span className="block font-plex font-medium text-callout" style={{ color: 'var(--p-mks-ink)' }}>MKS</span>
+            <span className="text-caption text-g-muted">Makassar</span>
           </div>
           <ArrowRight className="w-4 h-4 text-g-muted" />
           <div className="flex-1">
-            <span className="block text-purple-600 dark:text-purple-400 font-semibold text-sm">JYP</span>
-            <span className="text-[11px] text-g-muted">Jayapura</span>
+            <span className="block font-plex font-medium text-callout" style={{ color: 'var(--p-jyp-ink)' }}>JYP</span>
+            <span className="text-caption text-g-muted">Jayapura</span>
           </div>
           <ArrowRight className="w-4 h-4 text-g-muted" />
           <div className="flex-1">
-            <span className="block text-amber-600 dark:text-amber-400 font-semibold text-sm">MDN</span>
-            <span className="text-[11px] text-g-muted">Medan</span>
+            <span className="block font-plex font-medium text-callout" style={{ color: 'var(--p-mdn-ink)' }}>MDN</span>
+            <span className="text-caption text-g-muted">Medan</span>
           </div>
         </div>
         <p>
@@ -45,22 +45,21 @@ const TUTORIAL_STEPS = [
   },
   {
     step: 2,
-    title: 'Penerimaan Order & Klasifikasi Customer',
-    subtitle: 'Kunci Memilih Kargo yang Menguntungkan',
+    title: 'Penerimaan order & klasifikasi customer',
+    subtitle: 'Kunci memilih kargo yang menguntungkan',
     icon: Package,
-    iconColor: 'text-blue-500 bg-blue-50 dark:bg-blue-950/50 dark:text-blue-400',
     content: (
-      <div className="space-y-3 text-[13px] text-g-ink2 leading-relaxed">
+      <div className="space-y-3 text-callout text-g-ink2 leading-relaxed">
         <p>
           Tidak semua pesanan harus diterima! Perhatikan klasifikasi pelanggan:
         </p>
         <div className="space-y-2">
-          <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl">
-            <span className="font-semibold text-rose-800 dark:text-rose-400 block text-xs">⭐ Committed Customer (Prioritas Tinggi)</span>
+          <div className="p-3 bg-g-danger-bg border border-g-danger-line rounded-xl">
+            <span className="font-semibold text-g-danger-ink block text-caption">Committed customer (prioritas tinggi)</span>
             <span className="text-g-ink2">Pelanggan terikat kontrak. <strong>Wajib diambil dan dimuat</strong>. Jika ditolak atau gagal muat, Anda langsung dikenakan denda penalti penuh (DRY Rp 16 Jt / REEFER Rp 24 Jt per kontainer).</span>
           </div>
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-xl">
-            <span className="font-semibold text-emerald-800 dark:text-emerald-400 block text-xs">📦 Non-Committed Customer (Bebas Ditolak)</span>
+          <div className="p-3 bg-g-inset border border-g-hair rounded-xl">
+            <span className="font-semibold text-g-ink block text-caption">Non-committed customer (bebas ditolak)</span>
             <span className="text-g-ink2">Pelanggan reguler. <strong>Boleh ditolak tanpa denda</strong> jika kapal Anda sudah penuh. Namun jika sudah terlanjur diklaim tetapi gagal dimuat, tetap kena denda rolling!</span>
           </div>
         </div>
@@ -69,26 +68,25 @@ const TUTORIAL_STEPS = [
   },
   {
     step: 3,
-    title: 'Aturan Fisika Stacking & Palka Kapal',
-    subtitle: 'Patuhi Batasan Fisika Ruang Kapal',
+    title: 'Aturan fisika stacking & palka kapal',
+    subtitle: 'Patuhi batasan fisika ruang kapal',
     icon: Anchor,
-    iconColor: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-950/50 dark:text-cyan-400',
     content: (
-      <div className="space-y-3 text-[13px] text-g-ink2 leading-relaxed">
+      <div className="space-y-3 text-callout text-g-ink2 leading-relaxed">
         <p>
           Penataan kontainer di atas kapal mengikuti 3 aturan fisika penting:
         </p>
         <ul className="space-y-2">
           <li className="flex items-start gap-2 p-2.5 bg-g-inset border border-g-hair rounded-xl text-g-ink">
-            <CheckCircle2 className="w-4 h-4 text-spil-green shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-g-green-ink shrink-0 mt-0.5" />
             <span><strong>Plug Recharging REEFER:</strong> Kontainer REEFER hanya boleh diletakkan di Bay 10 atau Bay 14 yang memiliki colokan listrik pendingin.</span>
           </li>
           <li className="flex items-start gap-2 p-2.5 bg-g-inset border border-g-hair rounded-xl text-g-ink">
-            <CheckCircle2 className="w-4 h-4 text-spil-green shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-g-green-ink shrink-0 mt-0.5" />
             <span><strong>Anti Melayang (Gravity):</strong> Kontainer di Tier 84 (dek atas) wajib memiliki kontainer di Tier 82 di bawahnya sebagai penopang.</span>
           </li>
           <li className="flex items-start gap-2 p-2.5 bg-g-inset border border-g-hair rounded-xl text-g-ink">
-            <CheckCircle2 className="w-4 h-4 text-spil-green shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-g-green-ink shrink-0 mt-0.5" />
             <span><strong>Tutup Palka (Hatch Cover):</strong> Slot Tier 02 (dalam palka) akan terkunci dan tidak bisa diisi apabila Tier 82 atau 84 di atasnya sudah terisi.</span>
           </li>
         </ul>
@@ -97,25 +95,24 @@ const TUTORIAL_STEPS = [
   },
   {
     step: 4,
-    title: 'Mencegah Denda Restow (Shifting)',
-    subtitle: 'Strategi Penempatan Next Port vs Later Port',
+    title: 'Mencegah denda restow (shifting)',
+    subtitle: 'Strategi penempatan next port vs later port',
     icon: ShieldAlert,
-    iconColor: 'text-amber-500 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-400',
     content: (
-      <div className="space-y-3 text-[13px] text-g-ink2 leading-relaxed">
-        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-2xl text-amber-900 dark:text-amber-300">
-          <span className="font-semibold block mb-1">⚠️ Mengapa Restow Sangat Mahal?</span>
+      <div className="space-y-3 text-callout text-g-ink2 leading-relaxed">
+        <div className="p-3 bg-g-warn-bg border border-g-warn-line rounded-2xl text-g-warn-ink">
+          <span className="font-semibold block mb-1">Mengapa restow sangat mahal?</span>
           <span>
             Bila kontainer tujuan nanti (Later Port) ditaruh di <strong>atas</strong> kontainer tujuan berikutnya (Next Port), crane pelabuhan harus menurunkan kontainer di atasnya lalu menaikkannya kembali. Denda: <strong>Rp 6.000.000 per kontainer blocker</strong>!
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-2 gap-2 text-caption">
           <div className="p-3 bg-g-inset border border-g-hair rounded-xl text-g-ink">
-            <span className="font-semibold text-blue-600 dark:text-blue-400 block">🔼 Next Port Kargo</span>
+            <span className="font-semibold text-g-ink block">Kargo next port</span>
             <span>Simpan di Dek Atas (Tier 82/84) agar langsung dibongkar di pelabuhan berikut.</span>
           </div>
           <div className="p-3 bg-g-inset border border-g-hair rounded-xl text-g-ink">
-            <span className="font-semibold text-purple-600 dark:text-purple-400 block">🔽 Later Port Kargo</span>
+            <span className="font-semibold text-g-ink block">Kargo later port</span>
             <span>Simpan di Palka Bawah (Tier 02) agar tidak menghalangi pelabuhan perantara.</span>
           </div>
         </div>
@@ -124,17 +121,16 @@ const TUTORIAL_STEPS = [
   },
   {
     step: 5,
-    title: 'Fase Pelayaran Akhir & Evaluasi Kinerja',
-    subtitle: 'Maksimalkan Keuntungan Bersih (Cash)',
+    title: 'Fase pelayaran akhir & evaluasi kinerja',
+    subtitle: 'Maksimalkan keuntungan bersih (cash)',
     icon: Award,
-    iconColor: 'text-purple-500 bg-purple-50 dark:bg-purple-950/50 dark:text-purple-400',
     content: (
-      <div className="space-y-3 text-[13px] text-g-ink2 leading-relaxed">
+      <div className="space-y-3 text-callout text-g-ink2 leading-relaxed">
         <p>
           Permainan berlangsung selama <strong>8 minggu pengambilan kargo</strong> + <strong>3 minggu fase pengosongan (Drain Phase)</strong> untuk membongkar seluruh muatan yang tersisa di atas kapal.
         </p>
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-xl text-emerald-900 dark:text-emerald-300">
-          <span className="font-semibold block mb-1">🏆 Tips Menang Melawan AI Benchmark:</span>
+        <div className="p-3 bg-g-green-bg border border-g-green-line rounded-xl text-g-green-ink">
+          <span className="font-semibold block mb-1">Tips menang melawan bot AI</span>
           <ul className="list-disc list-inside space-y-1 text-g-ink">
             <li>Klaim seluruh Committed order terlebih dahulu.</li>
             <li>Ambil order bernilai tinggi (tarif besar per jarak tempuh).</li>
@@ -172,44 +168,44 @@ export default function TutorialModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 g-overlay animate-fade-in">
-      <div className="g-glass-modal max-w-lg w-full overflow-hidden animate-scale-up flex flex-col transition-colors">
+    <Sheet onClose={onClose} labelledBy="tutorial-title">
+      <div className="g-glass-modal max-w-lg w-full overflow-hidden flex flex-col transition-colors text-g-ink">
         {/* Header */}
         <div className="p-6 border-b border-g-hair flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-2xl ${currentStep.iconColor}`}>
+            <div className="p-2.5 rounded-2xl bg-g-inset border border-g-hair text-g-ink2">
               <StepIcon className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-spil-red bg-rose-50 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-400 px-2 py-0.5 rounded-md border border-rose-100">
-                  Langkah {currentStep.step} dari {TUTORIAL_STEPS.length}
-                </span>
-              </div>
-              <h3 className="text-base font-semibold text-g-ink tracking-tight mt-0.5">
+              <span className="text-caption font-semibold text-g-muted">
+                Langkah {currentStep.step} dari {TUTORIAL_STEPS.length}
+              </span>
+              <h3 id="tutorial-title" className="text-headline font-semibold text-g-ink">
                 {currentStep.title}
               </h3>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-g-muted hover:text-g-ink hover:bg-g-inset-hover transition-colors"
+            aria-label="Tutup"
+            className="g-pill w-8 h-8 flex items-center justify-center text-g-muted"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Progress Bar */}
         <div className="w-full bg-g-inset h-1 flex">
           <div
-            className="h-full bg-spil-green transition-all duration-300"
+            className="h-full bg-g-green transition-all duration-300"
             style={{ width: `${((currentStepIdx + 1) / TUTORIAL_STEPS.length) * 100}%` }}
           ></div>
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-2">
-          <h4 className="text-xs font-semibold text-g-muted uppercase tracking-wider">
+          <h4 className="text-caption font-semibold text-g-muted">
             {currentStep.subtitle}
           </h4>
           {currentStep.content}
@@ -218,31 +214,34 @@ export default function TutorialModal({ isOpen, onClose }) {
         {/* Footer Navigation */}
         <div className="p-4 bg-g-inset border-t border-g-hair flex items-center justify-between">
           <button
+            type="button"
             onClick={onClose}
-            className="text-xs font-medium text-g-muted hover:text-g-ink transition-colors px-2 py-1"
+            className="text-callout text-g-muted hover:text-g-ink transition-colors px-2 py-1"
           >
-            Lewati Tutorial
+            Lewati tutorial
           </button>
 
           <div className="flex items-center gap-2">
             {!isFirst && (
               <button
+                type="button"
                 onClick={handlePrev}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-g-ink2 hover:bg-g-inset-hover transition-colors"
+                className="g-pill flex items-center gap-1 px-4 py-2 text-callout font-semibold"
               >
                 <ChevronLeft className="w-4 h-4" /> Kembali
               </button>
             )}
             <button
+              type="button"
               onClick={handleNext}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-spil-green hover:bg-emerald-700 text-white font-semibold text-xs uppercase tracking-wider shadow-md hover:scale-[1.02] transition-all"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-g-green hover:bg-g-green-hover text-white font-semibold text-callout transition-colors"
             >
-              {isLast ? 'Mulai Bermain!' : 'Lanjut'}
+              {isLast ? 'Mulai bermain' : 'Lanjut'}
               {!isLast && <ChevronRight className="w-4 h-4" />}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

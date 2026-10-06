@@ -33,6 +33,9 @@
   --g-warn-bg: #FEF6E0;
   --g-info: #175CD3;
   --g-info-bg: #D1E9FF;
+  --g-info-ink: #1849A9;
+  --g-info-line: #A9C8F5;
+  --g-warn-line: #F2C66D;
   --g-inv: #13212B;
   --g-inv-ink: #FFFFFF;
   --g-scrim: rgba(19, 33, 43, 0.3);
@@ -97,6 +100,9 @@
   --g-warn-bg: #261D10;
   --g-info: #84ADFF;
   --g-info-bg: #12233D;
+  --g-info-ink: #A9C5FF;
+  --g-info-line: #29457A;
+  --g-warn-line: #5C4520;
   --g-inv: #1E2A30;
   --g-inv-ink: #E7ECEE;
   --g-scrim: rgba(0, 0, 0, 0.3);
@@ -220,6 +226,45 @@ html.dark .glass-panel {
     backdrop-filter: blur(20px);
   }
 
+  /* Native <dialog> host for every game sheet (see components/ui/Sheet.jsx).
+     The dialog itself is a transparent full-viewport flex box so the panel
+     inside keeps the exact size and position the old fixed overlay gave it. */
+  .g-sheet {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 16px;
+    border: 0;
+    background: transparent;
+    color: var(--g-ink);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .g-sheet[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .g-sheet::backdrop {
+    background: var(--g-overlay);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: g-sheet-fade 0.24s ease-out;
+  }
+  .g-sheet[open] > * {
+    animation: g-sheet-in 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  /* showModal() may focus the scrollable panel itself; a ring around the
+     whole sheet says nothing, so only controls inside keep theirs. */
+  .g-sheet:focus,
+  .g-sheet > *:focus {
+    outline: none;
+  }
+
   /* Cards, stat boxes and neutral chips that sit inside a glass panel. */
   .g-inset {
     background: var(--g-inset);
@@ -243,6 +288,31 @@ html.dark .glass-panel {
     border: 0;
     border-top: 1px solid var(--g-hair);
   }
+}
+
+@keyframes g-sheet-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes g-sheet-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Printing a sheet (e.g. the learning report): show only that sheet. */
+@media print {
+  body:has(.g-sheet[data-printable][open]) * { visibility: hidden; }
+  .g-sheet[data-printable][open],
+  .g-sheet[data-printable][open] * { visibility: visible; }
+  .g-sheet[data-printable][open] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    height: auto;
+    padding: 0;
+    overflow: visible;
+  }
+  .g-sheet[data-printable]::backdrop { display: none; }
 }
 
 /* Mobile legibility floor. Several arbitrary text-[Npx] sizes in the
@@ -287,6 +357,17 @@ html.dark .glass-panel {
 
 ::-webkit-scrollbar-thumb {
   @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-all;
+}
+
+/* Dark theme: the light track showed as a bright bar inside dark sheets. */
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28);
 }
 
 /* Animated warning pulses */

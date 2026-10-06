@@ -78,6 +78,9 @@ export default {
           'warn-bg': 'var(--g-warn-bg)',
           info: 'var(--g-info)',
           'info-bg': 'var(--g-info-bg)',
+          'info-ink': 'var(--g-info-ink)',
+          'info-line': 'var(--g-info-line)',
+          'warn-line': 'var(--g-warn-line)',
           edge: 'var(--g-edge)',
           hair: 'var(--g-hair)',
           inset: 'var(--g-inset)',
@@ -138,6 +141,16 @@ export default {
       animation: {
         shake: 'shake 0.5s ease-in-out',
         'border-pulse': 'border-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+      },
+      // Game type ramp (Apple text-style naming). Six steps only; IBM Plex
+      // Mono stays for codes, coordinates and money.
+      fontSize: {
+        'title-1': ['28px', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
+        'title-2': ['21px', { lineHeight: '1.25', letterSpacing: '-0.012em' }],
+        headline: ['17px', { lineHeight: '1.35', letterSpacing: '-0.01em' }],
+        body: ['15px', { lineHeight: '1.5', letterSpacing: '-0.005em' }],
+        callout: ['13px', { lineHeight: '1.45', letterSpacing: '0' }],
+        caption: ['12px', { lineHeight: '1.35', letterSpacing: '0.005em' }]
       },
       fontFamily: {
         sans: ['Outfit', 'Inter', 'sans-serif'],
