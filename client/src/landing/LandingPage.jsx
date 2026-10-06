@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import StickyNav from './StickyNav';
 import HeroSection from './HeroSection';
 import ContextSection from './ContextSection';
@@ -6,18 +6,18 @@ import WorkflowSection from './WorkflowSection';
 import TutorialSection from './TutorialSection';
 import FeaturesGrid from './FeaturesGrid';
 import CTASection from './CTASection';
-import GridPulse from '../components/ui/GridPulse';
 
 /**
- * LandingPage — Caliber-inspired scrollytelling landing experience.
+ * LandingPage — progressive disclosure narrative:
+ * Overview → Context → Workflow → Tutorial → Features → CTA.
  *
- * Replaces the old single-screen mode selector with a progressive
- * disclosure narrative: Overview → Context → Workflow → Tutorial →
- * Features → CTA. All scroll-driven animations use the --p CSS
- * custom property injected by useScrollProgress (no heavy libraries).
+ * Visual language follows the Apple-inspired foundation in index.css
+ * (.lp tokens: one typeface, neutral alternating grounds, 28px tiles,
+ * green as the only action colour).
  *
  * Props are forwarded from App.jsx to CTASection so the mode
- * selection logic stays in App.jsx unchanged.
+ * selection logic stays in App.jsx unchanged. The mode modal state
+ * lives here so the hero's primary button can open it too.
  */
 export default function LandingPage({
   onSelectOffline,
@@ -31,6 +31,8 @@ export default function LandingPage({
   theme,
   toggleTheme,
 }) {
+  const [isModeModalOpen, setIsModeModalOpen] = useState(false);
+
   // Add smooth scroll class to html element when landing is mounted
   useEffect(() => {
     document.documentElement.classList.add('landing-active');
@@ -43,20 +45,17 @@ export default function LandingPage({
   }, []);
 
   return (
-    <div className="relative">
-      {/* Universal SPIL Maritime Interactive Grid Backdrop */}
-      <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-
+    <div className="lp relative">
       {/* Sticky navigation */}
       <StickyNav theme={theme} toggleTheme={toggleTheme} />
 
       {/* Section 1: Hero / Overview */}
-      <HeroSection />
+      <HeroSection onStart={() => setIsModeModalOpen(true)} />
 
       {/* Section 2: Context — Why this game matters */}
       <ContextSection />
 
-      {/* Section 3: Workflow — 4-step game flow (sticky horizontal scroll) */}
+      {/* Section 3: Workflow — 4-step game flow (horizontal card gallery) */}
       <WorkflowSection />
 
       {/* Section 4: Mini Tutorial — Scroll-driven bayplan onboarding */}
@@ -75,6 +74,9 @@ export default function LandingPage({
         onOpenGlossary={onOpenGlossary}
         authUser={authUser}
         onLogout={onLogout}
+        isModeModalOpen={isModeModalOpen}
+        onOpenModeModal={() => setIsModeModalOpen(true)}
+        onCloseModeModal={() => setIsModeModalOpen(false)}
       />
     </div>
   );

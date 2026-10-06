@@ -8,7 +8,6 @@ import {
   Snowflake, 
   ShieldAlert, 
   Scale, 
-  Anchor, 
   Layers,
   Compass,
   Ship,
@@ -481,20 +480,18 @@ export default function TutorialSection() {
     <section 
       id="tutorial" 
       ref={sectionContainerRef}
-      className="bg-white/75 dark:bg-slate-900/80 backdrop-blur-md rounded-t-[3rem] py-24 px-4 sm:px-6 md:px-8 relative z-10 shadow-2xl border-t border-black/[0.04] dark:border-white/10 transition-colors"
+      className="lp-alt lp-section px-4 sm:px-6 md:px-8 relative"
     >
       <div className="max-w-6xl mx-auto">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-spil-green-light dark:bg-emerald-950/60 text-spil-green dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-black uppercase tracking-widest mb-3">
-            <Anchor size={14} /> Mini Tutorial Interaktif
-          </div>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-800 dark:text-white mb-4 font-display transition-colors">
-            Simulasi Penataan Bayplan
+        <div className="text-center max-w-[760px] mx-auto mb-12 md:mb-16">
+          <p className="lp-eyebrow mb-3">Mini tutorial interaktif</p>
+          <h2 className="lp-h2 lp-ink">
+            Simulasi penataan bayplan.
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed transition-colors">
-            Saksikan proses crane memuat kargo langkah demi langkah secara otomatis, atau kendalikan sendiri setiap tahapan susunan kontainer.
+          <p className="lp-lead lp-muted mt-5">
+            Saksikan crane memuat kargo langkah demi langkah, atau kendalikan sendiri setiap tahap susunan kontainer.
           </p>
         </div>
 
