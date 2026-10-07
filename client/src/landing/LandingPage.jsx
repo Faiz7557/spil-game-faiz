@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import StickyNav from './StickyNav';
 import HeroSection from './HeroSection';
 import ContextSection from './ContextSection';
@@ -15,13 +15,11 @@ import CTASection from './CTASection';
  * (.lp tokens: one typeface, neutral alternating grounds, 28px tiles,
  * green as the only action colour).
  *
- * Props are forwarded from App.jsx to CTASection so the mode
- * selection logic stays in App.jsx unchanged. The mode modal state
- * lives here so the hero's primary button can open it too.
+ * Both "start" buttons open the game lobby directly; offline vs online is
+ * picked inside the lobby.
  */
 export default function LandingPage({
-  onSelectOffline,
-  onSelectOnline,
+  onStart,
   onOpenLeaderboard,
   onOpenAuth,
   onOpenTariff,
@@ -31,8 +29,6 @@ export default function LandingPage({
   theme,
   toggleTheme,
 }) {
-  const [isModeModalOpen, setIsModeModalOpen] = useState(false);
-
   // Add smooth scroll class to html element when landing is mounted
   useEffect(() => {
     document.documentElement.classList.add('landing-active');
@@ -50,7 +46,7 @@ export default function LandingPage({
       <StickyNav theme={theme} toggleTheme={toggleTheme} />
 
       {/* Section 1: Hero / Overview */}
-      <HeroSection onStart={() => setIsModeModalOpen(true)} />
+      <HeroSection onStart={onStart} />
 
       {/* Section 2: Context — Why this game matters */}
       <ContextSection />
@@ -64,19 +60,15 @@ export default function LandingPage({
       {/* Section 5: Bento Features Grid */}
       <FeaturesGrid />
 
-      {/* Section 6: CTA Section with animated marquee & mode selection modal */}
+      {/* Section 6: CTA Section with animated marquee */}
       <CTASection
-        onSelectOffline={onSelectOffline}
-        onSelectOnline={onSelectOnline}
+        onStart={onStart}
         onOpenLeaderboard={onOpenLeaderboard}
         onOpenAuth={onOpenAuth}
         onOpenTariff={onOpenTariff}
         onOpenGlossary={onOpenGlossary}
         authUser={authUser}
         onLogout={onLogout}
-        isModeModalOpen={isModeModalOpen}
-        onOpenModeModal={() => setIsModeModalOpen(true)}
-        onCloseModeModal={() => setIsModeModalOpen(false)}
       />
     </div>
   );

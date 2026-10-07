@@ -234,7 +234,7 @@ export default function TutorialModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={handleNext}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-g-green hover:bg-g-green-hover text-white font-semibold text-callout transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-full g-btn-green font-semibold text-callout"
             >
               {isLast ? 'Mulai bermain' : 'Lanjut'}
               {!isLast && <ChevronRight className="w-4 h-4" />}

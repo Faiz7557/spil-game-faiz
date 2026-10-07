@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getBayConfig, getNextPort, calculateCapacityMetrics } from '../utils/gameHelpers';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useElementSize } from '../hooks/useElementSize';
@@ -7,6 +7,7 @@ import BayCrossSection from './game/BayCrossSection';
 import ShipProfile from './game/ShipProfile';
 import ReadinessBar from './game/ReadinessBar';
 import { formatJt, rollingPenalty, RESTOW_PENALTY } from './game/gameUi';
+import { measureBufferCard, animatePlacement, createFlight, flightExpired } from './game/motion';
 
 // Display order for a bay cross-section viewed from aft looking forward:
 // port (even rows, outermost first) on the left, centre 00, starboard (odd
@@ -48,6 +49,9 @@ export default function BayplanSimulator({
   const [railOpen, setRailOpen] = useState(false);
   const [selectedBay, setSelectedBay] = useState(null);
   const [sectionRef, sectionSize] = useElementSize();
+  // Pending placement animation: set when a box is placed, played once the
+  // slot shows up in the grid (online placements arrive a round-trip later).
+  const flightRef = useRef(null);
 
   const railSide = useMediaQuery('(min-width: 1024px)');
   const nextPort = getNextPort(currentPort, activePorts);
@@ -74,7 +78,8 @@ export default function BayplanSimulator({
     return false;
   };
 
-  const placeContainer = (container, b, row, tier) => {
+  const placeContainer = (container, b, row, tier, via = 'click') => {
+    flightRef.current = createFlight(`${b}-${row}-${tier}`, via === 'click' ? measureBufferCard(container.id) : null);
     setPlacedHistory((prev) => [...prev, { containerId: container.id, bay: b, row, tier }]);
     onPlaceContainer(container.id, b, row, tier);
     // Keep going with the same kind of box, like a planner working a batch.
@@ -106,6 +111,16 @@ export default function BayplanSimulator({
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  useLayoutEffect(() => {
+    const flight = flightRef.current;
+    if (!flight) return;
+    if (flightExpired(flight)) {
+      flightRef.current = null;
+      return;
+    }
+    if (animatePlacement(flight.coord, flight.from)) flightRef.current = null;
+  }, [grid]);
+
   const slotIsPlaceable = (container, b, row, tier) => {
     if (!container || grid?.[b]?.[row]?.[tier]) return false;
     if (getBayConfig(b).containerType !== container.containerType) return false;
@@ -130,7 +145,7 @@ export default function BayplanSimulator({
     if (readOnly) return;
     const id = e.dataTransfer.getData('text/plain');
     const container = pendingContainers.find((c) => c.id === id);
-    if (slotIsPlaceable(container, b, row, tier)) placeContainer(container, b, row, tier);
+    if (slotIsPlaceable(container, b, row, tier)) placeContainer(container, b, row, tier, 'drop');
   };
 
   const handleDragStart = (e, id) => e.dataTransfer.setData('text/plain', id);
@@ -216,7 +231,6 @@ export default function BayplanSimulator({
   ];
 
   const isOnline = gameMode === 'ONLINE';
-  const penaltyHint = totalPenalty ? `Estimasi denda Rp ${formatJt(totalPenalty)} jt` : 'Tanpa denda yang terdeteksi';
   let depart;
   if (isSpectator) {
     depart = { label: 'Hanya menonton', sub: 'Mode penonton: semua kontrol nonaktif', disabled: true };
@@ -226,14 +240,15 @@ export default function BayplanSimulator({
       sub: isReadyCurrent ? 'Menunggu pemain lain' : 'Kapal berangkat saat semua siap',
       variant: isReadyCurrent ? 'ready' : 'primary',
       disabled: loading || isGameOver,
+      busy: loading,
       onClick: onToggleReadyOnline
     };
   } else {
     depart = {
       label: loading ? `Berlayar ke ${nextPort}…` : `Berangkat ke ${nextPort}`,
-      sub: penaltyHint,
       variant: 'primary',
       disabled: loading || isGameOver,
+      busy: loading,
       onClick: onDepart
     };
   }
@@ -331,7 +346,7 @@ export default function BayplanSimulator({
         <button
           type="button"
           onClick={() => setRailOpen(true)}
-          className="fixed left-1/2 -translate-x-1/2 bottom-[18px] z-[26] bg-g-inv text-g-inv-ink border border-g-inv rounded-full px-4 py-2.5 text-[13.5px] font-medium whitespace-nowrap shadow-[0_8px_24px_var(--g-shadow)]"
+          className="fixed left-1/2 -translate-x-1/2 bottom-[18px] z-[26] bg-g-inv text-g-inv-ink border border-g-inv rounded-full px-4 py-2.5 text-callout font-medium whitespace-nowrap shadow-[0_8px_24px_var(--g-shadow)]"
         >
           Tawaran {isDrainPhase ? 0 : cargoPool.length} · Buffer {pendingContainers.length}
         </button>
@@ -341,6 +356,17 @@ export default function BayplanSimulator({
         ref={sectionRef}
         className="order-1 w-full max-w-[1320px] mx-auto flex flex-col gap-3.5 min-w-0 px-[clamp(10px,2vw,22px)] pt-3.5 pb-24 lg:pb-7"
       >
+        <ShipProfile
+          bays={baysToRender}
+          grid={grid}
+          getConfig={getBayConfig}
+          displayRows={toDisplayRows}
+          selectedBay={bay}
+          onSelectBay={setSelectedBay}
+          isBlocker={isBlocker}
+          totalSlots={totalSlots}
+        />
+
         <BayCrossSection
           bay={bay}
           bayIndex={bayIndex}
@@ -362,17 +388,6 @@ export default function BayplanSimulator({
           onDropOnCell={handleDropOnCell}
         />
 
-        <ShipProfile
-          bays={baysToRender}
-          grid={grid}
-          getConfig={getBayConfig}
-          displayRows={toDisplayRows}
-          selectedBay={bay}
-          onSelectBay={setSelectedBay}
-          isBlocker={isBlocker}
-          totalSlots={totalSlots}
-        />
-
         <ReadinessBar
           grid={grid}
           pendingContainers={pendingContainers}
@@ -380,6 +395,8 @@ export default function BayplanSimulator({
           checks={checks}
           totalPenalty={totalPenalty}
           depart={depart}
+          currentPort={currentPort}
+          nextPort={nextPort}
         />
       </main>
     </div>

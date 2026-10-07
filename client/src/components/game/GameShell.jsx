@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LayoutGrid, FileText, BookOpen, Grid3x3, GraduationCap, BarChart3, Award } from 'lucide-react';
 import GameSidebar from './GameSidebar';
 import Dashboard from '../Dashboard';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -47,29 +48,29 @@ export default function GameShell({
   const groups = [
     {
       label: 'Pelayaran',
-      items: [{ label: 'Workspace', abbr: 'WS', active: true }]
+      items: [{ label: 'Workspace', icon: LayoutGrid, active: true }]
     },
     {
       label: 'Referensi',
       items: [
-        { label: 'Tarif muatan', abbr: 'TR', hint: 'T', onClick: onOpenTariff },
-        { label: 'Glosarium', abbr: 'GL', hint: 'G', onClick: onOpenGlossary },
-        { label: 'ISO 9711', abbr: 'IS', hint: 'I', onClick: onOpenISO },
-        { label: 'Tutorial', abbr: 'TU', onClick: onOpenTutorial }
+        { label: 'Tarif muatan', icon: FileText, hint: 'T', onClick: onOpenTariff },
+        { label: 'Glosarium', icon: BookOpen, hint: 'G', onClick: onOpenGlossary },
+        { label: 'ISO 9711', icon: Grid3x3, hint: 'I', onClick: onOpenISO },
+        { label: 'Tutorial', icon: GraduationCap, onClick: onOpenTutorial }
       ]
     },
     {
       label: 'Komunitas',
       items: [
-        { label: 'Laporan', abbr: 'LP', onClick: onOpenAnalytics },
-        { label: 'Lencana', abbr: 'LC', hint: badgeCount ? String(badgeCount) : '', onClick: onOpenBadges }
+        { label: 'Laporan', icon: BarChart3, onClick: onOpenAnalytics },
+        { label: 'Lencana', icon: Award, badge: badgeCount ? String(badgeCount) : '', onClick: onOpenBadges }
       ]
     }
   ];
 
   return (
     <div
-      className="min-h-screen grid grid-cols-[auto_minmax(0,1fr)] g-stage text-g-ink font-sans text-sm"
+      className="min-h-screen grid grid-cols-[auto_minmax(0,1fr)] g-stage text-g-ink font-sans text-callout"
       style={{ '--g-header-h': `${headerSize.height || 64}px` }}
     >
       <GameSidebar
@@ -88,9 +89,9 @@ export default function GameShell({
 
       <div className="min-w-0 flex flex-col">
         {isSpectator && (
-          <div className="bg-g-inv text-g-inv-ink px-6 py-[7px] flex flex-wrap items-center gap-3 text-[13px]">
-            <span className="font-plex text-[11px] tracking-[.08em] border border-g-structure rounded-[5px] px-1.5 py-px">
-              PENONTON
+          <div className="bg-g-inv text-g-inv-ink px-6 py-[7px] flex flex-wrap items-center gap-3 text-callout">
+            <span className="font-plex text-caption border border-g-structure rounded-[5px] px-1.5 py-px">
+              Penonton
             </span>
             <span>
               Mengamati {spectatorName || 'pemain'} di room{' '}
@@ -99,7 +100,7 @@ export default function GameShell({
             <button
               type="button"
               onClick={onLeave}
-              className="ml-auto border border-g-structure rounded-md px-2.5 py-[3px] text-[12.5px]"
+              className="ml-auto border border-g-structure rounded-md px-2.5 py-[3px] text-callout"
             >
               Berhenti menonton
             </button>

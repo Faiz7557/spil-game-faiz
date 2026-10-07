@@ -1,10 +1,6 @@
-import { useEffect, useRef } from 'react';
 import {
-  Monitor,
-  Network,
   Award,
   LogIn,
-  X,
   Ship,
   Layers,
   Zap,
@@ -155,52 +151,15 @@ const SHOWCASE_CARDS = [
   }
 ];
 
-const MODES = [
-  {
-    id: 'offline',
-    Icon: Monitor,
-    title: 'Mabar offline (lokal)',
-    tag: 'Pass & play',
-    body: 'Bermain bergantian bersama hingga 4 kapten (atau lawan bot AI) di satu layar tanpa perlu koneksi internet.'
-  },
-  {
-    id: 'online',
-    Icon: Network,
-    title: 'Mabar online (kamar)',
-    tag: 'Real-time room',
-    body: 'Buat atau gabung kamar online kompetitif bersama teman dari perangkat masing-masing dengan sistem giliran 60 detik.'
-  }
-];
-
 export default function CTASection({
-  onSelectOffline,
-  onSelectOnline,
+  onStart,
   onOpenLeaderboard,
   onOpenAuth,
   onOpenTariff,
   onOpenGlossary,
   authUser,
-  onLogout,
-  isModeModalOpen,
-  onOpenModeModal,
-  onCloseModeModal
+  onLogout
 }) {
-  const dialogRef = useRef(null);
-
-  // Native <dialog>: focus trap, Esc to close and inert background for free.
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isModeModalOpen && !dialog.open) dialog.showModal();
-    if (!isModeModalOpen && dialog.open) dialog.close();
-  }, [isModeModalOpen]);
-
-  const handleSelect = (id) => {
-    onCloseModeModal();
-    if (id === 'offline') onSelectOffline();
-    else onSelectOnline();
-  };
-
   // Duplicate cards for seamless infinite horizontal marquee
   const duplicatedCards = [...SHOWCASE_CARDS, ...SHOWCASE_CARDS];
 
@@ -247,7 +206,7 @@ export default function CTASection({
           Uji insting perencanaan kargo, taklukkan empat pelabuhan domestik, dan buktikan efisiensi armadamu tanpa terkena denda restow.
         </p>
 
-        <button type="button" onClick={onOpenModeModal} className="lp-btn lp-btn-primary mt-8">
+        <button type="button" onClick={onStart} className="lp-btn lp-btn-primary mt-8">
           <Ship size={18} aria-hidden="true" /> Mulai berlayar sekarang
         </button>
 
@@ -301,50 +260,6 @@ export default function CTASection({
         &copy; Prototipe PT Salam Pacific Indonesia Lines (SPIL) &bull; Hak Cipta Dilindungi
       </p>
 
-      {/* MODE SELECTION DIALOG */}
-      <dialog
-        ref={dialogRef}
-        className="lp-dialog text-left"
-        aria-labelledby="mode-dialog-title"
-        onClose={onCloseModeModal}
-        onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCloseModeModal(); } }}
-        onClick={(e) => { if (e.target === e.currentTarget) onCloseModeModal(); }}
-      >
-        <div className="relative p-8 md:p-10">
-          <button type="button" onClick={onCloseModeModal} className="lp-paddle absolute top-5 right-5" aria-label="Tutup">
-            <X size={18} />
-          </button>
-
-          <h3 id="mode-dialog-title" className="lp-h3 lp-ink pr-10">Pilih mode permainan.</h3>
-          <p className="lp-body lp-muted mt-2">Tentukan format simulasi stowage-mu.</p>
-
-          <div className="grid grid-cols-1 gap-3 mt-7">
-            {MODES.map(({ id, Icon, title, tag, body }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => handleSelect(id)}
-                className="lp-tile lp-tile-hover !rounded-[20px] p-5 text-left flex items-start gap-4 cursor-pointer"
-              >
-                <span
-                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--lp-page)', color: 'var(--lp-link)' }}
-                  aria-hidden="true"
-                >
-                  <Icon size={20} />
-                </span>
-                <span className="flex-1">
-                  <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <span className="lp-title lp-ink">{title}</span>
-                    <span className="lp-caption lp-muted">{tag}</span>
-                  </span>
-                  <span className="block lp-small lp-muted mt-1.5">{body}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </dialog>
     </section>
   );
 }

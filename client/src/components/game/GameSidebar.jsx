@@ -6,22 +6,31 @@ const initials = (name = '') =>
 function NavButton({ item, mode, onDone }) {
   const compact = mode === 'compact';
   const on = !!item.active;
+  const Icon = item.icon;
   return (
     <button
       type="button"
-      title={item.label}
+      title={item.hint ? `${item.label} [${item.hint}]` : item.label}
+      aria-label={compact ? item.label : undefined}
+      aria-current={on ? 'page' : undefined}
       onClick={() => { item.onClick?.(); onDone?.(); }}
-      className={`flex items-center gap-1.5 rounded-xl border text-left whitespace-nowrap transition-colors ${
-        compact ? 'justify-center py-[5px] text-xs font-plex' : 'justify-start px-2 py-[7px] text-[13.5px]'
+      className={`relative flex items-center gap-2 rounded-xl border text-left whitespace-nowrap transition-colors ${
+        compact ? 'justify-center py-[7px]' : 'justify-start px-2 py-[7px] text-callout'
       } ${
         on
           ? 'border-g-green-line bg-g-green-nav text-g-ink font-medium'
           : 'border-transparent hover:bg-g-inset-hover text-g-ink2'
       }`}
     >
-      {compact ? item.abbr : item.label}
-      {!compact && item.hint && (
-        <span className="ml-auto font-plex text-[11px] text-g-muted">{item.hint}</span>
+      {Icon && <Icon className={`w-4 h-4 shrink-0 ${on ? 'text-g-green-ink' : 'text-g-muted'}`} aria-hidden="true" />}
+      {!compact && item.label}
+      {!compact && (item.hint || item.badge) && (
+        <span className="ml-auto font-plex text-caption text-g-muted">{item.hint || item.badge}</span>
+      )}
+      {compact && item.badge && (
+        <span className="absolute top-0.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-g-inv text-g-inv-ink font-plex text-[10px] leading-4 text-center">
+          {item.badge}
+        </span>
       )}
     </button>
   );
@@ -30,7 +39,7 @@ function NavButton({ item, mode, onDone }) {
 function Section({ label, mode }) {
   if (mode === 'compact') return <span className="block h-px bg-g-hair my-2 mx-1.5" aria-hidden="true" />;
   return (
-    <span className="font-plex text-[11px] tracking-[.1em] uppercase text-g-muted px-2 pt-3 pb-1 whitespace-nowrap">
+    <span className="text-caption font-semibold text-g-muted px-2 pt-3 pb-1 whitespace-nowrap">
       {label}
     </span>
   );
@@ -49,13 +58,13 @@ export default function GameSidebar({ mode, open, onClose, modeLabel, playerName
   return (
     <aside className={`${base} ${placement}`} aria-label="Navigasi">
       <div className={`flex items-center gap-[9px] ${compact ? 'justify-center pt-0.5 pb-2.5' : 'px-1.5 pt-0.5 pb-3.5'}`}>
-        <span className="bg-g-red text-white font-plex text-[11px] font-semibold tracking-[.05em] px-[7px] py-[5px] rounded-md shrink-0">
+        <span className="bg-g-red text-white font-plex text-caption font-semibold px-[7px] py-[5px] rounded-md shrink-0">
           SPIL
         </span>
         {!compact && (
-          <span className="text-sm font-medium leading-tight whitespace-nowrap">
+          <span className="text-callout font-medium leading-tight whitespace-nowrap">
             Game 4 Jalur
-            <span className="block text-[11.5px] font-normal text-g-muted">{modeLabel}</span>
+            <span className="block text-caption font-normal text-g-muted">{modeLabel}</span>
           </span>
         )}
       </div>
@@ -72,15 +81,15 @@ export default function GameSidebar({ mode, open, onClose, modeLabel, playerName
       <div className={`mt-auto border-t border-g-hair pt-3 flex flex-col gap-2 ${compact ? 'items-center' : ''}`}>
         <div className={`flex items-center gap-[9px] ${compact ? 'justify-center' : 'pl-1.5'}`}>
           <span
-            className="w-7 h-7 rounded-full bg-g-inset-hover grid place-items-center text-[11.5px] font-medium text-g-ink2 shrink-0"
+            className="w-7 h-7 rounded-full bg-g-inset-hover grid place-items-center text-caption font-medium text-g-ink2 shrink-0"
             title={playerName}
           >
             {initials(playerName)}
           </span>
           {!compact && (
-            <span className="text-[13px] leading-tight whitespace-nowrap truncate max-w-[130px]" title={playerName}>
+            <span className="text-callout leading-tight whitespace-nowrap truncate max-w-[130px]" title={playerName}>
               {playerName}
-              <span className="block text-[11.5px] text-g-muted">Kapten aktif</span>
+              <span className="block text-caption text-g-muted">Kapten aktif</span>
             </span>
           )}
         </div>
@@ -89,7 +98,7 @@ export default function GameSidebar({ mode, open, onClose, modeLabel, playerName
           onClick={onLeave}
           title="Keluar dari permainan"
           className={`flex items-center gap-1.5 g-pill text-g-ink2 ${
-            compact ? 'justify-center py-1.5' : 'px-3 py-[7px] text-[13px]'
+            compact ? 'justify-center py-1.5' : 'px-3 py-[7px] text-callout'
           }`}
         >
           <LogOut className="w-3.5 h-3.5" />

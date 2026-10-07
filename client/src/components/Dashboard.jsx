@@ -49,17 +49,17 @@ export default function Dashboard({
         <button
           type="button"
           onClick={onOpenNav}
-          className="g-pill px-3 py-1.5 text-[13px] flex items-center gap-1.5"
+          className="g-pill px-3 py-1.5 text-callout flex items-center gap-1.5"
         >
           <Menu className="w-3.5 h-3.5" /> Menu
         </button>
       )}
 
       <div className="min-w-0">
-        <div className="font-plex text-[11px] tracking-[.1em] uppercase text-g-muted whitespace-nowrap">
+        <div className="font-plex text-caption text-g-muted whitespace-nowrap">
           Minggu {week} / {TOTAL_GAME_WEEKS} · {currentPort} → {nextPort}{inDrain ? ' · masa pengosongan' : ''}
         </div>
-        <h1 className="m-0 mt-px text-[19px] font-medium tracking-[-.015em]">Workspace bayplan</h1>
+        <h1 className="m-0 mt-px text-title-2 font-medium">Workspace bayplan</h1>
       </div>
 
       {showRoute && (
@@ -81,7 +81,7 @@ export default function Dashboard({
             return (
               <span key={port} className="contents">
                 {i > 0 && <span className="text-g-structure">›</span>}
-                <span className="font-plex text-[11.5px] font-semibold whitespace-nowrap px-[7px] py-0.5 rounded-[5px]" style={style}>
+                <span className="font-plex text-caption font-semibold whitespace-nowrap px-[7px] py-0.5 rounded-[5px]" style={style}>
                   {port}{suffix}
                 </span>
               </span>
@@ -93,10 +93,10 @@ export default function Dashboard({
       <div className="ml-auto flex flex-wrap items-center gap-x-[clamp(10px,1.6vw,20px)] gap-y-2.5">
         {isOnlineRoom && (
           <span className="flex items-center gap-2">
-            <span className="font-plex text-xs text-g-muted">Room {roomCode}</span>
+            <span className="font-plex text-caption text-g-muted">Room {roomCode}</span>
             {turnTimer && (
               <span
-                className={`font-plex text-[13px] font-medium px-[9px] py-0.5 rounded-md border ${
+                className={`font-plex text-callout font-medium px-[9px] py-0.5 rounded-md border ${
                   timerLow ? 'border-g-danger bg-g-danger-bg text-g-danger' : 'border-g-hair bg-g-inset text-g-ink'
                 }`}
                 title="Batas waktu giliran"
@@ -108,16 +108,16 @@ export default function Dashboard({
         )}
 
         <span className="flex flex-col">
-          <span className="text-[11.5px] text-g-muted">Kas</span>
-          <span className={`font-plex text-[19px] font-medium tracking-[-.01em] whitespace-nowrap ${cash >= 0 ? 'text-g-green-ink' : 'text-g-danger'}`}>
+          <span className="text-caption text-g-muted">Kas</span>
+          <span className={`font-plex text-title-2 font-medium whitespace-nowrap ${cash >= 0 ? 'text-g-green-ink' : 'text-g-danger'}`}>
             Rp {formatJt(cash)} jt
           </span>
         </span>
 
         {showDenda && (
           <span className="flex flex-col">
-            <span className="text-[11.5px] text-g-muted whitespace-nowrap">Denda terkumpul</span>
-            <span className={`font-plex text-[15px] font-medium whitespace-nowrap ${accumulatedPenalties > 0 ? 'text-g-danger' : 'text-g-faint'}`}>
+            <span className="text-caption text-g-muted whitespace-nowrap">Denda terkumpul</span>
+            <span className={`font-plex text-body font-medium whitespace-nowrap ${accumulatedPenalties > 0 ? 'text-g-danger' : 'text-g-faint'}`}>
               Rp {formatJt(accumulatedPenalties)} jt
             </span>
           </span>
@@ -127,7 +127,7 @@ export default function Dashboard({
           type="button"
           onClick={onOpenTariff}
           title="Buka tarif muatan [T]"
-          className="g-pill px-3.5 py-[7px] text-[13px]"
+          className="g-pill px-3.5 py-[7px] text-callout"
         >
           Referensi
         </button>
@@ -136,7 +136,7 @@ export default function Dashboard({
           onClick={toggleTheme}
           aria-label={isDark ? 'Beralih ke tema terang' : 'Beralih ke tema gelap'}
           title={isDark ? 'Tema terang' : 'Tema gelap'}
-          className="g-pill px-3.5 py-[7px] text-[13px] flex items-center gap-1.5 whitespace-nowrap"
+          className="g-pill px-3.5 py-[7px] text-callout flex items-center gap-1.5 whitespace-nowrap"
         >
           {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           {isDark ? 'Tema terang' : 'Tema gelap'}

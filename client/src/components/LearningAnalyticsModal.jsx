@@ -1,6 +1,6 @@
 import {
   Award, AlertTriangle, Printer,
-  X, CheckCircle, BarChart3, Lightbulb
+  X, CheckCircle, BarChart3, Lightbulb, Info
 } from 'lucide-react';
 import { formatRupiah } from '../utils/gameHelpers';
 import Sheet from './ui/Sheet';
@@ -24,6 +24,11 @@ export default function LearningAnalyticsModal({
   const totalPenalties = totalRestowPenalty + totalRollingPenalty;
   const totalRestows = logs.reduce((sum, w) => sum + (w.restowCount || 0), 0);
   const totalRolled = logs.reduce((sum, w) => sum + (w.rolledCount || 0), 0);
+  const totalLoaded = logs.reduce((sum, w) => sum + (w.loadedCount || 0), 0);
+
+  // Rank by cash, like the end-of-game standings; the incoming order is the
+  // seat order, so the human always came first and was labelled rank 1.
+  const rankedPlayers = [...players].sort((a, b) => (b.cash || 0) - (a.cash || 0));
 
   // Generate automated learning insights
   const insights = [];
@@ -33,11 +38,20 @@ export default function LearningAnalyticsModal({
       title: 'Denda Restow Terlalu Tinggi',
       desc: `Denda restow Anda mencapai ${formatRupiah(totalRestowPenalty)} (${Math.round((totalRestowPenalty / totalGrossRevenue) * 100)}% dari pendapatan). Biasakan menata kargo Next Port di dek atas dan Later Port di palka bawah.`
     });
-  } else if (totalRestows === 0) {
+  } else if (totalRestows === 0 && totalLoaded > 0) {
+    // Zero restows only means something once cargo has actually been stowed.
     insights.push({
       type: 'success',
       title: 'Strategi Stowage Sempurna!',
       desc: 'Luar biasa! Anda berhasil berlayar tanpa ada satupun restow blocker. Ini membuktikan pemahaman mendalam tentang tata letak ISO 9711.'
+    });
+  }
+
+  if (totalLoaded === 0) {
+    insights.push({
+      type: 'info',
+      title: 'Belum ada kargo yang dimuat',
+      desc: 'Evaluasi stowage baru bisa diberikan setelah Anda memuat kontainer ke kapal. Klaim tawaran kargo lalu susun di bayplan.'
     });
   }
 
@@ -154,7 +168,7 @@ export default function LearningAnalyticsModal({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-g-hair">
-                    {players.map((p, idx) => {
+                    {rankedPlayers.map((p, idx) => {
                       const isHuman = !p.isBot;
                       return (
                         <tr key={p.id} className={isHuman ? 'bg-g-green-bg text-g-ink' : 'text-g-ink'}>
@@ -202,11 +216,15 @@ export default function LearningAnalyticsModal({
                   className={`p-3.5 rounded-2xl border flex items-start gap-3 text-callout ${
                     ins.type === 'success'
                       ? 'bg-g-green-bg border-g-green-line text-g-green-ink'
+                      : ins.type === 'info'
+                      ? 'bg-g-inset border-g-hair text-g-ink'
                       : 'bg-g-warn-bg border-g-warn-line text-g-warn-ink'
                   }`}
                 >
                   {ins.type === 'success' ? (
                     <CheckCircle className="w-4 h-4 text-g-green-ink shrink-0 mt-0.5" />
+                  ) : ins.type === 'info' ? (
+                    <Info className="w-4 h-4 text-g-muted shrink-0 mt-0.5" />
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-g-warn-ink shrink-0 mt-0.5" />
                   )}

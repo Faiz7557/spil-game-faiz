@@ -103,7 +103,8 @@ export default function ISOVisualizerModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="grid grid-cols-5 gap-2.5 p-3 bg-g-surface rounded-xl border border-g-hair">
-                  {['18', '14', '10', '06', '02'].map(bay => {
+                  {/* Bays run from bow to stern (02 = haluan), same as the ship profile in the workspace. */}
+                  {['02', '06', '10', '14', '18'].map(bay => {
                     const cfg = getBayConfig(bay);
                     const isSelected = activeBay === bay;
 

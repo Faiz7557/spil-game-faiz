@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Users } from 'lucide-react';
 
 const QUICK_REACTIONS = [
-  '⚓ Siap Berlayar!',
-  '⚡ Kargo bernilai tinggi!',
-  '⚠️ Hati-hati restow!',
-  '📦 Kapal saya penuh!',
-  '🚢 GG Kapten!'
+  'Siap berlayar!',
+  'Kargo bernilai tinggi!',
+  'Hati-hati restow!',
+  'Kapal saya penuh!',
+  'GG, Kapten!'
 ];
 
 export default function ChatPanel({ socket, roomCode, myPlayerId }) {
@@ -50,29 +50,32 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl shadow-xl hover:scale-105 transition-all border border-slate-700 font-semibold text-xs uppercase tracking-wider"
+          className="flex items-center gap-2 px-4 py-3 bg-g-inv text-g-inv-ink rounded-full shadow-[0_8px_24px_var(--g-shadow)] font-semibold text-callout transition-opacity hover:opacity-90"
         >
-          <MessageSquare className="w-4 h-4 text-emerald-400" />
-          <span>Obrolan Kamar</span>
+          <MessageSquare className="w-4 h-4" />
+          <span>Obrolan kamar</span>
           {messages.length > 0 && (
-            <span className="w-2 h-2 rounded-full bg-spil-green animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-g-green" aria-label="Ada pesan"></span>
           )}
         </button>
       )}
 
       {/* Expanded Chat Drawer */}
       {isOpen && (
-        <div className="g-glass-modal rounded-3xl w-80 sm:w-96 overflow-hidden flex flex-col h-[420px] animate-scale-up transition-colors">
+        <div className="g-glass-modal w-80 sm:w-96 overflow-hidden flex flex-col h-[420px] transition-colors text-g-ink">
           {/* Header */}
-          <div className="bg-slate-900 p-3.5 text-white flex items-center justify-between border-b border-slate-800">
+          <div className="px-4 py-3 flex items-center justify-between border-b border-g-hair">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs font-semibold tracking-wide">Obrolan Kamar {roomCode}</span>
+              <MessageSquare className="w-4 h-4 text-g-muted" />
+              <span className="text-callout font-semibold">Obrolan kamar <span className="font-plex font-medium">{roomCode}</span></span>
             </div>
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              aria-label="Tutup obrolan"
+              className="g-pill w-7 h-7 flex items-center justify-center text-g-muted"
             >
               <X className="w-4 h-4" />
             </button>
@@ -83,8 +86,9 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
             {QUICK_REACTIONS.map((reaction, i) => (
               <button
                 key={i}
+                type="button"
                 onClick={() => handleSendMessage(reaction)}
-                className="px-2.5 py-1 bg-g-inset hover:bg-g-green-bg hover:border-g-green-line border border-g-hair rounded-lg text-[11px] font-medium text-g-ink whitespace-nowrap shadow-xs transition-colors shrink-0"
+                className="g-pill px-3 py-1 text-caption font-medium text-g-ink whitespace-nowrap shrink-0"
               >
                 {reaction}
               </button>
@@ -92,12 +96,12 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-3.5 overflow-y-auto space-y-2 text-xs bg-g-inset">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-2 text-callout">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-g-muted text-center p-4">
                 <Users className="w-8 h-8 text-g-faint mb-2" />
-                <p className="font-semibold text-xs text-g-muted">Belum ada pesan</p>
-                <p className="text-[11px] mt-0.5">Sapa kapten lain atau kirim reaksi cepat di atas!</p>
+                <p className="font-semibold text-callout">Belum ada pesan</p>
+                <p className="text-caption mt-0.5">Sapa kapten lain atau kirim reaksi cepat di atas.</p>
               </div>
             ) : (
               messages.map((m, idx) => {
@@ -107,14 +111,14 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
                     key={idx}
                     className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                   >
-                    <span className="text-[11px] text-g-muted font-medium mb-0.5 px-1">
+                    <span className="text-caption text-g-muted mb-0.5 px-1">
                       {isMe ? 'Anda' : m.playerName}
                     </span>
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-xs ${
+                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-callout ${
                         isMe
-                          ? 'bg-spil-green text-white rounded-br-xs font-semibold'
-                          : 'bg-g-inset text-g-ink rounded-bl-xs font-medium'
+                          ? 'bg-g-green text-white rounded-br-md'
+                          : 'bg-g-inset border border-g-hair text-g-ink rounded-bl-md'
                       }`}
                     >
                       {m.message}
@@ -138,14 +142,16 @@ export default function ChatPanel({ socket, roomCode, myPlayerId }) {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ketik pesan..."
+              placeholder="Ketik pesan…"
+              aria-label="Pesan"
               maxLength={200}
-              className="flex-1 px-3 py-2 text-xs rounded-xl bg-g-inset border border-g-hair focus:outline-none focus:border-spil-green text-g-ink"
+              className="flex-1 px-3.5 py-2 text-callout rounded-full bg-g-surface border border-g-hair focus:outline-none focus:border-g-green text-g-ink placeholder:text-g-faint"
             />
             <button
               type="submit"
               disabled={!inputText.trim()}
-              className="p-2 bg-spil-green hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl transition-all shadow-sm"
+              aria-label="Kirim"
+              className="w-9 h-9 flex items-center justify-center g-btn-green rounded-full"
             >
               <Send className="w-4 h-4" />
             </button>

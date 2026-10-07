@@ -1,4 +1,4 @@
-import { formatRupiah } from '../utils/gameHelpers';
+import { formatRupiah, rolledUnits } from '../utils/gameHelpers';
 import { Ship, Award, RefreshCw, AlertOctagon, Trophy, ShieldAlert, FileSpreadsheet, BarChart3 } from 'lucide-react';
 import Sheet from './ui/Sheet';
 
@@ -170,7 +170,7 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
                     <tr key={idx} className="text-g-ink2 font-plex tabular-nums hover:bg-g-inset-hover">
                       <td className="py-3 font-sans text-g-muted">Minggu {log.week}</td>
                       <td className="text-g-ink">{log.port}</td>
-                      <td>{log.rolledCount}x</td>
+                      <td>{rolledUnits(log)}x</td>
                       <td className={log.rollingPenalty > 0 ? 'text-g-danger-ink' : ''}>{log.rollingPenalty > 0 ? formatRupiah(log.rollingPenalty) : 'Rp 0'}</td>
                       <td>{log.restowCount}x</td>
                       <td className={log.restowPenalty > 0 ? 'text-g-danger-ink' : ''}>{log.restowPenalty > 0 ? formatRupiah(log.restowPenalty) : 'Rp 0'}</td>
@@ -201,7 +201,7 @@ export default function GameOverModal({ isOpen, cash, accumulatedPenalties, play
           <button
             type="button"
             onClick={onRestart}
-            className="flex items-center justify-center gap-2 bg-g-green hover:bg-g-green-hover text-white font-semibold text-callout px-8 py-3 rounded-full transition-colors"
+            className="flex items-center justify-center gap-2 g-btn-green font-semibold text-callout px-8 py-3 rounded-full"
           >
             <RefreshCw className="w-4 h-4" />
             Mulai pelayaran baru

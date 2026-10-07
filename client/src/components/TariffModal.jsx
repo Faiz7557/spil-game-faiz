@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TARIFF_TABLE, PORT_CODES_INFO, formatRupiah, PORT_NAMES } from '../utils/gameHelpers';
+import { TARIFF_TABLE, PORT_CODES_INFO, formatRupiah, PORT_NAMES, REEFER_BAYS, getBayConfig } from '../utils/gameHelpers';
 import { X, DollarSign, Filter, Sparkles, AlertCircle, Ship } from 'lucide-react';
 import Sheet from './ui/Sheet';
 
@@ -30,6 +30,16 @@ export default function TariffModal({ isOpen, onClose, currentPort }) {
       }
     });
   });
+
+  // Reefer bays come from the shared vessel config so this sheet cannot drift
+  // from the rules the engine enforces.
+  const reeferBays = [...REEFER_BAYS].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  const reeferBayLabel = reeferBays.map((b) => `Bay ${b}`).join(' dan ');
+  const reeferSlotsPerBay = getBayConfig(reeferBays[0]).rows.length * getBayConfig(reeferBays[0]).tiers.length;
+  // Reefer premium range, derived from the tariff table rather than hard-coded.
+  const premiumPcts = PORTS.flatMap((o) => PORTS.filter((d) => d !== o && TARIFF_TABLE[o]?.[d])
+    .map((d) => Math.round((TARIFF_TABLE[o][d].REEFER / TARIFF_TABLE[o][d].DRY - 1) * 100)));
+  const premiumRange = `${Math.min(...premiumPcts)}–${Math.max(...premiumPcts)}%`;
 
   return (
     <Sheet onClose={onClose} labelledBy="tariff-title">
@@ -125,53 +135,53 @@ export default function TariffModal({ isOpen, onClose, currentPort }) {
         </div>
 
         {/* Tariff Table */}
-        <div className="overflow-x-auto rounded-2xl border border-g-hair max-h-[380px] overflow-y-auto">
+        {/* One scroll for the whole sheet: no inner max-height, and few
+            enough columns to fit the sheet width without sideways scrolling. */}
+        <div className="overflow-x-auto rounded-2xl border border-g-hair shrink-0">
           <table className="w-full text-callout text-left border-collapse">
-            <thead className="bg-g-surface sticky top-0 z-10 border-b border-g-hair">
+            <thead className="bg-g-inset border-b border-g-hair">
               <tr className="text-g-muted font-semibold text-caption select-none">
-                <th className="py-3 px-4">Asal</th>
-                <th className="py-3 px-4">Tujuan</th>
-                {filterType !== 'REEFER' && <th className="py-3 px-4 text-right">Tarif DRY</th>}
-                {filterType !== 'DRY' && <th className="py-3 px-4 text-right">Tarif REEFER</th>}
-                {filterType === 'ALL' && <th className="py-3 px-4 text-right">Selisih premium</th>}
-                <th className="py-3 px-4 text-center">Rekomendasi stowage</th>
+                <th className="py-2.5 px-4">Rute</th>
+                {filterType !== 'REEFER' && <th className="py-2.5 px-4 text-right">Tarif DRY</th>}
+                {filterType !== 'DRY' && <th className="py-2.5 px-4 text-right">Tarif REEFER</th>}
+                {filterType === 'ALL' && <th className="py-2.5 px-4 text-right">Selisih premium</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-g-hair">
-              {routes.map((r, idx) => {
+              {routes.map((r) => {
                 const originLabel = PORT_CODES_INFO[r.origin]?.fullLabel || r.origin;
                 const destLabel = PORT_CODES_INFO[r.destination]?.fullLabel || r.destination;
                 const isHighYield = r.dry >= 12000000 || r.reefer >= 19000000;
+                const longHaul = r.origin === 'SBY' && r.destination === 'JYP';
 
                 return (
                   <tr
-                    key={idx}
+                    key={`${r.origin}-${r.destination}`}
                     className={`hover:bg-g-inset-hover transition-colors ${r.isCurrentOrigin ? 'bg-g-green-bg' : ''}`}
                   >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-g-ink">{originLabel}</span>
-                        <span className="text-caption text-g-muted">({PORT_NAMES[r.origin]})</span>
+                    <td className="py-2.5 px-4">
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                        <span className="font-semibold text-g-ink whitespace-nowrap">{originLabel} → {destLabel}</span>
                         {r.isCurrentOrigin && (
-                          <span className="text-caption font-semibold text-g-green-ink whitespace-nowrap">
-                            Port Anda
+                          <span className="text-caption font-semibold text-g-green-ink whitespace-nowrap">Port Anda</span>
+                        )}
+                        {longHaul && (
+                          <span className="text-caption px-2 py-px rounded-full bg-g-inset border border-g-hair text-g-ink2 whitespace-nowrap">
+                            Long haul · underdeck
                           </span>
                         )}
                       </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-g-ink">{destLabel}</span>
-                        <span className="text-caption text-g-muted">({PORT_NAMES[r.destination]})</span>
-                      </div>
+                      <span className="block text-caption text-g-muted whitespace-nowrap">
+                        {PORT_NAMES[r.origin]} ke {PORT_NAMES[r.destination]}
+                      </span>
                     </td>
                     {filterType !== 'REEFER' && (
-                      <td className="py-3 px-4 text-right font-plex tabular-nums whitespace-nowrap text-g-ink">
+                      <td className="py-2.5 px-4 text-right font-plex tabular-nums whitespace-nowrap text-g-ink">
                         {formatRupiah(r.dry)}
                       </td>
                     )}
                     {filterType !== 'DRY' && (
-                      <td className="py-3 px-4 text-right font-plex tabular-nums whitespace-nowrap text-g-ink">
+                      <td className="py-2.5 px-4 text-right font-plex tabular-nums whitespace-nowrap text-g-ink">
                         <div className="flex items-center justify-end gap-1">
                           {formatRupiah(r.reefer)}
                           {isHighYield && <Sparkles className="w-3 h-3 text-g-green-ink" aria-label="Tarif tinggi" />}
@@ -179,15 +189,10 @@ export default function TariffModal({ isOpen, onClose, currentPort }) {
                       </td>
                     )}
                     {filterType === 'ALL' && (
-                      <td className="py-3 px-4 text-right font-plex tabular-nums whitespace-nowrap text-g-muted">
+                      <td className="py-2.5 px-4 text-right font-plex tabular-nums whitespace-nowrap text-g-muted">
                         +{formatRupiah(r.premium)}
                       </td>
                     )}
-                    <td className="py-3 px-4 text-center">
-                      <span className="text-caption px-2 py-0.5 rounded-full bg-g-inset border border-g-hair text-g-ink2 whitespace-nowrap">
-                        {r.origin === 'SBY' && r.destination === 'JYP' ? 'Long Haul (Underdeck)' : 'Direct Stacking'}
-                      </span>
-                    </td>
                   </tr>
                 );
               })}
@@ -201,7 +206,7 @@ export default function TariffModal({ isOpen, onClose, currentPort }) {
             <AlertCircle className="w-4 h-4 text-g-muted shrink-0 mt-0.5" />
             <div className="text-callout text-g-ink2">
               <strong className="text-g-ink font-semibold block">Kontainer reefer bernilai lebih tinggi</strong>
-              Tarif Reefer memberikan freight ~60-70% lebih tinggi dari Dry, tetapi hanya bisa diletakkan pada <strong className="font-semibold text-g-ink">Bay 02 (12 Slot)</strong> yang memiliki fasilitas reefer plug.
+              Tarif reefer {premiumRange} lebih tinggi dari dry, tetapi hanya bisa diletakkan pada <strong className="font-semibold text-g-ink">{reeferBayLabel}</strong> ({reeferSlotsPerBay} slot per bay) yang memiliki fasilitas reefer plug.
             </div>
           </div>
           <div className="flex items-start gap-2">

@@ -18,7 +18,8 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTheme } from './hooks/useTheme';
 import { validateGridPhysics, formatRupiah, HORIZON_WEEKS, TOTAL_GAME_WEEKS } from './utils/gameHelpers';
 import { evaluateEarnedBadges } from '../../shared/badgeDefinitions.js';
-import { AlertCircle, Play, Award, Users, LogIn, Monitor, Network, Eye } from 'lucide-react';
+import { AlertCircle, Play, Award, Users, LogIn, Monitor, Network, Eye, Cpu, Zap, Scale } from 'lucide-react';
+import GameLobby from './components/lobby/GameLobby';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   typeof window !== 'undefined' && window.location.port !== '3000' && window.location.port !== '5050' && (window.location.port === '5190' || window.location.port === '5173' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -743,8 +744,7 @@ export default function App() {
         <LandingPage
           theme={theme}
           toggleTheme={toggleTheme}
-          onSelectOffline={() => setGameMode('OFFLINE')}
-          onSelectOnline={() => setGameMode('ONLINE')}
+          onStart={() => setGameMode('OFFLINE')}
           onOpenLeaderboard={handleOpenLeaderboard}
           onOpenAuth={handleOpenAuth}
           onOpenTariff={() => setIsTariffOpen(true)}
@@ -762,60 +762,60 @@ export default function App() {
   // --- RENDER: LOGIN / REGISTER ---
   if (gameMode === 'AUTH') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
         <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
         <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-sm w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+          <button type="button" onClick={() => setGameMode(null)} className="text-callout text-g-muted hover:text-g-ink mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke pemilihan mode</button>
 
-          <div className="w-14 h-14 rounded-2xl bg-spil-green-light dark:bg-emerald-950/60 border border-green-100 dark:border-emerald-800 flex items-center justify-center text-spil-green dark:text-emerald-400 mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-g-inset border border-g-hair flex items-center justify-center text-g-ink2 mx-auto mb-4">
             <LogIn className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">
-            {authMode === 'login' ? 'Masuk ke Akun' : 'Daftar Akun Baru'}
+          <h2 className="text-title-2 font-semibold text-g-ink mb-1">
+            {authMode === 'login' ? 'Masuk ke akun' : 'Daftar akun baru'}
           </h2>
-          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">
-            Lacak Profil & Peringkat Anda
+          <p className="text-callout text-g-muted mb-6 border-b border-g-hair pb-4">
+            Lacak profil dan peringkat Anda
           </p>
 
           <form className="space-y-4 text-left" onSubmit={handleAuthSubmit}>
             <div>
-              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider">Nama Pengguna</label>
+              <label className="block text-callout font-semibold text-g-ink2 mb-1.5">Nama pengguna</label>
               <input
                 type="text"
                 placeholder="3-20 karakter, huruf/angka/underscore"
                 value={authUsernameInput}
                 onChange={(e) => setAuthUsernameInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-green font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
+                className="w-full px-4 py-3 rounded-xl border border-g-line focus:outline-none focus:border-g-green text-body bg-g-surface text-g-ink placeholder:text-g-faint"
                 maxLength={20}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider">Kata Sandi</label>
+              <label className="block text-callout font-semibold text-g-ink2 mb-1.5">Kata sandi</label>
               <input
                 type="password"
                 placeholder="Minimal 6 karakter"
                 value={authPasswordInput}
                 onChange={(e) => setAuthPasswordInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-green font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
+                className="w-full px-4 py-3 rounded-xl border border-g-line focus:outline-none focus:border-g-green text-body bg-g-surface text-g-ink placeholder:text-g-faint"
               />
             </div>
 
             {authError && (
-              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-lg px-3 py-2">{authError}</p>
+              <p className="text-callout text-g-danger-ink bg-g-danger-bg border border-g-danger-line rounded-xl px-3 py-2">{authError}</p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-semibold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 g-btn-green font-semibold text-body py-3.5 px-6 rounded-full cursor-pointer"
             >
-              {loading ? 'Memproses...' : (authMode === 'login' ? 'Masuk' : 'Daftar')}
+              {loading ? 'Memproses…' : (authMode === 'login' ? 'Masuk' : 'Daftar')}
             </button>
 
             <button
               type="button"
               onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
-              className="w-full text-center text-[11px] text-g-muted font-semibold uppercase hover:text-g-ink"
+              className="w-full text-center text-callout text-g-green-ink hover:underline"
             >
               {authMode === 'login' ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Masuk di sini'}
             </button>
@@ -828,45 +828,45 @@ export default function App() {
   // --- RENDER: GLOBAL LEADERBOARD ---
   if (gameMode === 'LEADERBOARD') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
         <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
         <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-2xl w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
+          <button type="button" onClick={() => setGameMode(null)} className="text-callout text-g-muted hover:text-g-ink mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke pemilihan mode</button>
 
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-g-inset border border-g-hair flex items-center justify-center text-g-ink2 mx-auto mb-4">
             <Award className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">Papan Peringkat Global</h2>
-          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">Kapten Terbaik Berdasarkan Saldo Akhir</p>
+          <h2 className="text-title-2 font-semibold text-g-ink mb-1">Papan peringkat global</h2>
+          <p className="text-callout text-g-muted mb-6 border-b border-g-hair pb-4">Kapten terbaik berdasarkan saldo akhir</p>
 
           {leaderboardData === null && (
-            <p className="text-xs text-g-muted font-semibold uppercase py-8">Memuat peringkat...</p>
+            <p className="text-callout text-g-muted py-8">Memuat peringkat…</p>
           )}
           {leaderboardData !== null && leaderboardData.length === 0 && (
-            <p className="text-xs text-g-muted font-semibold uppercase py-8">Belum ada permainan yang selesai.</p>
+            <p className="text-callout text-g-muted py-8">Belum ada permainan yang selesai.</p>
           )}
           {leaderboardData !== null && leaderboardData.length > 0 && (
             <div className="text-left overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-callout">
                 <thead>
-                  <tr className="text-[11px] text-g-muted uppercase tracking-wider border-b border-g-hair">
+                  <tr className="text-caption font-semibold text-g-muted border-b border-g-hair">
                     <th className="py-2 px-2 text-left">#</th>
                     <th className="py-2 px-2 text-left">Kapten</th>
                     <th className="py-2 px-2 text-left">Mode</th>
                     <th className="py-2 px-2 text-left">Peringkat</th>
-                    <th className="py-2 px-2 text-right">Saldo Akhir</th>
+                    <th className="py-2 px-2 text-right">Saldo akhir</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leaderboardData.map((entry, idx) => (
                     <tr key={idx} className="border-b border-g-hair">
-                      <td className="py-2 px-2 font-semibold text-g-muted">
-                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                      <td className="py-2 px-2 font-plex text-g-muted">
+                        {idx + 1}
                       </td>
                       <td className="py-2 px-2 font-semibold text-g-ink">{entry.player_name}</td>
-                      <td className="py-2 px-2 text-g-muted font-medium">{entry.mode === 'ONLINE' ? 'Online' : 'Offline'}</td>
-                      <td className="py-2 px-2 text-g-muted font-medium">{entry.player_rating}</td>
-                      <td className={`py-2 px-2 text-right font-semibold ${entry.cash < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatRupiah(entry.cash)}</td>
+                      <td className="py-2 px-2 text-g-muted">{entry.mode === 'ONLINE' ? 'Online' : 'Offline'}</td>
+                      <td className="py-2 px-2 text-g-muted">{entry.player_rating}</td>
+                      <td className={`py-2 px-2 text-right font-plex tabular-nums ${entry.cash < 0 ? 'text-g-danger-ink' : 'text-g-ink'}`}>{formatRupiah(entry.cash)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -881,27 +881,24 @@ export default function App() {
   // --- RENDER 2: LOBBY FORM ---
   if (gameMode === 'ONLINE' && (!isInRoom || !roomState || (!isSpectator && !roomState.players[myPlayerId]))) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up animate-fade-in relative">
-        <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-        <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-md w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
-          
-          <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 flex items-center justify-center text-spil-red dark:text-rose-400 mx-auto mb-4 animate-bounce">
-            <Network className="w-7 h-7" />
-          </div>
-          
-          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">Mabar Online (Open Room)</h2>
-          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">Mode Kompetisi Real-Time</p>
-          
+      <GameLobby
+        icon={Network}
+        mode="ONLINE"
+        onSwitchMode={setGameMode}
+        title="Mabar online"
+        subtitle="Bertanding real-time bersama pemain lain dalam satu kamar"
+        onBack={() => setGameMode(null)}
+        busy={loading}
+      >
           <form className="space-y-4 text-left">
             <div>
-              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider">Nama Planner / Kapten</label>
+              <label className="block text-callout font-semibold text-g-ink2 mb-1.5">Nama kapten</label>
               <input
                 type="text"
                 placeholder="Masukkan nama kapten..."
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-red font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
+                className="w-full px-4 py-3 rounded-xl border border-g-line focus:outline-none focus:border-g-green text-body bg-g-surface text-g-ink placeholder:text-g-faint"
                 maxLength={12}
               />
             </div>
@@ -909,31 +906,32 @@ export default function App() {
             <div className="pt-2">
               <button
                 onClick={handleCreateRoom}
-                className="w-full flex items-center justify-center gap-2 bg-spil-red hover:bg-spil-red-hover text-white font-semibold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 g-btn-green font-semibold text-body py-3.5 px-6 rounded-full cursor-pointer"
               >
                 <Users className="w-4 h-4" />
-                Buat Kamar Baru (Host)
+                Buat kamar baru
               </button>
             </div>
 
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-g-hair"></div>
-              <span className="flex-shrink mx-4 text-g-muted font-semibold text-[11px] tracking-wider uppercase">ATAU GABUNG</span>
+              <span className="flex-shrink mx-4 text-g-muted text-caption">atau gabung</span>
               <div className="flex-grow border-t border-g-hair"></div>
             </div>
 
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Kode Kamar..."
+                placeholder="Kode kamar"
+                aria-label="Kode kamar"
                 value={roomCodeInput}
                 onChange={(e) => setRoomCodeInput(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-red font-semibold text-sm uppercase text-center tracking-wider bg-g-inset text-g-ink placeholder:text-g-faint"
+                className="flex-1 px-4 py-3 rounded-xl border border-g-line focus:outline-none focus:border-g-green font-plex font-medium text-body uppercase tracking-[.12em] placeholder:normal-case placeholder:tracking-normal placeholder:font-sans text-center bg-g-surface text-g-ink placeholder:text-g-faint"
                 maxLength={4}
               />
               <button
                 onClick={handleJoinRoom}
-                className="bg-g-inv text-g-inv-ink hover:opacity-90 font-semibold px-6 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-95 transition-all duration-200 cursor-pointer"
+                className="g-pill font-semibold px-6 text-callout flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 Gabung
@@ -944,58 +942,54 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleSpectateRoom}
-                className="w-full flex items-center justify-center gap-2 bg-g-inset hover:bg-g-inset-hover text-g-ink font-semibold py-3 px-4 rounded-xl uppercase tracking-wider text-xs border border-g-hair transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
+                className="g-pill w-full flex items-center justify-center gap-2 font-semibold py-3 px-4 text-callout cursor-pointer"
               >
                 <Eye className="w-4 h-4 text-g-ink2" />
-                Masuk sebagai Penonton (Spectator)
+                Masuk sebagai penonton
               </button>
             </div>
           </form>
 
           {alertMessage && (
-            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-medium">
+            <div className="mt-4 p-3 bg-g-danger-bg border border-g-danger-line rounded-xl text-g-danger-ink text-callout">
               {alertMessage}
             </div>
           )}
-        </article>
-      </div>
+      </GameLobby>
     );
   }
 
   if (gameMode === 'OFFLINE' && !isOfflineGameStarted) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 animate-slide-up relative">
-        <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-        <article className="relative flex flex-col overflow-hidden g-glass-modal max-w-xl w-full p-8 text-center transition-colors">
-          <button onClick={() => setGameMode(null)} className="text-[11px] text-g-muted hover:text-g-ink font-semibold uppercase mb-6 flex items-center gap-1 mx-auto">&larr; Kembali ke Pemilihan Mode</button>
-          
-          <div className="w-14 h-14 rounded-2xl bg-spil-green-light dark:bg-emerald-950/60 border border-green-100 dark:border-emerald-800 flex items-center justify-center text-spil-green dark:text-emerald-400 mx-auto mb-4 animate-bounce">
-            <Monitor className="w-7 h-7" />
-          </div>
-          
-          <h2 className="text-xl font-semibold text-g-ink mb-1 uppercase tracking-wider">Single Player vs Bot AI</h2>
-          <p className="text-xs text-g-muted font-semibold uppercase tracking-wider mb-6 border-b border-g-hair pb-4">Mode Offline Skripsi: Bermain Bertanding Melawan 3 AI Agent</p>
-
+      <GameLobby
+        icon={Monitor}
+        mode="OFFLINE"
+        onSwitchMode={setGameMode}
+        title="Lawan bot AI"
+        subtitle={`Bertanding melawan tiga bot AI selama ${TOTAL_GAME_WEEKS} minggu pelayaran`}
+        onBack={() => setGameMode(null)}
+        busy={loading}
+      >
           {resumableSession && (
-            <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-left">
-              <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">Permainan Belum Selesai Ditemukan</p>
-              <p className="text-xs text-g-ink2 font-medium mb-3">
-                {resumableSession.players[0]?.name || 'Kapten'} · Minggu {resumableSession.week}/8 · Port {resumableSession.currentPort} · Saldo {formatRupiah(resumableSession.players[0]?.cash)}
+            <div className="p-4 rounded-2xl bg-g-inset border border-g-hair text-left">
+              <p className="text-callout font-semibold text-g-ink mb-1">Ada permainan yang belum selesai</p>
+              <p className="text-callout text-g-muted mb-3">
+                {resumableSession.players[0]?.name || 'Kapten'} · Minggu {resumableSession.week}/{TOTAL_GAME_WEEKS} · Port {resumableSession.currentPort} · Saldo <span className="font-plex">{formatRupiah(resumableSession.players[0]?.cash)}</span>
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleResumeOfflineGame}
-                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-sm cursor-pointer"
+                  className="flex-1 g-btn-green font-semibold py-2.5 px-4 rounded-full text-callout cursor-pointer"
                 >
-                  Lanjutkan Permainan
+                  Lanjutkan permainan
                 </button>
                 <button
                   type="button"
                   onClick={() => setResumableSession(null)}
-                  className="text-[11px] text-g-muted font-semibold uppercase hover:text-g-ink px-3 cursor-pointer"
+                  className="g-pill font-semibold text-callout px-4 cursor-pointer"
                 >
-                  Mulai Baru
+                  Mulai baru
                 </button>
               </div>
             </div>
@@ -1004,64 +998,65 @@ export default function App() {
           {!resumableSession && (
           <form className="space-y-5 text-left" onSubmit={handleStartOfflineGame}>
             <div>
-              <label className="block text-[11px] font-semibold text-g-muted uppercase mb-1.5 tracking-wider border-l-2 border-spil-green pl-2">NAMA KAPTEN ANDA (HUMAN PLAYER):</label>
+              <label className="block text-callout font-semibold text-g-ink2 mb-1.5">Nama kapten</label>
               <input
                 type="text"
-                placeholder="Masukkan Nama Anda..."
+                placeholder="Masukkan nama Anda"
                 value={offlinePlayersNames[0] || ''}
                 onChange={(e) => {
                   const newNames = [...offlinePlayersNames];
                   newNames[0] = e.target.value;
                   setOfflinePlayersNames(newNames);
                 }}
-                className="w-full px-4 py-3 rounded-xl border border-g-hair focus:outline-none focus:border-spil-green font-medium text-sm bg-g-inset text-g-ink placeholder:text-g-faint"
+                className="w-full px-4 py-3 rounded-xl border border-g-line focus:outline-none focus:border-g-green text-body bg-g-surface text-g-ink placeholder:text-g-faint"
                 maxLength={12}
               />
             </div>
 
-            <div className="space-y-2 pt-1">
-              <span className="text-[11px] text-g-muted font-semibold uppercase tracking-wider block mb-2 border-l-2 border-indigo-500 pl-2">KAPTEN LAWAN (BOT AGENTS SKRIPSI):</span>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/60 dark:to-slate-800 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 shadow-xs">
-                  <span className="font-semibold text-indigo-900 dark:text-indigo-200 block text-[11px] mb-0.5">🤖 Bot Alpha (Smart AI)</span>
-                  <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider block">Smart Restow Minimizer</span>
-                </div>
-                
-                <div className="bg-gradient-to-br from-amber-50/70 to-white dark:from-amber-950/60 dark:to-slate-800 p-3 rounded-xl border border-amber-200 dark:border-amber-800 shadow-xs">
-                  <span className="font-semibold text-amber-900 dark:text-amber-200 block text-[11px] mb-0.5">⚡ Bot Beta (Greedy AI)</span>
-                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider block">Revenue Maximizer</span>
-                </div>
-
-                <div className="bg-gradient-to-br from-emerald-50/70 to-white dark:from-emerald-950/60 dark:to-slate-800 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-xs">
-                  <span className="font-semibold text-emerald-900 dark:text-emerald-200 block text-[11px] mb-0.5">⚖️ Bot Gamma (Balanced)</span>
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider block">Balanced Strategy</span>
-                </div>
-              </div>
+            <div className="pt-1">
+              <span className="text-callout font-semibold text-g-ink2 flex items-center justify-between mb-2">
+                Kapten lawan <span className="font-plex text-caption font-normal text-g-muted">3 / 3 siap</span>
+              </span>
+              <ul className="rounded-xl border border-g-hair divide-y divide-g-hair overflow-hidden">
+                {[
+                  { name: 'Bot Alpha', style: 'Smart', note: 'meminimalkan restow', Icon: Cpu },
+                  { name: 'Bot Beta', style: 'Greedy', note: 'memaksimalkan pendapatan', Icon: Zap },
+                  { name: 'Bot Gamma', style: 'Balanced', note: 'strategi seimbang', Icon: Scale }
+                ].map(({ name, style, note, Icon }) => (
+                  <li key={name} className="flex items-center gap-3 px-3 py-2.5 bg-g-inset">
+                    <span className="w-8 h-8 rounded-lg border border-g-hair bg-g-surface grid place-items-center shrink-0">
+                      <Icon className="w-4 h-4 text-g-muted" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-callout font-semibold text-g-ink">{name}</span>
+                      <span className="block text-caption text-g-muted truncate">{style} · {note}</span>
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-g-green shrink-0" title="Siap" />
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <div className="pt-3">
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleStartOfflineGame}
                 disabled={loading}
-                className="w-full bg-spil-green hover:bg-spil-green-hover text-white font-semibold py-3.5 px-6 rounded-xl uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 g-btn-green font-semibold text-body py-3.5 px-6 rounded-full cursor-pointer"
               >
-                <Play className="w-4 h-4 fill-white" />
-                {loading ? 'Menyiapkan Simulasi Bot...' : 'Mulai Tanding vs Bot AI'}
+                <Play className="w-4 h-4 fill-current" />
+                {loading ? 'Menyiapkan bot…' : 'Mulai tanding'}
               </button>
             </div>
           </form>
           )}
 
           {alertMessage && (
-            <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900 rounded-xl text-spil-red dark:text-rose-400 text-[11px] font-medium">
+            <div className="p-3 bg-g-danger-bg border border-g-danger-line rounded-xl text-g-danger-ink text-callout">
               {alertMessage}
             </div>
           )}
-
-        </article>
-      </div>
+      </GameLobby>
     );
   }
 
@@ -1108,7 +1103,7 @@ export default function App() {
       {/* 1. Global alert toast */}
       {alertMessage && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 w-[min(560px,90vw)] px-0" role="alert">
-          <div className="bg-g-inv text-g-inv-ink rounded-[10px] px-4 py-2.5 shadow-[0_10px_30px_var(--g-shadow)] flex items-center gap-3 text-[13px]">
+          <div className="bg-g-inv text-g-inv-ink rounded-[10px] px-4 py-2.5 shadow-[0_10px_30px_var(--g-shadow)] flex items-center gap-3 text-callout">
             <AlertCircle className="w-4 h-4 text-g-red shrink-0" />
             <span className="leading-relaxed">{alertMessage}</span>
           </div>

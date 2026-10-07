@@ -253,7 +253,7 @@ export default function DepartureClearanceModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 py-3 px-4 rounded-full bg-g-green hover:bg-g-green-hover disabled:opacity-60 text-white font-semibold text-callout transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 px-4 rounded-full g-btn-green font-semibold text-callout flex items-center justify-center gap-2"
           >
             <Play className="w-3.5 h-3.5 fill-white" />
             {loading ? 'Memproses pelayaran…' : (isOnline ? 'Konfirmasi siap berlayar' : 'Konfirmasi berangkat')}

@@ -1,4 +1,4 @@
-import { formatRupiah, PORT_NAMES } from '../utils/gameHelpers';
+import { formatRupiah, PORT_NAMES, rolledUnits } from '../utils/gameHelpers';
 import { Compass, AlertTriangle, ShieldCheck, ArrowRight, FileSpreadsheet, Calendar, Activity, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
 import Sheet from './ui/Sheet';
 
@@ -144,7 +144,7 @@ export default function PerformanceModal({ isOpen, evaluation, history, onClose 
           <div className="bg-g-inset border border-g-hair rounded-2xl p-4.5">
             <h3 className="text-callout font-semibold text-g-ink mb-3.5 flex items-center gap-1.5 border-b border-g-hair pb-2">
               <AlertTriangle className="w-4 h-4 text-g-muted shrink-0" />
-              Kontainer rolled ({evaluation.rolledCount} unit)
+              Kontainer rolled & kontrak terabaikan ({rolledUnits(evaluation)} unit)
             </h3>
 
             {evaluation.rolledDetails && evaluation.rolledDetails.length > 0 ? (
@@ -233,7 +233,7 @@ export default function PerformanceModal({ isOpen, evaluation, history, onClose 
                     <tr key={idx} className="text-g-ink2 font-plex tabular-nums hover:bg-g-inset-hover">
                       <td className="py-3 font-sans text-g-muted">Minggu {log.week}</td>
                       <td className="text-g-ink">{log.port}</td>
-                      <td>{log.rolledCount}x</td>
+                      <td>{rolledUnits(log)}x</td>
                       <td className={log.rollingPenalty > 0 ? 'text-g-danger-ink' : ''}>{log.rollingPenalty > 0 ? formatRupiah(log.rollingPenalty) : 'Rp 0'}</td>
                       <td>{log.restowCount}x</td>
                       <td className={log.restowPenalty > 0 ? 'text-g-danger-ink' : ''}>{log.restowPenalty > 0 ? formatRupiah(log.restowPenalty) : 'Rp 0'}</td>
@@ -254,7 +254,7 @@ export default function PerformanceModal({ isOpen, evaluation, history, onClose 
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-2 bg-g-green hover:bg-g-green-hover text-white font-semibold text-callout px-6 py-3 rounded-full transition-colors"
+            className="flex items-center gap-2 g-btn-green font-semibold text-callout px-6 py-3 rounded-full"
           >
             Berlayar ke tujuan berikutnya
             <ArrowRight className="w-4 h-4" />
