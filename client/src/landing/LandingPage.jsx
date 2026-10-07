@@ -6,22 +6,20 @@ import WorkflowSection from './WorkflowSection';
 import TutorialSection from './TutorialSection';
 import FeaturesGrid from './FeaturesGrid';
 import CTASection from './CTASection';
-import GridPulse from '../components/ui/GridPulse';
 
 /**
- * LandingPage — Caliber-inspired scrollytelling landing experience.
+ * LandingPage — progressive disclosure narrative:
+ * Overview → Context → Workflow → Tutorial → Features → CTA.
  *
- * Replaces the old single-screen mode selector with a progressive
- * disclosure narrative: Overview → Context → Workflow → Tutorial →
- * Features → CTA. All scroll-driven animations use the --p CSS
- * custom property injected by useScrollProgress (no heavy libraries).
+ * Visual language follows the Apple-inspired foundation in index.css
+ * (.lp tokens: one typeface, neutral alternating grounds, 28px tiles,
+ * green as the only action colour).
  *
- * Props are forwarded from App.jsx to CTASection so the mode
- * selection logic stays in App.jsx unchanged.
+ * Both "start" buttons open the game lobby directly; offline vs online is
+ * picked inside the lobby.
  */
 export default function LandingPage({
-  onSelectOffline,
-  onSelectOnline,
+  onStart,
   onOpenLeaderboard,
   onOpenAuth,
   onOpenTariff,
@@ -43,20 +41,17 @@ export default function LandingPage({
   }, []);
 
   return (
-    <div className="relative">
-      {/* Universal SPIL Maritime Interactive Grid Backdrop */}
-      <GridPulse className="fixed inset-0 pointer-events-none -z-10" />
-
+    <div className="lp relative">
       {/* Sticky navigation */}
       <StickyNav theme={theme} toggleTheme={toggleTheme} />
 
       {/* Section 1: Hero / Overview */}
-      <HeroSection />
+      <HeroSection onStart={onStart} />
 
       {/* Section 2: Context — Why this game matters */}
       <ContextSection />
 
-      {/* Section 3: Workflow — 4-step game flow (sticky horizontal scroll) */}
+      {/* Section 3: Workflow — 4-step game flow (horizontal card gallery) */}
       <WorkflowSection />
 
       {/* Section 4: Mini Tutorial — Scroll-driven bayplan onboarding */}
@@ -65,10 +60,9 @@ export default function LandingPage({
       {/* Section 5: Bento Features Grid */}
       <FeaturesGrid />
 
-      {/* Section 6: CTA Section with animated marquee & mode selection modal */}
+      {/* Section 6: CTA Section with animated marquee */}
       <CTASection
-        onSelectOffline={onSelectOffline}
-        onSelectOnline={onSelectOnline}
+        onStart={onStart}
         onOpenLeaderboard={onOpenLeaderboard}
         onOpenAuth={onOpenAuth}
         onOpenTariff={onOpenTariff}

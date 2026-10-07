@@ -1,5 +1,6 @@
 import { formatRupiah, PORT_NAMES } from '../utils/gameHelpers';
 import { Anchor, ArrowRight, AlertTriangle, ShieldCheck, Ship, Play, X } from 'lucide-react';
+import Sheet from './ui/Sheet';
 
 export default function DepartureClearanceModal({
   isOpen,
@@ -95,116 +96,118 @@ export default function DepartureClearanceModal({
   const hasSevereWarnings = totalPenalties > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/65 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-white/10 shadow-2xl rounded-3xl p-6 md:p-7 flex flex-col gap-5 max-h-[92vh] overflow-y-auto animate-slide-up relative text-slate-800 dark:text-slate-100 transition-colors">
+    <Sheet onClose={loading ? undefined : onCancel} labelledBy="departure-title">
+      <div className="g-glass-modal w-full max-w-2xl p-6 md:p-7 flex flex-col gap-5 max-h-[92vh] overflow-y-auto relative text-g-ink transition-colors">
         
         {/* Header */}
-        <div className="flex justify-between items-start border-b border-slate-100 dark:border-white/10 pb-4">
+        <div className="flex justify-between items-start border-b border-g-hair pb-4">
           <div>
-            <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 inline-block mb-1.5">
-              🚢 Clearance Manifest Keberangkatan
+            <span className="text-caption font-semibold text-g-muted">
+              Clearance keberangkatan
             </span>
-            <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-wide">
-              Pemeriksaan Izin Berlayar (Pre-Flight Check)
+            <h2 id="departure-title" className="text-title-2 font-semibold text-g-ink mt-0.5">
+              Pemeriksaan izin berlayar
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-0.5">
+            <p className="text-callout text-g-muted mt-0.5">
               Verifikasi stabilitas muatan dan proyeksi finansial sebelum melepas tali dermaga.
             </p>
           </div>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            disabled={loading}
+            aria-label="Tutup"
+            className="g-pill w-8 h-8 shrink-0 flex items-center justify-center text-g-muted"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Route Card */}
-        <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center justify-between">
+        <div className="bg-g-inset border border-g-hair rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Anchor className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Anchor className="w-4 h-4 text-g-muted" />
             <div>
-              <span className="text-[8px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block">Pelabuhan Asal</span>
-              <span className="text-xs font-black text-slate-800 dark:text-white uppercase">{currentPort} ({PORT_NAMES[currentPort]})</span>
+              <span className="text-caption text-g-muted block">Pelabuhan asal</span>
+              <span className="text-callout font-semibold text-g-ink">{currentPort} ({PORT_NAMES[currentPort]})</span>
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-[7.5px] text-indigo-500 dark:text-indigo-400 font-black tracking-widest uppercase">Voyage Transit</span>
-            <ArrowRight className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-bounce-horizontal" />
+            <span className="text-caption text-g-muted">Voyage</span>
+            <ArrowRight className="w-4 h-4 text-g-muted" />
           </div>
           <div className="flex items-center gap-2 text-right">
             <div>
-              <span className="text-[8px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block">Tujuan Berikutnya</span>
-              <span className="text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase">{nextPort} ({PORT_NAMES[nextPort]})</span>
+              <span className="text-caption text-g-muted block">Tujuan berikutnya</span>
+              <span className="text-callout font-semibold text-g-ink">{nextPort} ({PORT_NAMES[nextPort]})</span>
             </div>
-            <Ship className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Ship className="w-4 h-4 text-g-muted" />
           </div>
         </div>
 
         {/* Audit Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-caption">
           {/* Capacity */}
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10">
-            <span className="text-[8px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block mb-1">
-              Daya Angkut Kapal
+          <div className="p-3.5 rounded-xl bg-g-inset border border-g-hair">
+            <span className="text-caption text-g-muted block mb-1">
+              Daya angkut kapal
             </span>
-            <span className="text-base font-black text-slate-800 dark:text-white">
-              {occupiedSlots} / {totalSlots} <span className="text-[10px] text-slate-400 dark:text-slate-500">TEU</span>
+            <span className="text-headline font-semibold font-plex tabular-nums text-g-ink">
+              {occupiedSlots} / {totalSlots} <span className="text-caption font-sans text-g-muted">TEU</span>
             </span>
-            <span className="text-[8px] text-slate-500 dark:text-slate-400 font-bold block mt-1">
+            <span className="text-caption text-g-muted block mt-1">
               DRY: {dryCount} · REEFER: {reeferCount}
             </span>
           </div>
 
           {/* Next Port Discharge */}
-          <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
-            <span className="text-[8px] text-emerald-700 dark:text-emerald-400 font-black uppercase tracking-wider block mb-1">
+          <div className="p-3.5 rounded-xl bg-g-inset border border-g-hair">
+            <span className="text-caption text-g-muted block mb-1">
               Bongkar di {nextPort}
             </span>
-            <span className="text-base font-black text-emerald-800 dark:text-emerald-200">
-              {nextPortDischargeCount} <span className="text-[10px] text-emerald-600 dark:text-emerald-300">Kontainer</span>
+            <span className="text-headline font-semibold font-plex tabular-nums text-g-ink">
+              {nextPortDischargeCount} <span className="text-caption font-sans text-g-muted">kontainer</span>
             </span>
-            <span className="text-[8px] text-emerald-700 dark:text-emerald-400 font-bold block mt-1">
+            <span className="text-caption font-plex tabular-nums text-g-green-ink block mt-1">
               +{formatRupiah(nextPortDischargeRevenue)}
             </span>
           </div>
 
           {/* Denda Restow & Rolling */}
-          <div className={`p-3.5 rounded-xl border ${hasSevereWarnings ? 'bg-rose-50/80 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-white/10'}`}>
-            <span className={`text-[8px] font-black uppercase tracking-wider block mb-1 ${hasSevereWarnings ? 'text-spil-red dark:text-rose-400' : 'text-slate-400 dark:text-slate-400'}`}>
-              Potensi Denda Port
+          <div className={`p-3.5 rounded-xl border ${hasSevereWarnings ? 'bg-g-danger-bg border-g-danger-line ' : 'bg-g-inset border-g-hair '}`}>
+            <span className={`text-caption block mb-1 ${hasSevereWarnings ? 'text-g-danger-ink' : 'text-g-muted'}`}>
+              Potensi denda port
             </span>
-            <span className={`text-base font-black ${hasSevereWarnings ? 'text-spil-red dark:text-rose-400' : 'text-slate-700 dark:text-slate-200'}`}>
+            <span className={`text-headline font-semibold font-plex tabular-nums ${hasSevereWarnings ? 'text-g-danger-ink' : 'text-g-ink'}`}>
               -{formatRupiah(totalPenalties)}
             </span>
-            <span className="text-[8px] text-slate-500 dark:text-slate-400 font-bold block mt-1">
-              {hasSevereWarnings ? 'Perlu dievaluasi!' : 'Bebas Denda!'}
+            <span className="text-caption text-g-muted block mt-1">
+              {hasSevereWarnings ? 'Perlu dievaluasi' : 'Bebas denda'}
             </span>
           </div>
         </div>
 
         {/* Warning Checklist (If any penalties exist) */}
         {hasSevereWarnings && (
-          <div className="bg-rose-50/60 dark:bg-rose-950/50 border border-rose-250 dark:border-rose-900/60 rounded-2xl p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-spil-red dark:text-rose-400">
-              <AlertTriangle className="w-4 h-4 shrink-0 animate-bounce" />
-              <span className="text-xs font-black uppercase tracking-wider">Perhatian: Denda Terdeteksi Sebelum Keberangkatan</span>
+          <div className="bg-g-danger-bg border border-g-danger-line rounded-2xl p-4 flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-g-danger-ink">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span className="text-callout font-semibold">Ada denda yang akan dikenakan</span>
             </div>
-            <ul className="text-xs font-semibold text-slate-700 dark:text-slate-300 space-y-1.5 pl-6 list-disc">
+            <ul className="text-callout text-g-ink space-y-1.5 pl-6 list-disc">
               {restowBlockerCount > 0 && (
                 <li>
-                  <strong className="text-spil-red dark:text-rose-400">{restowBlockerCount} Blocker Restow:</strong> Menghalangi kargo pelabuhan berikutnya ({restowMovements} gerakan shifting = <strong className="text-spil-red dark:text-rose-400">-{formatRupiah(restowPenalty)}</strong>).
+                  <strong className="font-semibold text-g-danger-ink">{restowBlockerCount} blocker restow:</strong> Menghalangi kargo pelabuhan berikutnya ({restowMovements} gerakan shifting = <strong className="font-semibold text-g-danger-ink">-{formatRupiah(restowPenalty)}</strong>).
                 </li>
               )}
               {unplacedCount > 0 && (
                 <li>
-                  <strong className="text-spil-red dark:text-rose-400">{unplacedCount} Kontainer di Buffer:</strong> Kargo sudah diklaim tetapi belum dimuat ke kapal (Rolling Penalty = <strong className="text-spil-red dark:text-rose-400">-{formatRupiah(bufferRollingPenalty)}</strong>).
+                  <strong className="font-semibold text-g-danger-ink">{unplacedCount} kontainer di buffer:</strong> Kargo sudah diklaim tetapi belum dimuat ke kapal (rolling penalty = <strong className="font-semibold text-g-danger-ink">-{formatRupiah(bufferRollingPenalty)}</strong>).
                 </li>
               )}
               {ignoredCommittedCount > 0 && (
                 <li>
-                  <strong className="text-spil-red dark:text-rose-400">{ignoredCommittedCount} Kontrak Committed Terabaikan:</strong> Kontrak prioritas belum diklaim di pasar (Denda = <strong className="text-spil-red dark:text-rose-400">-{formatRupiah(ignoredCommittedPenalty)}</strong>).
+                  <strong className="font-semibold text-g-danger-ink">{ignoredCommittedCount} kontrak committed terabaikan:</strong> Kontrak prioritas belum diklaim di pasar (Denda = <strong className="font-semibold text-g-danger-ink">-{formatRupiah(ignoredCommittedPenalty)}</strong>).
                 </li>
               )}
             </ul>
@@ -212,25 +215,25 @@ export default function DepartureClearanceModal({
         )}
 
         {!hasSevereWarnings && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-250 dark:border-emerald-800 rounded-2xl p-3.5 flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-              Kapal memenuhi standar operasional prima! Bebas restow blocker dan seluruh kontrak prioritas telah terakomodasi.
+          <div className="bg-g-green-bg border border-g-green-line rounded-2xl p-3.5 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-g-green-ink shrink-0" />
+            <span className="text-callout text-g-green-ink">
+              Kapal siap berlayar. Tidak ada restow blocker dan seluruh kontrak prioritas sudah terakomodasi.
             </span>
           </div>
         )}
 
         {/* Projected Financial Net */}
-        <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 p-4 rounded-2xl">
+        <div className="flex justify-between items-center bg-g-inset border border-g-hair p-4 rounded-2xl">
           <div>
-            <span className="text-[8px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider block">
-              Proyeksi Hasil Usaha Bersih Voyage
+            <span className="text-caption text-g-muted block">
+              Proyeksi hasil bersih voyage
             </span>
-            <span className={`text-lg font-black ${estimatedNet >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-spil-red dark:text-rose-400'}`}>
+            <span className={`text-title-2 font-semibold font-plex tabular-nums ${estimatedNet >= 0 ? 'text-g-green-ink' : 'text-g-danger-ink'}`}>
               {estimatedNet >= 0 ? '+' : ''}{formatRupiah(estimatedNet)}
             </span>
           </div>
-          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-400 max-w-xs text-right">
+          <span className="text-caption text-g-muted max-w-xs text-right">
             Diakui saat kapal bersandar di pelabuhan {nextPort}
           </span>
         </div>
@@ -241,23 +244,23 @@ export default function DepartureClearanceModal({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 py-3 px-4 rounded-xl border border-slate-250 dark:border-white/10 text-slate-700 dark:text-slate-200 font-extrabold text-xs uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="g-pill flex-1 py-3 px-4 font-semibold text-callout"
           >
-            Kembali Menata
+            Kembali menata
           </button>
 
           <button
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-xs uppercase tracking-widest shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 py-3 px-4 rounded-full g-btn-green font-semibold text-callout flex items-center justify-center gap-2"
           >
             <Play className="w-3.5 h-3.5 fill-white" />
-            {loading ? 'Memproses Pelayaran...' : (isOnline ? 'Konfirmasi Siap Berlayar' : 'Konfirmasi Berangkat')}
+            {loading ? 'Memproses pelayaran…' : (isOnline ? 'Konfirmasi siap berlayar' : 'Konfirmasi berangkat')}
           </button>
         </div>
 
       </div>
-    </div>
+    </Sheet>
   );
 }

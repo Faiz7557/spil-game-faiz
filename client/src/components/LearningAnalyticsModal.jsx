@@ -1,13 +1,14 @@
-import { 
-  Award, AlertTriangle, Printer, 
-  X, CheckCircle, BarChart3, Lightbulb
+import {
+  Award, AlertTriangle, Printer,
+  X, CheckCircle, BarChart3, Lightbulb, Info
 } from 'lucide-react';
 import { formatRupiah } from '../utils/gameHelpers';
+import Sheet from './ui/Sheet';
 
-export default function LearningAnalyticsModal({ 
-  isOpen, 
-  onClose, 
-  players = [], 
+export default function LearningAnalyticsModal({
+  isOpen,
+  onClose,
+  players = [],
   humanPlayer = null,
   totalWeeks = 11
 }) {
@@ -15,7 +16,7 @@ export default function LearningAnalyticsModal({
 
   const player = humanPlayer || players[0];
   const logs = player?.performanceLog || [];
-  
+
   // Aggregate human metrics
   const totalGrossRevenue = logs.reduce((sum, w) => sum + (w.grossRevenue || 0), 0);
   const totalRestowPenalty = logs.reduce((sum, w) => sum + (w.restowPenalty || 0), 0);
@@ -23,6 +24,11 @@ export default function LearningAnalyticsModal({
   const totalPenalties = totalRestowPenalty + totalRollingPenalty;
   const totalRestows = logs.reduce((sum, w) => sum + (w.restowCount || 0), 0);
   const totalRolled = logs.reduce((sum, w) => sum + (w.rolledCount || 0), 0);
+  const totalLoaded = logs.reduce((sum, w) => sum + (w.loadedCount || 0), 0);
+
+  // Rank by cash, like the end-of-game standings; the incoming order is the
+  // seat order, so the human always came first and was labelled rank 1.
+  const rankedPlayers = [...players].sort((a, b) => (b.cash || 0) - (a.cash || 0));
 
   // Generate automated learning insights
   const insights = [];
@@ -32,11 +38,20 @@ export default function LearningAnalyticsModal({
       title: 'Denda Restow Terlalu Tinggi',
       desc: `Denda restow Anda mencapai ${formatRupiah(totalRestowPenalty)} (${Math.round((totalRestowPenalty / totalGrossRevenue) * 100)}% dari pendapatan). Biasakan menata kargo Next Port di dek atas dan Later Port di palka bawah.`
     });
-  } else if (totalRestows === 0) {
+  } else if (totalRestows === 0 && totalLoaded > 0) {
+    // Zero restows only means something once cargo has actually been stowed.
     insights.push({
       type: 'success',
       title: 'Strategi Stowage Sempurna!',
       desc: 'Luar biasa! Anda berhasil berlayar tanpa ada satupun restow blocker. Ini membuktikan pemahaman mendalam tentang tata letak ISO 9711.'
+    });
+  }
+
+  if (totalLoaded === 0) {
+    insights.push({
+      type: 'info',
+      title: 'Belum ada kargo yang dimuat',
+      desc: 'Evaluasi stowage baru bisa diberikan setelah Anda memuat kontainer ke kapal. Klaim tawaran kargo lalu susun di bayplan.'
     });
   }
 
@@ -61,38 +76,38 @@ export default function LearningAnalyticsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in print:bg-white print:p-0 print:static">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 dark:border-white/10 animate-scale-up max-h-[92vh] flex flex-col print:shadow-none print:border-none print:max-h-none print:w-full transition-colors text-slate-800 dark:text-slate-100">
+    <Sheet onClose={onClose} labelledBy="analytics-title" printable>
+      <div className="g-glass-modal max-w-4xl w-full overflow-hidden max-h-[92vh] flex flex-col print:shadow-none print:border-none print:max-h-none print:w-full transition-colors text-g-ink">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-spil-green px-6 py-5 text-white flex items-center justify-between shrink-0 print:bg-slate-900">
+        <div className="px-6 py-5 border-b border-g-hair flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md">
-              <Award className="w-6 h-6 text-emerald-300" />
+            <div className="p-2.5 rounded-2xl bg-g-inset border border-g-hair">
+              <Award className="w-6 h-6 text-g-ink2" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-                  Laporan Hasil Belajar Resmi
-                </span>
-                <span className="text-[10px] text-slate-300">Durasi: {totalWeeks} Minggu</span>
-              </div>
-              <h3 className="text-lg font-black tracking-tight mt-0.5">
-                Audit Analisis Pembelajaran & Skor Benchmark SPIL
+              <span className="text-caption font-semibold text-g-muted">
+                Laporan hasil belajar &middot; {totalWeeks} minggu
+              </span>
+              <h3 id="analytics-title" className="text-title-2 font-semibold mt-0.5">
+                Analisis pembelajaran & benchmark
               </h3>
             </div>
           </div>
           <div className="flex items-center gap-2 print:hidden">
             <button
+              type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-colors"
+              className="g-pill flex items-center gap-1.5 px-3.5 py-1.5 text-callout font-semibold"
             >
               <Printer className="w-4 h-4" /> Cetak / PDF
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+              aria-label="Tutup"
+              className="g-pill w-8 h-8 flex items-center justify-center text-g-muted"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -101,82 +116,82 @@ export default function LearningAnalyticsModal({
         <div className="p-6 overflow-y-auto space-y-6 print:overflow-visible">
           {/* Top KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 rounded-2xl">
-              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide block">Saldo Akhir (Cash)</span>
-              <span className="text-lg font-black text-emerald-950 dark:text-white mt-1 block">
+            <div className="p-4 bg-g-inset border border-g-hair rounded-2xl">
+              <span className="text-caption text-g-muted block">Saldo akhir</span>
+              <span className={`text-headline font-semibold font-plex tabular-nums mt-1 block ${player?.cash < 0 ? 'text-g-danger-ink' : 'text-g-ink'}`}>
                 {formatRupiah(player?.cash)}
               </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-300 font-semibold mt-0.5 block">Modal Awal Rp 150 Jt</span>
+              <span className="text-caption text-g-muted mt-0.5 block">Modal awal Rp 150 jt</span>
             </div>
 
-            <div className="p-4 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 rounded-2xl">
-              <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide block">Pendapatan Kotor</span>
-              <span className="text-lg font-black text-blue-950 dark:text-white mt-1 block">
+            <div className="p-4 bg-g-inset border border-g-hair rounded-2xl">
+              <span className="text-caption text-g-muted block">Pendapatan kotor</span>
+              <span className="text-headline font-semibold font-plex tabular-nums text-g-ink mt-1 block">
                 {formatRupiah(totalGrossRevenue)}
               </span>
-              <span className="text-[10px] text-blue-600 dark:text-blue-300 font-semibold mt-0.5 block">Dari kargo ter-discharge</span>
+              <span className="text-caption text-g-muted mt-0.5 block">Dari kargo yang dibongkar</span>
             </div>
 
-            <div className="p-4 bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 rounded-2xl">
-              <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wide block">Total Denda Akumulasi</span>
-              <span className="text-lg font-black text-rose-950 dark:text-white mt-1 block">
+            <div className="p-4 bg-g-inset border border-g-hair rounded-2xl">
+              <span className="text-caption text-g-muted block">Total denda</span>
+              <span className={`text-headline font-semibold font-plex tabular-nums mt-1 block ${totalPenalties > 0 ? 'text-g-danger-ink' : 'text-g-ink'}`}>
                 {formatRupiah(totalPenalties)}
               </span>
-              <span className="text-[10px] text-rose-600 dark:text-rose-300 font-semibold mt-0.5 block">Restow + Rolling</span>
+              <span className="text-caption text-g-muted mt-0.5 block">Restow + rolling</span>
             </div>
 
-            <div className="p-4 bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/60 rounded-2xl">
-              <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide block">Rating Kapten</span>
-              <span className="text-sm font-black text-purple-950 dark:text-white mt-1 block leading-tight">
+            <div className="p-4 bg-g-inset border border-g-hair rounded-2xl">
+              <span className="text-caption text-g-muted block">Rating kapten</span>
+              <span className="text-callout font-semibold text-g-ink mt-1 block leading-tight">
                 {player?.playerRating || 'Perwira Logistik Junior'}
               </span>
-              <span className="text-[10px] text-purple-600 dark:text-purple-300 font-semibold mt-0.5 block">Berdasarkan net profit</span>
+              <span className="text-caption text-g-muted mt-0.5 block">Berdasarkan net profit</span>
             </div>
           </div>
 
           {/* Benchmark Comparison Table vs Bots */}
           {players.length > 1 && (
-            <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
-              <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-spil-green dark:text-emerald-400" />
-                Perbandingan Performa: Anda vs AI Benchmark Agents
+            <div className="bg-g-inset rounded-2xl p-4 border border-g-hair">
+              <h4 className="text-callout font-semibold text-g-ink mb-3 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-g-muted" />
+                Perbandingan performa: kamu vs bot AI
               </h4>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
+                <table className="w-full text-callout text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-white/10 text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">
-                      <th className="py-2 px-3">Agen / Pemain</th>
-                      <th className="py-2 px-3">Tipe Strategi</th>
-                      <th className="py-2 px-3 text-right">Saldo Kas</th>
-                      <th className="py-2 px-3 text-right">Akumulasi Denda</th>
+                    <tr className="border-b border-g-hair text-caption font-semibold text-g-muted">
+                      <th className="py-2 px-3">Pemain</th>
+                      <th className="py-2 px-3">Strategi</th>
+                      <th className="py-2 px-3 text-right">Saldo kas</th>
+                      <th className="py-2 px-3 text-right">Total denda</th>
                       <th className="py-2 px-3 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-                    {players.map((p, idx) => {
+                  <tbody className="divide-y divide-g-hair">
+                    {rankedPlayers.map((p, idx) => {
                       const isHuman = !p.isBot;
                       return (
-                        <tr key={p.id} className={isHuman ? 'bg-emerald-50/80 dark:bg-emerald-950/50 font-black' : 'text-slate-700 dark:text-slate-300'}>
+                        <tr key={p.id} className={isHuman ? 'bg-g-green-bg text-g-ink' : 'text-g-ink'}>
                           <td className="py-2.5 px-3 flex items-center gap-2">
                             <span>{p.avatar || (isHuman ? '👤' : '🤖')}</span>
-                            <span className={isHuman ? 'text-spil-green dark:text-emerald-400' : 'text-slate-800 dark:text-white'}>{p.name}</span>
+                            <span className={isHuman ? 'font-semibold text-g-green-ink' : ''}>{p.name}</span>
                           </td>
-                          <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
+                          <td className="py-2.5 px-3 text-g-muted">
                             {isHuman ? 'Chief Stowage Planner' : p.personality}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-white">
+                          <td className="py-2.5 px-3 text-right font-plex tabular-nums text-g-ink">
                             {formatRupiah(p.cash)}
                           </td>
-                          <td className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400 font-semibold">
+                          <td className={`py-2.5 px-3 text-right font-plex tabular-nums ${(p.accumulatedPenalties || 0) > 0 ? 'text-g-danger-ink' : 'text-g-muted'}`}>
                             {formatRupiah(p.accumulatedPenalties || 0)}
                           </td>
                           <td className="py-2.5 px-3 text-center">
                             {idx === 0 ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
-                                🥇 Peringkat 1
+                              <span className="px-2 py-0.5 rounded-full text-caption font-semibold bg-g-inv text-g-inv-ink">
+                                Peringkat 1
                               </span>
                             ) : (
-                              <span className="text-slate-400 dark:text-slate-500 text-[10px]">#{idx + 1}</span>
+                              <span className="text-g-muted font-plex">#{idx + 1}</span>
                             )}
                           </td>
                         </tr>
@@ -190,28 +205,32 @@ export default function LearningAnalyticsModal({
 
           {/* AI Pedagogical Insights */}
           <div className="space-y-3">
-            <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-              Catatan Evaluasi Edukatif & Rekomendasi Solusi
+            <h4 className="text-callout font-semibold text-g-ink flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-g-muted" />
+              Catatan evaluasi & rekomendasi
             </h4>
             <div className="space-y-2.5">
               {insights.map((ins, i) => (
                 <div
                   key={i}
-                  className={`p-3.5 rounded-2xl border flex items-start gap-3 text-xs ${
+                  className={`p-3.5 rounded-2xl border flex items-start gap-3 text-callout ${
                     ins.type === 'success'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
-                      : 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200'
+                      ? 'bg-g-green-bg border-g-green-line text-g-green-ink'
+                      : ins.type === 'info'
+                      ? 'bg-g-inset border-g-hair text-g-ink'
+                      : 'bg-g-warn-bg border-g-warn-line text-g-warn-ink'
                   }`}
                 >
                   {ins.type === 'success' ? (
-                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 text-g-green-ink shrink-0 mt-0.5" />
+                  ) : ins.type === 'info' ? (
+                    <Info className="w-4 h-4 text-g-muted shrink-0 mt-0.5" />
                   ) : (
-                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-4 h-4 text-g-warn-ink shrink-0 mt-0.5" />
                   )}
                   <div>
-                    <strong className="block font-black text-xs mb-0.5">{ins.title}</strong>
-                    <span className="leading-relaxed text-slate-700 dark:text-slate-300">{ins.desc}</span>
+                    <strong className="block font-semibold mb-0.5">{ins.title}</strong>
+                    <span className="text-g-ink">{ins.desc}</span>
                   </div>
                 </div>
               ))}
@@ -220,18 +239,19 @@ export default function LearningAnalyticsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0 print:hidden">
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-            PT. Salam Pacific Indonesia Lines — Serious Game CSPP Research
+        <div className="p-4 bg-g-inset border-t border-g-hair flex justify-between items-center shrink-0 print:hidden">
+          <span className="text-caption text-g-muted">
+            PT Salam Pacific Indonesia Lines — Serious Game CSPP Research
           </span>
           <button
+            type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all"
+            className="g-pill px-5 py-2.5 font-semibold text-callout"
           >
-            Tutup Laporan
+            Tutup
           </button>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

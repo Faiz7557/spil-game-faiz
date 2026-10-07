@@ -742,16 +742,16 @@ cd client && npm run build
 
 ### Opsi 1: Orkestrasi Docker Compose (Disarankan)
 
-Metode tercepat dan paling andal untuk menjalankan seluruh ekosistem SPIL-GAME (PostgreSQL, Redis, Backend Server, Frontend Nginx, dan AI Microservice):
+Stack produksi berisi tiga container: PostgreSQL, satu container aplikasi (Express + Socket.IO yang sekaligus menyajikan build client), dan Caddy untuk HTTPS otomatis. Redis dan AI service belum dipakai server saat runtime sehingga tidak dijalankan. Roadmap lengkap ada di [docs/DEPLOYMENT_ROADMAP.md](docs/DEPLOYMENT_ROADMAP.md).
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/FaizIqbal/SPIL-GAME.git
 cd SPIL-GAME
 
-# 2. Siapkan file konfigurasi environment
+# 2. Siapkan file konfigurasi environment, lalu isi POSTGRES_PASSWORD,
+#    JWT_SECRET, dan DOMAIN. Compose menolak jalan bila rahasia kosong.
 cp .env.example .env
-# Ubah JWT_SECRET pada .env dengan string acak yang kuat
 
 # 3. Bangun dan jalankan seluruh container di latar belakang
 docker compose up -d --build
@@ -761,11 +761,11 @@ docker compose ps
 ```
 
 Layanan yang aktif:
-* **Web Game Client (Frontend):** `http://localhost:3000` (atau port `80` di server produksi)
-* **Backend REST & WebSocket API:** `http://localhost:5050`
-* **AI DRL Microservice (FastAPI):** `http://localhost:8000/docs`
-* **PostgreSQL 16 Database:** `localhost:5432`
-* **Redis 7 Cache Store:** `localhost:6379`
+* **Game (client, REST API, WebSocket):** `https://<DOMAIN>` lewat Caddy (port 80/443)
+* **Aplikasi tanpa proxy (cek lokal di server):** `http://127.0.0.1:5050`
+* **PostgreSQL 16:** hanya di jaringan internal compose, tidak dibuka ke publik
+
+Untuk PaaS (Railway/Render), cukup deploy `Dockerfile` di root dengan satu Postgres terkelola dan **satu replika** (state room ada di memori proses).
 
 ---
 

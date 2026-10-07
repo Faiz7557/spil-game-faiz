@@ -48,6 +48,46 @@ export default {
           ink: '#13212B',
           muted: '#52626C'
         },
+        // Game workspace tokens (claude design "Game SPIL 4 Jalur"). Values live
+        // in CSS variables (see index.css) so one class works in light + dark.
+        g: {
+          bg: 'var(--g-bg)',
+          surface: 'var(--g-surface)',
+          sunk: 'var(--g-sunk)',
+          line: 'var(--g-line)',
+          ink: 'var(--g-ink)',
+          ink2: 'var(--g-ink2)',
+          muted: 'var(--g-muted)',
+          faint: 'var(--g-faint)',
+          structure: 'var(--g-structure)',
+          tint: 'var(--g-tint)',
+          tint2: 'var(--g-tint2)',
+          green: 'var(--g-green)',
+          'green-ink': 'var(--g-green-ink)',
+          'green-bg': 'var(--g-green-bg)',
+          'green-line': 'var(--g-green-line)',
+          'green-hover': 'var(--g-green-hover)',
+          'green-nav': 'var(--g-green-nav)',
+          red: 'var(--g-red)',
+          danger: 'var(--g-danger)',
+          'danger-bg': 'var(--g-danger-bg)',
+          'danger-line': 'var(--g-danger-line)',
+          'danger-ink': 'var(--g-danger-ink)',
+          warn: 'var(--g-warn)',
+          'warn-ink': 'var(--g-warn-ink)',
+          'warn-bg': 'var(--g-warn-bg)',
+          info: 'var(--g-info)',
+          'info-bg': 'var(--g-info-bg)',
+          'info-ink': 'var(--g-info-ink)',
+          'info-line': 'var(--g-info-line)',
+          'warn-line': 'var(--g-warn-line)',
+          edge: 'var(--g-edge)',
+          hair: 'var(--g-hair)',
+          inset: 'var(--g-inset)',
+          'inset-hover': 'var(--g-inset-hover)',
+          inv: 'var(--g-inv)',
+          'inv-ink': 'var(--g-inv-ink)'
+        },
         // Custom variant shades used in components
         indigo: {
           150: '#e0e7ff',
@@ -102,8 +142,19 @@ export default {
         shake: 'shake 0.5s ease-in-out',
         'border-pulse': 'border-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
       },
+      // Game type ramp (Apple text-style naming). Six steps only; IBM Plex
+      // Mono stays for codes, coordinates and money.
+      fontSize: {
+        'title-1': ['28px', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
+        'title-2': ['21px', { lineHeight: '1.25', letterSpacing: '-0.012em' }],
+        headline: ['17px', { lineHeight: '1.35', letterSpacing: '-0.01em' }],
+        body: ['15px', { lineHeight: '1.5', letterSpacing: '-0.005em' }],
+        callout: ['13px', { lineHeight: '1.45', letterSpacing: '0' }],
+        caption: ['12px', { lineHeight: '1.35', letterSpacing: '0.005em' }]
+      },
       fontFamily: {
         sans: ['Outfit', 'Inter', 'sans-serif'],
+        plex: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
         display: ['Archivo', 'Outfit', 'Inter', 'sans-serif'],
       }
     },

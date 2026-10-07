@@ -220,4 +220,16 @@ export const calculateCapacityMetrics = (grid, pendingContainers = []) => {
   };
 };
 
-
+// Units shown as "rolled" in weekly reports. The engine's `rolledCount` only
+// counts claimed boxes left in the buffer, while `rollingPenalty` and
+// `rolledDetails` also include committed orders that were never claimed
+// ("Committed (Terabaikan)"). Summing the details keeps the unit count in step
+// with the penalty shown next to it. Display only: the engine value is left
+// untouched because the research harness reads it.
+export const rolledUnits = (log) => {
+  if (!log) return 0;
+  if (Array.isArray(log.rolledDetails)) {
+    return log.rolledDetails.reduce((sum, item) => sum + (item.missingCount || 0), 0);
+  }
+  return log.rolledCount || 0;
+};

@@ -1,14 +1,18 @@
+# Production stack: Postgres + one app container (Express + Socket.IO + built
+# client) + Caddy for automatic HTTPS. Secrets have no defaults on purpose -
+# copy .env.example to .env and fill them in, or compose refuses to start.
+#
+# Redis and ai-service are not used by the running server yet (see
+# docs/DEPLOYMENT_ROADMAP.md, Fase 7), so they are not started here.
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: spil_postgres
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-spil_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spil_secret_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-spil_game}
-    ports:
-      - "5432:5432"
+    # No published port: only reachable from the app on the compose network.
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,25 +21,8 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: spil_redis
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  server:
-    build:
-      context: .
-      dockerfile: server/Dockerfile
-    container_name: spil_server
+  app:
+    build: .
     restart: always
     environment:
       NODE_ENV: production
@@ -43,40 +30,30 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${POSTGRES_USER:-spil_admin}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-spil_secret_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       DB_NAME: ${POSTGRES_DB:-spil_game}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      AI_SERVICE_URL: http://ai-service:8000
-      JWT_SECRET: ${JWT_SECRET:-spil_production_jwt_secret_key_long_and_secure}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+    # Localhost only, for checking the app without Caddy. Public traffic goes through Caddy.
     ports:
-      - "5050:5050"
+      - "127.0.0.1:5050:5050"
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
 
-  client:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-    container_name: spil_client
+  caddy:
+    image: caddy:2-alpine
     restart: always
+    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to app:5050
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
     depends_on:
-      - server
-
-  ai-service:
-    build:
-      context: ./ai-service
-      dockerfile: Dockerfile
-    container_name: spil_ai_service
-    restart: always
-    ports:
-      - "8000:8000"
+      - app
 
 volumes:
   postgres_data:
-  redis_data:
+  caddy_data:

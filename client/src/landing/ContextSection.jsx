@@ -1,6 +1,12 @@
 import { AlertTriangle, Clock, MapPin } from 'lucide-react';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 
+const STATS = [
+  { Icon: AlertTriangle, value: 'Rp 6 juta', label: 'Biaya per restow blocker', critical: true },
+  { Icon: Clock, value: '26 minggu', label: 'Durasi satu siklus voyage' },
+  { Icon: MapPin, value: '4 rute', label: 'Sirkuit pelabuhan domestik' }
+];
+
 const ContextSection = () => {
   const { ref, progress } = useScrollProgress();
 
@@ -14,59 +20,41 @@ const ContextSection = () => {
   };
 
   return (
-    <section 
-      id="context"
-      ref={ref}
-      className="relative bg-white/60 dark:bg-slate-900/80 backdrop-blur-md rounded-t-[3rem] py-24 px-6 border-t border-slate-200/70 dark:border-white/10 shadow-xl z-20 mt-[-2rem] transition-colors"
-    >
-      <div className="max-w-5xl mx-auto flex flex-col items-center">
-        <div className="text-xs font-black text-spil-green dark:text-emerald-400 uppercase tracking-widest mb-4">
-          MENGAPA GAME INI?
-        </div>
-        
-        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 text-center transition-colors" style={{ fontFamily: "'Archivo', 'Outfit', sans-serif" }}>
-          Industri Pelayaran Butuh Planner yang Terlatih
+    <section id="context" ref={ref} className="lp-alt lp-section px-4 sm:px-6">
+      <div className="max-w-[1024px] mx-auto flex flex-col items-center text-center">
+        <p className="lp-eyebrow mb-3">Mengapa game ini?</p>
+
+        <h2 className="lp-h2 lp-ink max-w-[760px]">
+          Industri pelayaran butuh planner yang terlatih.
         </h2>
-        
-        <p className="text-slate-600 dark:text-slate-300 text-lg max-w-2xl mx-auto text-center leading-relaxed transition-colors">
-          Kesalahan stowage kontainer menyebabkan kerugian jutaan rupiah per pelayaran. 
+
+        <p className="lp-lead lp-muted max-w-[680px] mt-5">
+          Kesalahan stowage kontainer menyebabkan kerugian jutaan rupiah per pelayaran.
           Overstowage, rolled cargo, dan kesalahan berat adalah tantangan nyata di lapangan.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 w-full">
-          {/* Card 1 */}
-          <article 
-            className="relative flex min-h-[260px] flex-col items-center justify-center p-8 text-center overflow-hidden rounded-[20px] border border-slate-200/90 dark:border-white/10 bg-white dark:bg-slate-800/90 shadow-[0_1px_3px_rgba(16,24,40,0.04),0_10px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] border-t-4 border-t-spil-red dark:border-t-rose-500 hover:shadow-md transition-all duration-300"
-            style={getCardStyle(0)}
-          >
-            <AlertTriangle className="text-spil-red dark:text-rose-400 mb-4" size={32} />
-            <div className="text-4xl font-black text-spil-red dark:text-rose-400 mb-2">Rp 6 Juta</div>
-            <div className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Biaya Per Restow Blocker</div>
-          </article>
-
-          {/* Card 2 */}
-          <article 
-            className="relative flex min-h-[260px] flex-col items-center justify-center p-8 text-center overflow-hidden rounded-[20px] border border-slate-200/90 dark:border-white/10 bg-white dark:bg-slate-800/90 shadow-[0_1px_3px_rgba(16,24,40,0.04),0_10px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] border-t-4 border-t-spil-red dark:border-t-rose-500 hover:shadow-md transition-all duration-300"
-            style={getCardStyle(0.08)}
-          >
-            <Clock className="text-spil-red dark:text-rose-400 mb-4" size={32} />
-            <div className="text-4xl font-black text-spil-red dark:text-rose-400 mb-2">26 Minggu</div>
-            <div className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Durasi Satu Siklus Voyage</div>
-          </article>
-
-          {/* Card 3 */}
-          <article 
-            className="relative flex min-h-[260px] flex-col items-center justify-center p-8 text-center overflow-hidden rounded-[20px] border border-slate-200/90 dark:border-white/10 bg-white dark:bg-slate-800/90 shadow-[0_1px_3px_rgba(16,24,40,0.04),0_10px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] border-t-4 border-t-spil-red dark:border-t-rose-500 hover:shadow-md transition-all duration-300"
-            style={getCardStyle(0.16)}
-          >
-            <MapPin className="text-spil-red dark:text-rose-400 mb-4" size={32} />
-            <div className="text-4xl font-black text-spil-red dark:text-rose-400 mb-2">4 Rute</div>
-            <div className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Sirkuit Pelabuhan Domestik</div>
-          </article>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mt-12 md:mt-16 w-full">
+          {STATS.map(({ Icon, value, label, critical }, i) => (
+            <article
+              key={label}
+              className="lp-tile flex min-h-[240px] flex-col items-center justify-center p-8"
+              style={getCardStyle(i * 0.08)}
+            >
+              <Icon
+                size={28}
+                strokeWidth={1.75}
+                className="mb-5"
+                style={{ color: critical ? '#D21E20' : 'var(--lp-muted)' }}
+                aria-hidden="true"
+              />
+              <div className="text-[40px] leading-[1.1] font-semibold tracking-[-0.01em] lp-ink">{value}</div>
+              <div className="lp-body lp-muted mt-2">{label}</div>
+            </article>
+          ))}
         </div>
 
-        <p className="italic text-slate-500 dark:text-slate-400 text-center mt-12 max-w-xl transition-colors">
-          Game ini melatih Anda menghadapi tantangan tersebut — mulai dari merencanakan stowage hingga mengelola pelayaran.
+        <p className="lp-body lp-muted mt-12 max-w-[600px]">
+          Game ini melatih Anda menghadapi tantangan tersebut, mulai dari merencanakan stowage hingga mengelola pelayaran.
         </p>
       </div>
     </section>

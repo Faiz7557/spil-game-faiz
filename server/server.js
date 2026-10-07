@@ -1,5 +1,8 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -31,6 +34,11 @@ import { hashPassword, verifyPassword, signToken, resolveIdentity, tokenWasRejec
 const app = express();
 const PORT = process.env.PORT || 5050;
 
+// Behind one reverse proxy (Railway/Render/Caddy/nginx) req.ip must come from
+// X-Forwarded-For, otherwise every player shares the proxy's IP and the rate
+// limiters below throttle everyone together. Set TRUST_PROXY=0 if exposed directly.
+app.set('trust proxy', parseInt(process.env.TRUST_PROXY ?? '1', 10));
+
 // Security headers middleware
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -40,15 +48,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configurable CORS
-const corsOrigin = process.env.CORS_ORIGIN || '*';
+// Configurable CORS. Comma-separated whitelist; '*' only for development.
+// When the client is served by this same server (see CLIENT_DIST) no
+// cross-origin access is needed at all.
+const corsOrigin = !process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === '*'
+  ? '*'
+  : process.env.CORS_ORIGIN.split(',').map(s => s.trim());
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: '1mb' }));
 
-// General API rate limiter (protecting against DoS / excessive queries)
+// General API rate limiter (protecting against DoS / excessive queries).
+// Solo mode sends one request per game action and a class often shares one
+// campus NAT IP, so this is ~5 req/s per IP rather than per player.
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 1000,
+  limit: 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Terlalu banyak permintaan API. Silakan coba lagi sebentar.' }
@@ -116,7 +130,10 @@ const loadRoomsFromDb = async () => {
         currentPort: row.current_port,
         globalCargoPool: typeof row.global_cargo_pool === 'string' ? JSON.parse(row.global_cargo_pool) : row.global_cargo_pool,
         isGameOver: row.is_game_over,
-        players
+        players,
+        // Without this the first TTL sweep (lastActive = 0) evicts every
+        // reloaded room 30 min after boot, even if players were mid-game.
+        lastActiveAt: new Date(row.updated_at).getTime() || Date.now()
       };
     });
     console.log(`[Database] Loaded ${res.rows.length} active room(s) from PostgreSQL into memory.`);
@@ -145,7 +162,8 @@ const loadSessionsFromDb = async () => {
         sharedGrid: typeof row.shared_grid === 'string' ? JSON.parse(row.shared_grid) : row.shared_grid,
         players,
         isGameOver: row.is_game_over,
-        seed: null
+        seed: row.seed ?? null,
+        lastActiveAt: new Date(row.updated_at).getTime() || Date.now()
       };
       loaded++;
     });
@@ -165,7 +183,8 @@ const persistOfflineSession = (session) => {
     sharedGrid: session.sharedGrid,
     globalCargoPool: [],
     players: session.players,
-    isGameOver: session.isGameOver
+    isGameOver: session.isGameOver,
+    seed: session.seed
   });
 };
 
@@ -276,8 +295,8 @@ const deleteRoomFromDb = async (roomCode) => {
 const upsertSessionToDb = async (sessionId, sessionData) => {
   try {
     const sql = `
-      INSERT INTO sessions (session_id, week, current_port, active_ports, vessel_level, shared_grid, global_cargo_pool, players, is_game_over, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+      INSERT INTO sessions (session_id, week, current_port, active_ports, vessel_level, shared_grid, global_cargo_pool, players, is_game_over, seed, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
       ON CONFLICT (session_id) DO UPDATE SET
         week = EXCLUDED.week,
         current_port = EXCLUDED.current_port,
@@ -287,6 +306,7 @@ const upsertSessionToDb = async (sessionId, sessionData) => {
         global_cargo_pool = EXCLUDED.global_cargo_pool,
         players = EXCLUDED.players,
         is_game_over = EXCLUDED.is_game_over,
+        seed = EXCLUDED.seed,
         updated_at = CURRENT_TIMESTAMP;
     `;
     await query(sql, [
@@ -298,7 +318,8 @@ const upsertSessionToDb = async (sessionId, sessionData) => {
       JSON.stringify(sessionData.sharedGrid || {}),
       JSON.stringify(sessionData.globalCargoPool || []),
       JSON.stringify(sessionData.players || []),
-      sessionData.isGameOver ?? false
+      sessionData.isGameOver ?? false,
+      sessionData.seed == null ? null : JSON.stringify(sessionData.seed)
     ]);
   } catch (err) {
     console.error(`[Database] Error saving session ${sessionId}:`, err.message || err);
@@ -329,18 +350,36 @@ app.get(['/health', '/api/health'], async (req, res) => {
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
+// bay/row/tier come straight from the client. Own-property checks reject
+// keys like "__proto__" or "constructor" that a plain truthiness check let
+// through to Object.prototype.
+const isValidSlot = (grid, bay, row, tier) =>
+  Object.hasOwn(grid, bay) &&
+  Object.hasOwn(grid[bay], row) &&
+  Object.hasOwn(grid[bay][row], tier);
+
 // Login/register have no other protection against brute-forcing a password
-// or spamming account creation - cap attempts per IP rather than leaving
-// them uncapped.
-const authLimiter = rateLimit({
+// or spamming account creation. A whole class often shares one campus NAT IP,
+// so login is capped per IP + username (brute force targets one account) and
+// register per IP with room for a class to sign up together.
+const authLimitMessage = { success: false, message: 'Terlalu banyak percobaan. Silakan coba lagi dalam beberapa menit.' };
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Terlalu banyak percobaan. Silakan coba lagi dalam beberapa menit.' }
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${String(req.body?.username || '').toLowerCase()}`,
+  message: authLimitMessage
+});
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: authLimitMessage
 });
 
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+app.post('/api/auth/register', registerLimiter, async (req, res) => {
   try {
     const { username, password } = req.body || {};
     if (typeof username !== 'string' || !USERNAME_RE.test(username)) {
@@ -369,7 +408,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', authLimiter, async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body || {};
     if (typeof username !== 'string' || typeof password !== 'string') {
@@ -411,12 +450,36 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
+// Generous for real play (drag-placing containers), low enough that a
+// scripted flood can't hammer the DB via per-action persistence.
+const SOCKET_EVENTS_PER_SECOND = 20;
+
 // WebSocket Real-time controllers
 io.on('connection', (socket) => {
   console.log(`[Socket Connected] ID: ${socket.id}`);
 
+  // Client payloads are untrusted: missing, null, or non-object. Socket.IO
+  // runs listeners in process.nextTick, so a throw here (e.g. destructuring
+  // undefined) would crash the whole process and every room with it.
+  // ponytail: fixed 1s window per socket, token bucket if bursts matter.
+  let windowStart = 0;
+  let eventCount = 0;
+  const on = (event, handler) => socket.on(event, (...args) => {
+    const now = Date.now();
+    if (now - windowStart >= 1000) { windowStart = now; eventCount = 0; }
+    if (++eventCount > SOCKET_EVENTS_PER_SECOND) return; // drop floods silently
+    const ack = typeof args[args.length - 1] === 'function' ? args.pop() : undefined;
+    const payload = args[0] && typeof args[0] === 'object' ? args[0] : {};
+    try {
+      handler(payload, ack);
+    } catch (err) {
+      console.error(`[Socket] ${event} failed:`, err);
+      socket.emit('error_message', 'Terjadi kesalahan server.');
+    }
+  });
+
   // 1. Create Room (Host)
-  socket.on('create_room', ({ playerName, playerId, authToken }) => {
+  on('create_room', ({ playerName, playerId, authToken }) => {
     try {
       if (tokenWasRejected(authToken)) {
         return socket.emit('error_message', 'auth_expired:Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
@@ -474,7 +537,7 @@ io.on('connection', (socket) => {
   // already has a seat in the room (page refresh, dropped connection,
   // server restart that reloaded the room from the database), restore it
   // instead of creating a second player.
-  socket.on('join_room', ({ roomCode, playerName, playerId, authToken }) => {
+  on('join_room', ({ roomCode, playerName, playerId, authToken }) => {
     try {
       if (tokenWasRejected(authToken)) {
         return socket.emit('error_message', 'auth_expired:Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
@@ -527,6 +590,13 @@ io.on('connection', (socket) => {
       socket.emit('room_joined', { roomCode: code, state: room });
       broadcastRoomState(code);
 
+      // Rooms reloaded from the DB after a restart have no timer. Restart it
+      // on the first reconnect rather than at boot, so an empty room can't
+      // auto-sail with nobody there.
+      if (!ROOM_TIMERS[code] && !room.isGameOver) {
+        startTurnTimer(code);
+      }
+
       // Sync active countdown timer to the newly connected/reconnected player
       if (ROOM_TIMERS[code]) {
         socket.emit('turn_timer_tick', {
@@ -541,7 +611,7 @@ io.on('connection', (socket) => {
   });
 
   // 3. Claim Cargo from Shared Cargo Pool
-  socket.on('claim_cargo', ({ orderId }) => {
+  on('claim_cargo', ({ orderId }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -590,7 +660,7 @@ io.on('connection', (socket) => {
   });
 
   // 4. Decline Cargo from Shared Pool (Regular contracts only)
-  socket.on('decline_cargo', ({ orderId }) => {
+  on('decline_cargo', ({ orderId }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -613,7 +683,7 @@ io.on('connection', (socket) => {
   // /api/game/offline/place-container's validation exactly - the server
   // owns each player's grid end to end, the client only ever says "place
   // this one container here" and re-renders from the broadcast that follows.
-  socket.on('place_container', ({ containerId, bay, row, tier }) => {
+  on('place_container', ({ containerId, bay, row, tier }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -625,7 +695,7 @@ io.on('connection', (socket) => {
     if (!container) {
       return socket.emit('error_message', 'Kontainer tidak ditemukan di buffer Anda.');
     }
-    if (!player.grid[bay] || !player.grid[bay][row] || !(tier in player.grid[bay][row])) {
+    if (!isValidSlot(player.grid, bay, row, tier)) {
       return socket.emit('error_message', 'Slot tidak valid.');
     }
 
@@ -654,14 +724,14 @@ io.on('connection', (socket) => {
   });
 
   // 6. Remove a container from the acting player's own grid back into the buffer
-  socket.on('remove_container', ({ bay, row, tier }) => {
+  on('remove_container', ({ bay, row, tier }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room) return;
     const player = room.players[socket.playerId];
     if (!player) return;
-    if (!player.grid[bay] || !player.grid[bay][row]) {
+    if (!isValidSlot(player.grid, bay, row, tier)) {
       return socket.emit('error_message', 'Slot tidak valid.');
     }
 
@@ -687,7 +757,7 @@ io.on('connection', (socket) => {
   // 7. Player Ready - the client sends no grid/pendingContainers anymore;
   // both already live server-side from place_container/remove_container/
   // claim_cargo, so there is nothing left to trust from the request body.
-  socket.on('player_ready', () => {
+  on('player_ready', () => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -723,7 +793,7 @@ io.on('connection', (socket) => {
   });
 
   // 8. Player Unready (Cancels ready state)
-  socket.on('player_unready', () => {
+  on('player_unready', () => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -737,7 +807,7 @@ io.on('connection', (socket) => {
   });
 
   // 8a. Chat message handler (Item 2.5)
-  socket.on('chat_message', ({ message }) => {
+  on('chat_message', ({ message }) => {
     try {
       const roomCode = socket.roomCode;
       const room = ROOMS[roomCode];
@@ -759,7 +829,7 @@ io.on('connection', (socket) => {
   });
 
   // 8b. Spectate room handler (Item 2.6)
-  socket.on('spectate_room', ({ roomCode }) => {
+  on('spectate_room', ({ roomCode }) => {
     try {
       const code = (roomCode || '').toUpperCase().trim();
       const room = ROOMS[code];
@@ -783,7 +853,7 @@ io.on('connection', (socket) => {
   // can close the transport before the packet is flushed, silently dropping
   // the leave and leaving a "ghost" occupied seat - the client must wait for
   // this ack before disconnecting.
-  socket.on('leave_room', (ack) => {
+  on('leave_room', (_payload, ack) => {
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room || !socket.playerId) {
@@ -1335,7 +1405,7 @@ app.post('/api/game/offline/place-container', (req, res) => {
     if (!container) {
       return res.status(400).json({ success: false, message: 'Kontainer tidak ditemukan di buffer Anda.' });
     }
-    if (!session.sharedGrid[bay] || !session.sharedGrid[bay][row] || !(tier in session.sharedGrid[bay][row])) {
+    if (!isValidSlot(session.sharedGrid, bay, row, tier)) {
       return res.status(400).json({ success: false, message: 'Slot tidak valid.' });
     }
 
@@ -1382,7 +1452,7 @@ app.post('/api/game/offline/remove-container', (req, res) => {
     if (player.isBot) {
       return res.status(400).json({ success: false, message: 'Giliran bot - tidak bisa membongkar kontainer secara manual.' });
     }
-    if (!session.sharedGrid[bay] || !session.sharedGrid[bay][row]) {
+    if (!isValidSlot(session.sharedGrid, bay, row, tier)) {
       return res.status(400).json({ success: false, message: 'Slot tidak valid.' });
     }
 
@@ -1724,6 +1794,19 @@ app.post('/api/game/offline/depart', (req, res) => {
   }
 });
 
+// Production: serve the built client from this same origin, so the SPA,
+// REST API and Socket.IO share one host (no CORS, no VITE_API_URL). Skipped
+// in development, where Vite's dev server serves the client instead.
+const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../client/dist');
+if (fs.existsSync(path.join(CLIENT_DIST, 'index.html'))) {
+  app.use(express.static(CLIENT_DIST, { index: false, maxAge: '1y', immutable: true }));
+  app.get(/^\/(?!api\/|socket\.io\/|health$).*/, (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(CLIENT_DIST, 'index.html'));
+  });
+  console.log(`[Server] Serving client build from ${CLIENT_DIST}`);
+}
+
 // Server Boot Sequence & Graceful Shutdown
 let isShuttingDown = false;
 
@@ -1750,14 +1833,16 @@ const gracefulShutdown = async (signal) => {
   isShuttingDown = true;
   console.log(`\n[Server] Menerima sinyal ${signal}. Memulai graceful shutdown...`);
 
-  httpServer.close(async () => {
+  // io.close() also disconnects open sockets; httpServer.close() alone waits
+  // on them forever and always ended in the forced 10s exit below.
+  io.close(async () => {
     console.log('[Server] HTTP and Socket server berhasil ditutup.');
     try {
       await closePool();
     } catch (err) {
       console.error('[Server] Gagal menutup pool database:', err);
     }
-    process.exit(0);
+    process.exit(signal === 'uncaughtException' ? 1 : 0);
   });
 
   setTimeout(() => {
@@ -1768,6 +1853,13 @@ const gracefulShutdown = async (signal) => {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// Last-resort net: log clearly, then exit so the platform restarts us
+// (state is already persisted per action and reloaded on boot).
+process.on('uncaughtException', (err) => {
+  console.error('[Fatal] Uncaught exception:', err);
+  gracefulShutdown('uncaughtException');
+});
+process.on('unhandledRejection', (err) => console.error('[UnhandledRejection]', err));
 
 startServer();
 

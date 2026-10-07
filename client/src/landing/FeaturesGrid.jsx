@@ -13,7 +13,7 @@ function Card({ children, className = '', style }) {
   return (
     <article
       style={style}
-      className={`relative flex min-h-[300px] flex-col overflow-hidden rounded-[20px] border border-black/[0.06] bg-white text-slate-800 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(0,0,0,0.03)] hover:border-black/[0.12] dark:border-white/10 dark:bg-slate-900/90 dark:text-white dark:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(0,0,0,0.2)] dark:hover:border-white/20 transition-all duration-300 ${className}`}
+      className={`lp-tile relative flex min-h-[320px] flex-col lp-ink ${className}`}
     >
       {children}
     </article>
@@ -22,7 +22,7 @@ function Card({ children, className = '', style }) {
 
 function Title({ children, className = '' }) {
   return (
-    <h3 className={`px-6 text-center text-[19px] sm:text-[20px] leading-7 font-bold text-slate-900 dark:text-white transition-colors ${className}`}>
+    <h3 className={`px-7 text-center lp-title lp-ink ${className}`}>
       {children}
     </h3>
   );
@@ -349,25 +349,23 @@ export default function FeaturesGrid() {
     <section 
       id="features" 
       ref={ref} 
-      className="bg-slate-100/50 dark:bg-gradient-to-b dark:from-[#0a2618]/95 dark:via-[#103b22]/90 dark:to-[#0a2618]/95 py-24 px-4 sm:px-8 relative transition-colors"
+      className="lp-page lp-section px-4 sm:px-6 relative"
     >
-      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-4 md:gap-5">
         
         {/* Header */}
-        <div className="text-center mb-10">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-spil-green dark:text-emerald-400 mb-2">
-            FITUR UNGGULAN
-          </p>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-4 font-display transition-colors">
-            Ekosistem Simulator Lengkap
+        <div className="text-center max-w-[760px] mx-auto mb-8 md:mb-12">
+          <p className="lp-eyebrow mb-3">Fitur unggulan</p>
+          <h2 className="lp-h2 lp-ink">
+            Ekosistem simulator lengkap.
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-xl mx-auto text-sm md:text-base transition-colors">
-            Dirancang dengan presisi standar industri pelayaran peti kemas PT SPIL untuk pembelajaran yang mendalam dan kompetitif.
+          <p className="lp-lead lp-muted mt-5">
+            Dirancang mengikuti standar industri pelayaran peti kemas PT SPIL, untuk pembelajaran yang mendalam dan kompetitif.
           </p>
         </div>
 
         {/* TOP ROW: 3 CARDS (Grid, Route Belt, Bot Orbit) */}
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.25fr_1fr]">
+        <div className="grid gap-4 md:gap-5 lg:grid-cols-[1fr_1.25fr_1fr]">
           
           {/* Card 1: Bayplan ISO 9711 Grid */}
           <Card style={getCardStyle(0)} className="pt-8">
@@ -390,22 +388,22 @@ export default function FeaturesGrid() {
         </div>
 
         {/* BOTTOM ROW: 3 CARDS (Code Rule, Achievements, Multiplayer) */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 md:gap-5 lg:grid-cols-3">
           
           {/* Card 4: Terminal Physics Rule Engine */}
-          <Card style={getCardStyle(3)} className="min-h-[290px] pt-7">
+          <Card style={getCardStyle(3)} className="min-h-[300px] pt-8">
             <Title>Validasi Fisika &amp; Audit Denda Real-Time</Title>
             <RuleCodeEditor />
           </Card>
 
           {/* Card 5: Badge Achievement System */}
-          <Card style={getCardStyle(4)} className="min-h-[290px] pt-7">
+          <Card style={getCardStyle(4)} className="min-h-[300px] pt-8">
             <Title>7 Lencana Penghargaan Master Planner</Title>
             <BadgeShowcase />
           </Card>
 
           {/* Card 6: Multiplayer Online & Audio Engine */}
-          <Card style={getCardStyle(5)} className="min-h-[290px] pt-7">
+          <Card style={getCardStyle(5)} className="min-h-[300px] pt-8">
             <Title>Multiplayer Real-Time &amp; Audio Prosedural</Title>
             <MultiplayerAudioShowcase />
           </Card>

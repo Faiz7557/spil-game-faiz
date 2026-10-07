@@ -1,15 +1,139 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --grid-hairline: rgba(0, 0, 0, 0.04);
+
+  /* Game workspace tokens - light */
+  --g-bg: #EEF2F3;
+  --g-surface: #FFFFFF;
+  --g-sunk: #E3E9EC;
+  --g-line: #CAD4D9;
+  --g-ink: #13212B;
+  --g-ink2: #3A4A53;
+  --g-muted: #52626C;
+  --g-faint: #66757C;
+  --g-tint: #F4F7F8;
+  --g-tint2: #FAFBFC;
+  --g-green: #2E7D4E;
+  --g-green-ink: #1E5C38;
+  --g-green-bg: #F1FAF4;
+  --g-green-line: #9FD3B4;
+  --g-green-hover: #225D3A;
+  --g-green-nav: #DCF5E6;
+  --g-green-soft: #DCFAE6;
+  --g-red: #D21E20;
+  --g-danger: #B42318;
+  --g-danger-bg: #FEE4E2;
+  --g-danger-line: #F4B4AE;
+  --g-danger-ink: #B0171A;
+  --g-warn: #B54708;
+  --g-warn-ink: #93370D;
+  --g-warn-bg: #FEF6E0;
+  --g-info: #175CD3;
+  --g-info-bg: #D1E9FF;
+  --g-info-ink: #1849A9;
+  --g-info-line: #A9C8F5;
+  --g-warn-line: #F2C66D;
+  --g-inv: #13212B;
+  --g-inv-ink: #FFFFFF;
+  --g-scrim: rgba(19, 33, 43, 0.3);
+  --g-shadow: rgba(19, 33, 43, 0.16);
+  --g-reefer-a: #F7F9FA;
+  --g-reefer-b: #E8EDEF;
+  --g-sea: #DCEBF3;
+  --g-sky: #F4F8FA;
+  --g-wave-a: #B9D3E2;
+  --g-wave-b: #C8DDEA;
+  --g-hull: #1F3442;
+  --g-structure: #B4C0C6;
+
+  /* Glass surfaces (game workspace) - light */
+  --g-glass-bg: linear-gradient(105deg, rgba(255, 255, 255, 0.97) 0%, rgba(244, 247, 248, 0.88) 100%);
+  --g-glass-bg-solid: linear-gradient(105deg, rgba(255, 255, 255, 0.97) 0%, rgba(244, 247, 248, 0.95) 100%);
+  --g-glass-shadow: 0 1px 2px rgba(19, 33, 43, 0.05), 0 16px 36px -16px rgba(19, 33, 43, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --g-edge: rgba(19, 33, 43, 0.08);
+  --g-hair: rgba(19, 33, 43, 0.07);
+  --g-inset: rgba(19, 33, 43, 0.035);
+  --g-inset-hover: rgba(19, 33, 43, 0.07);
+  --g-overlay: rgba(19, 33, 43, 0.45);
+  --g-stage-glow:
+    radial-gradient(60% 42% at 100% 0%, rgba(46, 125, 78, 0.13) 0, transparent 70%),
+    radial-gradient(48% 36% at 0% 8%, rgba(210, 30, 32, 0.06) 0, transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(0, 114, 178, 0.07) 0, transparent 70%);
+
+  --p-sby: #0072B2; --p-sby-bg: #E3F0F8; --p-sby-ink: #00527F;
+  --p-mks: #E69F00; --p-mks-bg: #FBF0D9; --p-mks-ink: #7A5300;
+  --p-jyp: #009E73; --p-jyp-bg: #DDF2EB; --p-jyp-ink: #006B4E;
+  --p-mdn: #CC79A7; --p-mdn-bg: #F7E9F1; --p-mdn-ink: #8A3F69;
 }
 
 .dark {
   --grid-hairline: rgba(255, 255, 255, 0.06);
+
+  /* Game workspace tokens - dark */
+  --g-bg: #0E1315;
+  --g-surface: #141A1D;
+  --g-sunk: #1E2629;
+  --g-line: #2E383D;
+  --g-ink: #E7ECEE;
+  --g-ink2: #C2CCD1;
+  --g-muted: #9AA7AD;
+  --g-faint: #8D9AA0;
+  --g-tint: #101618;
+  --g-tint2: #171F22;
+  --g-green: #2F8A5C;
+  --g-green-ink: #86D3AA;
+  --g-green-bg: #111E19;
+  --g-green-line: #2C5A42;
+  --g-green-hover: #38A06B;
+  --g-green-nav: #15281F;
+  --g-green-soft: #133022;
+  --g-red: #D21E20;
+  --g-danger: #EF6A61;
+  --g-danger-bg: #3A1714;
+  --g-danger-line: #6B2A26;
+  --g-danger-ink: #F59A93;
+  --g-warn: #E8B145;
+  --g-warn-ink: #F0C878;
+  --g-warn-bg: #261D10;
+  --g-info: #84ADFF;
+  --g-info-bg: #12233D;
+  --g-info-ink: #A9C5FF;
+  --g-info-line: #29457A;
+  --g-warn-line: #5C4520;
+  --g-inv: #1E2A30;
+  --g-inv-ink: #E7ECEE;
+  --g-scrim: rgba(0, 0, 0, 0.3);
+  --g-shadow: rgba(0, 0, 0, 0.3);
+  --g-reefer-a: #101618;
+  --g-reefer-b: #1A2225;
+  --g-sea: #10222E;
+  --g-sky: #0F1A1F;
+  --g-wave-a: #234A61;
+  --g-wave-b: #1B3A4D;
+  --g-hull: #26404F;
+  --g-structure: #46545A;
+
+  /* Glass surfaces (game workspace) - dark */
+  --g-glass-bg: linear-gradient(105deg, rgba(255, 255, 255, 0.075) 0%, rgba(20, 26, 29, 0.9) 72%);
+  --g-glass-bg-solid: linear-gradient(105deg, rgba(34, 42, 46, 0.97) 0%, rgba(18, 23, 26, 0.97) 72%);
+  --g-glass-shadow: 0 20px 46px -18px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --g-edge: rgba(255, 255, 255, 0.08);
+  --g-hair: rgba(255, 255, 255, 0.08);
+  --g-inset: rgba(255, 255, 255, 0.06);
+  --g-inset-hover: rgba(255, 255, 255, 0.12);
+  --g-overlay: rgba(4, 8, 10, 0.66);
+  --g-stage-glow:
+    radial-gradient(60% 42% at 100% 0%, rgba(47, 138, 92, 0.2) 0, transparent 70%),
+    radial-gradient(48% 36% at 0% 8%, rgba(210, 30, 32, 0.1) 0, transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(0, 114, 178, 0.1) 0, transparent 70%);
+
+  --p-sby: #3BA3E6; --p-sby-bg: #10222E; --p-sby-ink: #9BD4F2;
+  --p-mks: #E8B145; --p-mks-bg: #2A2314; --p-mks-ink: #F0C878;
+  --p-jyp: #2FC495; --p-jyp-bg: #0E2420; --p-jyp-ink: #83D8BD;
+  --p-mdn: #E39AC4; --p-mdn-bg: #251A21; --p-mdn-ink: #E9B8D2;
 }
 
 body {
@@ -57,6 +181,174 @@ html.dark .glass-panel {
   box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5);
 }
 
+/* Glass primitives for the game workspace and its dialogs. Colours come from
+   the --g-* tokens above so one class serves light and dark. They sit in the
+   components layer, so a utility class (rounded-*, shadow-*) still overrides. */
+@layer components {
+  .g-stage {
+    background-color: var(--g-bg);
+    background-image: var(--g-stage-glow);
+    background-attachment: fixed;
+  }
+
+  .g-glass {
+    background: var(--g-glass-bg);
+    border: 1px solid var(--g-edge);
+    border-radius: 20px;
+    box-shadow: var(--g-glass-shadow);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Edge-attached bars and rails (sidebar, header, cargo rail): no radius, no
+     drop shadow, a more opaque fill because content scrolls underneath. */
+  .g-glass-rail {
+    background: var(--g-glass-bg-solid);
+    border-color: var(--g-edge);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Backdrop behind dialogs. */
+  .g-overlay {
+    background: var(--g-overlay);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Dialogs: larger radius, stronger blur. */
+  .g-glass-modal {
+    background: var(--g-glass-bg-solid);
+    border: 1px solid var(--g-edge);
+    border-radius: 28px;
+    box-shadow: var(--g-glass-shadow), 0 32px 80px -24px var(--g-shadow);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+
+  /* Native <dialog> host for every game sheet (see components/ui/Sheet.jsx).
+     The dialog itself is a transparent full-viewport flex box so the panel
+     inside keeps the exact size and position the old fixed overlay gave it. */
+  .g-sheet {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 16px;
+    border: 0;
+    background: transparent;
+    color: var(--g-ink);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .g-sheet[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .g-sheet::backdrop {
+    background: var(--g-overlay);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: g-sheet-fade 0.24s ease-out;
+  }
+  .g-sheet[open] > * {
+    animation: g-sheet-in 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  /* showModal() may focus the scrollable panel itself; a ring around the
+     whole sheet says nothing, so only controls inside keep theirs. */
+  .g-sheet:focus,
+  .g-sheet > *:focus {
+    outline: none;
+  }
+
+  /* Cards, stat boxes and neutral chips that sit inside a glass panel. */
+  .g-inset {
+    background: var(--g-inset);
+    border: 1px solid var(--g-hair);
+    border-radius: 14px;
+  }
+
+  /* Secondary buttons: fully rounded, translucent, brighter on hover. */
+  .g-pill {
+    background: var(--g-inset);
+    border: 1px solid var(--g-hair);
+    border-radius: 9999px;
+    color: var(--g-ink);
+    transition: background-color 0.15s ease;
+  }
+  .g-pill:hover:not(:disabled) {
+    background: var(--g-inset-hover);
+  }
+
+  /* Primary action, same tint as the active sidebar item: soft green fill,
+     green hairline, ink text, green icons. Shape and size stay with the
+     caller. */
+  .g-btn-green {
+    background: var(--g-green-nav);
+    border: 1px solid var(--g-green-line);
+    color: var(--g-ink);
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .g-btn-green svg {
+    color: var(--g-green-ink);
+  }
+  .g-btn-green:hover:not(:disabled) {
+    background: var(--g-green-soft);
+    border-color: var(--g-green);
+  }
+  .g-btn-green:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .g-btn-green:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .g-divider {
+    border: 0;
+    border-top: 1px solid var(--g-hair);
+  }
+}
+
+@keyframes g-sheet-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes g-sheet-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Ship profile: waves drift one crest (80 units) per loop and the hull
+   rides them gently. */
+@keyframes g-wave {
+  to { transform: translateX(-80px); }
+}
+
+@keyframes g-bob {
+  50% { transform: translateY(-1.5px); }
+}
+
+/* Printing a sheet (e.g. the learning report): show only that sheet. */
+@media print {
+  body:has(.g-sheet[data-printable][open]) * { visibility: hidden; }
+  .g-sheet[data-printable][open],
+  .g-sheet[data-printable][open] * { visibility: visible; }
+  .g-sheet[data-printable][open] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    height: auto;
+    padding: 0;
+    overflow: visible;
+  }
+  .g-sheet[data-printable]::backdrop { display: none; }
+}
+
 /* Mobile legibility floor. Several arbitrary text-[Npx] sizes in the
    bayplan/dashboard were tuned for desktop density and render unreadably
    small (7-9.5px) on phones. Only raise the ones below a comfortable
@@ -99,6 +391,17 @@ html.dark .glass-panel {
 
 ::-webkit-scrollbar-thumb {
   @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-all;
+}
+
+/* Dark theme: the light track showed as a bright bar inside dark sheets. */
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28);
 }
 
 /* Animated warning pulses */
@@ -212,7 +515,12 @@ html.dark .glass-panel {
 }
 
 /* ===================================================================
-   LANDING PAGE STYLES (Caliber-inspired scroll-driven design)
+   LANDING PAGE — Apple-inspired foundation
+   One typeface (Inter, the closest open match to SF Pro), two weights
+   (400/600), a short type scale, neutral grounds that alternate between
+   sections, borderless 28px tiles, and SPIL green as the only action
+   colour. Port colours stay inside the bay visuals. Everything is scoped
+   to .lp so the game workspace keeps its own system.
    =================================================================== */
 
 /* Smooth scrolling for the entire page when landing is active */
@@ -220,198 +528,268 @@ html.landing-active {
   scroll-behavior: smooth;
 }
 
-/* Enhanced glass panels for landing */
-.lp-glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 1.5rem;
+.lp {
+  --lp-page: #FFFFFF;
+  --lp-alt: #F4F6F7;
+  --lp-tile: #F4F6F7;     /* tile sitting on --lp-page */
+  --lp-tile-alt: #FFFFFF; /* tile sitting on --lp-alt */
+  --lp-ink: #13212B;
+  --lp-ink2: #3A4A53;
+  --lp-muted: #5C6B73;
+  --lp-hair: rgba(19, 33, 43, 0.1);
+  --lp-action: #2E7D4E;
+  --lp-action-hover: #276B43;
+  --lp-link: #22683F;
+  --lp-paddle: rgba(19, 33, 43, 0.07);
+  --lp-paddle-hover: rgba(19, 33, 43, 0.12);
+  --lp-nav: rgba(255, 255, 255, 0.78);
+  --lp-scrim: rgba(19, 33, 43, 0.42);
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--lp-ink);
+  background: var(--lp-page);
+  -webkit-font-smoothing: antialiased;
 }
 
-.lp-glass-solid {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 1.5rem;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+.dark .lp {
+  --lp-page: #0A0D0F;
+  --lp-alt: #111618;
+  --lp-tile: #161C1F;
+  --lp-tile-alt: #1C2326;
+  --lp-ink: #EEF2F3;
+  --lp-ink2: #C2CCD1;
+  --lp-muted: #98A5AB;
+  --lp-hair: rgba(255, 255, 255, 0.1);
+  --lp-action: #2E7D4E;
+  --lp-action-hover: #38925E;
+  --lp-link: #86D3AA;
+  --lp-paddle: rgba(255, 255, 255, 0.1);
+  --lp-paddle-hover: rgba(255, 255, 255, 0.16);
+  --lp-nav: rgba(10, 13, 15, 0.74);
+  --lp-scrim: rgba(0, 0, 0, 0.6);
 }
 
-/* Floating animation for hero stat badges */
-@keyframes lp-float {
-  0%, 100% {
-    transform: translateY(0px);
+@layer components {
+  /* --- Grounds --- */
+  .lp-page { background-color: var(--lp-page); }
+  .lp-alt { background-color: var(--lp-alt); }
+
+  /* Section rhythm: 96px top/bottom on desktop, 64px on phones. */
+  .lp-section {
+    padding-top: 64px;
+    padding-bottom: 64px;
   }
-  50% {
-    transform: translateY(-8px);
+  @media (min-width: 768px) {
+    .lp-section {
+      padding-top: 96px;
+      padding-bottom: 96px;
+    }
   }
-}
 
-@keyframes lp-float-delayed {
-  0%, 100% {
-    transform: translateY(0px);
+  /* --- Type scale (64 / 48 / 28 / 21 / 17 / 14 / 12) --- */
+  .lp-hero-title {
+    font-size: clamp(44px, 7.2vw, 80px);
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.015em;
   }
-  50% {
-    transform: translateY(-10px);
+  .lp-h2 {
+    font-size: 32px;
+    line-height: 1.125;
+    font-weight: 600;
+    letter-spacing: -0.009em;
   }
-}
-
-.lp-float-1 {
-  animation: lp-float 4s ease-in-out infinite;
-}
-.lp-float-2 {
-  animation: lp-float-delayed 5s ease-in-out infinite 0.5s;
-}
-.lp-float-3 {
-  animation: lp-float 6s ease-in-out infinite 1s;
-}
-
-/* Animated border beam glow (for hero screenshot card) */
-@keyframes lp-border-beam {
-  0% {
-    background-position: 0% 0%;
+  @media (min-width: 768px) {
+    .lp-h2 {
+      font-size: 48px;
+      line-height: 1.0834;
+      letter-spacing: -0.003em;
+    }
   }
-  50% {
-    background-position: 100% 100%;
+  .lp-h3 {
+    font-size: 24px;
+    line-height: 1.1667;
+    font-weight: 600;
+    letter-spacing: -0.009em;
   }
-  100% {
-    background-position: 0% 0%;
+  @media (min-width: 768px) {
+    .lp-h3 {
+      font-size: 28px;
+      line-height: 1.1429;
+    }
   }
-}
-
-.lp-border-beam {
-  position: relative;
-}
-.lp-border-beam::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: linear-gradient(
-    135deg,
-    rgba(46, 125, 78, 0.6),
-    rgba(210, 30, 32, 0.3),
-    rgba(46, 125, 78, 0.1),
-    rgba(210, 30, 32, 0.6),
-    rgba(46, 125, 78, 0.3)
-  );
-  background-size: 300% 300%;
-  animation: lp-border-beam 6s ease infinite;
-  z-index: -1;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: xor;
-  -webkit-mask-composite: xor;
-  padding: 2px;
-}
-
-/* Sticky scroll rail for workflow section */
-.lp-workflow-rail {
-  display: flex;
-  gap: 2rem;
-  transition: transform 0.15s ease-out;
-  will-change: transform;
-}
-
-/* Section entrance transition */
-.lp-section-enter {
-  opacity: calc(var(--p, 0) * 3);
-  transform: translateY(calc((1 - min(1, var(--p, 0) * 3)) * 30px));
-  transition: opacity 0.1s, transform 0.1s;
-}
-
-/* Staggered card entrance */
-.lp-card-enter {
-  opacity: calc(var(--p, 0) * 4 - 0.5);
-  transform: translateY(calc(max(0, (1 - var(--p, 0) * 4 + 0.5)) * 20px));
-}
-
-.lp-card-enter-2 {
-  opacity: calc(var(--p, 0) * 4 - 0.7);
-  transform: translateY(calc(max(0, (1 - var(--p, 0) * 4 + 0.7)) * 20px));
-}
-
-.lp-card-enter-3 {
-  opacity: calc(var(--p, 0) * 4 - 0.9);
-  transform: translateY(calc(max(0, (1 - var(--p, 0) * 4 + 0.9)) * 20px));
-}
-
-/* White section wave/curve top */
-.lp-section-white {
-  background: white;
-  border-radius: 3rem 3rem 0 0;
-  position: relative;
-}
-
-/* Scroll progress bar (for nav) */
-.lp-progress-bar {
-  height: 2px;
-  background: linear-gradient(90deg, #2E7D4E, #D21E20);
-  transform-origin: left;
-  transition: transform 0.1s linear;
-}
-
-/* Container mockup cell styles */
-.lp-cell {
-  border: 1px dashed rgba(148, 163, 184, 0.3);
-  border-radius: 0.5rem;
-  transition: all 0.4s ease;
-}
-
-.lp-cell-filled {
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Tutorial phase transitions */
-.lp-phase {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.lp-phase-hidden {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.lp-phase-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Bento grid card hover glow */
-.lp-bento-card {
-  transition: all 0.3s ease;
-}
-.lp-bento-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 30px rgba(46, 125, 78, 0.1);
-}
-
-/* Scroll hint pulse */
-@keyframes lp-scroll-hint {
-  0%, 100% {
-    opacity: 0.4;
-    transform: translateY(0);
+  /* Inter runs wider than SF Pro, so mid sizes get slightly tighter
+     tracking than Apple's published values. */
+  .lp-lead {
+    font-size: 21px;
+    line-height: 1.381;
+    font-weight: 400;
+    letter-spacing: -0.006em;
   }
-  50% {
-    opacity: 0.8;
-    transform: translateY(6px);
+  @media (min-width: 768px) {
+    .lp-lead {
+      font-size: 24px;
+      line-height: 1.3333;
+    }
   }
+  .lp-title {
+    font-size: 21px;
+    line-height: 1.19;
+    font-weight: 600;
+    letter-spacing: -0.006em;
+  }
+  .lp-body {
+    font-size: 17px;
+    line-height: 1.4706;
+    font-weight: 400;
+    letter-spacing: -0.022em;
+  }
+  .lp-small {
+    font-size: 14px;
+    line-height: 1.4286;
+    font-weight: 400;
+    letter-spacing: -0.016em;
+  }
+  .lp-eyebrow {
+    font-size: 14px;
+    line-height: 1.4286;
+    font-weight: 600;
+    letter-spacing: -0.016em;
+    color: var(--lp-link);
+  }
+  .lp-caption {
+    font-size: 12px;
+    line-height: 1.3333;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .lp-ink { color: var(--lp-ink); }
+  .lp-ink2 { color: var(--lp-ink2); }
+  .lp-muted { color: var(--lp-muted); }
+
+  /* --- Tiles: no border, no shadow; contrast comes from the ground. --- */
+  .lp-tile {
+    background-color: var(--lp-tile);
+    border-radius: 28px;
+    overflow: hidden;
+  }
+  .lp-alt .lp-tile { background-color: var(--lp-tile-alt); }
+  /* Dialogs sit on --lp-page even when opened from an --lp-alt section. */
+  .lp-dialog .lp-tile { background-color: var(--lp-tile); }
+
+  .lp-tile-hover {
+    transition: transform 0.3s cubic-bezier(0, 0, 0.5, 1), box-shadow 0.3s cubic-bezier(0, 0, 0.5, 1);
+  }
+  .lp-tile-hover:hover {
+    transform: scale(1.012);
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  /* --- Buttons: pill, regular weight, one action colour. --- */
+  .lp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 28px;
+    padding: 11px 21px;
+    border-radius: 980px;
+    font-size: 17px;
+    line-height: 1.1765;
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .lp-btn-sm {
+    padding: 6px 14px;
+    font-size: 14px;
+    line-height: 1.2857;
+  }
+  .lp-btn-primary {
+    background-color: var(--lp-action);
+    color: #FFFFFF;
+  }
+  .lp-btn-primary:hover { background-color: var(--lp-action-hover); }
+  .lp-btn-secondary {
+    background-color: transparent;
+    color: var(--lp-link);
+    box-shadow: inset 0 0 0 1px var(--lp-link);
+  }
+  .lp-btn-secondary:hover {
+    background-color: var(--lp-link);
+    color: var(--lp-page);
+  }
+  .lp-btn:focus-visible,
+  .lp-link:focus-visible,
+  .lp-paddle:focus-visible {
+    outline: 2px solid var(--lp-link);
+    outline-offset: 3px;
+  }
+
+  /* Text link with a trailing chevron. */
+  .lp-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--lp-link);
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .lp-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Round, translucent control used for gallery paddles and the "+" button. */
+  .lp-paddle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    background-color: var(--lp-paddle);
+    color: var(--lp-ink);
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+  .lp-paddle:hover:not(:disabled) { background-color: var(--lp-paddle-hover); }
+  .lp-paddle:disabled { opacity: 0.36; cursor: default; }
+
+  /* Horizontal card shelf: native scroll + snap, scrollbar hidden. */
+  .lp-shelf {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .lp-shelf::-webkit-scrollbar { display: none; }
+  .lp-shelf > * { scroll-snap-align: start; }
+
+  /* Native <dialog> used for detail sheets. */
+  .lp-dialog {
+    width: min(680px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    padding: 0;
+    border: 0;
+    border-radius: 28px;
+    background-color: var(--lp-page);
+    color: var(--lp-ink);
+    box-shadow: 0 32px 80px -24px rgba(0, 0, 0, 0.35);
+  }
+  .lp-dialog::backdrop {
+    background: var(--lp-scrim);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  .lp-dialog[open] { animation: lp-dialog-in 0.32s cubic-bezier(0, 0, 0.5, 1); }
 }
 
-.lp-scroll-hint {
-  animation: lp-scroll-hint 2s ease-in-out infinite;
+@keyframes lp-dialog-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }
 
-/* Override body background for landing page white sections */
-.lp-white-bg {
-  background-color: white;
-  background-image: none;
-}
 
 /* Infinite Horizontal Marquee (Pure CSS GPU Accelerated) */
 @keyframes lp-marquee {
