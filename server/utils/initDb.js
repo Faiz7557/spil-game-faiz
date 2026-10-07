@@ -17,6 +17,13 @@ export const initializeDatabase = async () => {
       console.log('[Database] All migrations are up to date.');
     }
   } catch (err) {
+    // Fail the boot: running on a half-migrated schema only surfaces later as
+    // confusing errors mid-game, and the platform should mark the deploy failed.
     console.error('[Database] Migration failed:', err.message);
+    throw err;
+  } finally {
+    // Migrations only - the app's queries go through utils/db.js's pool.
+    await db?.destroy();
+    db = null;
   }
 };

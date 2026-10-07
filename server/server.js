@@ -1,4 +1,7 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -31,6 +34,11 @@ import { hashPassword, verifyPassword, signToken, resolveIdentity, tokenWasRejec
 const app = express();
 const PORT = process.env.PORT || 5050;
 
+// Behind one reverse proxy (Railway/Render/Caddy/nginx) req.ip must come from
+// X-Forwarded-For, otherwise every player shares the proxy's IP and the rate
+// limiters below throttle everyone together. Set TRUST_PROXY=0 if exposed directly.
+app.set('trust proxy', parseInt(process.env.TRUST_PROXY ?? '1', 10));
+
 // Security headers middleware
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -40,8 +48,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configurable CORS
-const corsOrigin = process.env.CORS_ORIGIN || '*';
+// Configurable CORS. Comma-separated whitelist; '*' only for development.
+// When the client is served by this same server (see CLIENT_DIST) no
+// cross-origin access is needed at all.
+const corsOrigin = !process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === '*'
+  ? '*'
+  : process.env.CORS_ORIGIN.split(',').map(s => s.trim());
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -415,8 +427,22 @@ app.get('/api/leaderboard', async (req, res) => {
 io.on('connection', (socket) => {
   console.log(`[Socket Connected] ID: ${socket.id}`);
 
+  // Client payloads are untrusted: missing, null, or non-object. Socket.IO
+  // runs listeners in process.nextTick, so a throw here (e.g. destructuring
+  // undefined) would crash the whole process and every room with it.
+  const on = (event, handler) => socket.on(event, (...args) => {
+    const ack = typeof args[args.length - 1] === 'function' ? args.pop() : undefined;
+    const payload = args[0] && typeof args[0] === 'object' ? args[0] : {};
+    try {
+      handler(payload, ack);
+    } catch (err) {
+      console.error(`[Socket] ${event} failed:`, err);
+      socket.emit('error_message', 'Terjadi kesalahan server.');
+    }
+  });
+
   // 1. Create Room (Host)
-  socket.on('create_room', ({ playerName, playerId, authToken }) => {
+  on('create_room', ({ playerName, playerId, authToken }) => {
     try {
       if (tokenWasRejected(authToken)) {
         return socket.emit('error_message', 'auth_expired:Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
@@ -474,7 +500,7 @@ io.on('connection', (socket) => {
   // already has a seat in the room (page refresh, dropped connection,
   // server restart that reloaded the room from the database), restore it
   // instead of creating a second player.
-  socket.on('join_room', ({ roomCode, playerName, playerId, authToken }) => {
+  on('join_room', ({ roomCode, playerName, playerId, authToken }) => {
     try {
       if (tokenWasRejected(authToken)) {
         return socket.emit('error_message', 'auth_expired:Sesi login Anda telah kedaluwarsa. Silakan login kembali.');
@@ -541,7 +567,7 @@ io.on('connection', (socket) => {
   });
 
   // 3. Claim Cargo from Shared Cargo Pool
-  socket.on('claim_cargo', ({ orderId }) => {
+  on('claim_cargo', ({ orderId }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -590,7 +616,7 @@ io.on('connection', (socket) => {
   });
 
   // 4. Decline Cargo from Shared Pool (Regular contracts only)
-  socket.on('decline_cargo', ({ orderId }) => {
+  on('decline_cargo', ({ orderId }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -613,7 +639,7 @@ io.on('connection', (socket) => {
   // /api/game/offline/place-container's validation exactly - the server
   // owns each player's grid end to end, the client only ever says "place
   // this one container here" and re-renders from the broadcast that follows.
-  socket.on('place_container', ({ containerId, bay, row, tier }) => {
+  on('place_container', ({ containerId, bay, row, tier }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -654,7 +680,7 @@ io.on('connection', (socket) => {
   });
 
   // 6. Remove a container from the acting player's own grid back into the buffer
-  socket.on('remove_container', ({ bay, row, tier }) => {
+  on('remove_container', ({ bay, row, tier }) => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -687,7 +713,7 @@ io.on('connection', (socket) => {
   // 7. Player Ready - the client sends no grid/pendingContainers anymore;
   // both already live server-side from place_container/remove_container/
   // claim_cargo, so there is nothing left to trust from the request body.
-  socket.on('player_ready', () => {
+  on('player_ready', () => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -723,7 +749,7 @@ io.on('connection', (socket) => {
   });
 
   // 8. Player Unready (Cancels ready state)
-  socket.on('player_unready', () => {
+  on('player_unready', () => {
     if (socket.isSpectator) return;
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
@@ -737,7 +763,7 @@ io.on('connection', (socket) => {
   });
 
   // 8a. Chat message handler (Item 2.5)
-  socket.on('chat_message', ({ message }) => {
+  on('chat_message', ({ message }) => {
     try {
       const roomCode = socket.roomCode;
       const room = ROOMS[roomCode];
@@ -759,7 +785,7 @@ io.on('connection', (socket) => {
   });
 
   // 8b. Spectate room handler (Item 2.6)
-  socket.on('spectate_room', ({ roomCode }) => {
+  on('spectate_room', ({ roomCode }) => {
     try {
       const code = (roomCode || '').toUpperCase().trim();
       const room = ROOMS[code];
@@ -783,7 +809,7 @@ io.on('connection', (socket) => {
   // can close the transport before the packet is flushed, silently dropping
   // the leave and leaving a "ghost" occupied seat - the client must wait for
   // this ack before disconnecting.
-  socket.on('leave_room', (ack) => {
+  on('leave_room', (_payload, ack) => {
     const roomCode = socket.roomCode;
     const room = ROOMS[roomCode];
     if (!room || !socket.playerId) {
@@ -1724,6 +1750,19 @@ app.post('/api/game/offline/depart', (req, res) => {
   }
 });
 
+// Production: serve the built client from this same origin, so the SPA,
+// REST API and Socket.IO share one host (no CORS, no VITE_API_URL). Skipped
+// in development, where Vite's dev server serves the client instead.
+const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../client/dist');
+if (fs.existsSync(path.join(CLIENT_DIST, 'index.html'))) {
+  app.use(express.static(CLIENT_DIST, { index: false, maxAge: '1y', immutable: true }));
+  app.get(/^\/(?!api\/|socket\.io\/|health$).*/, (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(CLIENT_DIST, 'index.html'));
+  });
+  console.log(`[Server] Serving client build from ${CLIENT_DIST}`);
+}
+
 // Server Boot Sequence & Graceful Shutdown
 let isShuttingDown = false;
 
@@ -1750,14 +1789,16 @@ const gracefulShutdown = async (signal) => {
   isShuttingDown = true;
   console.log(`\n[Server] Menerima sinyal ${signal}. Memulai graceful shutdown...`);
 
-  httpServer.close(async () => {
+  // io.close() also disconnects open sockets; httpServer.close() alone waits
+  // on them forever and always ended in the forced 10s exit below.
+  io.close(async () => {
     console.log('[Server] HTTP and Socket server berhasil ditutup.');
     try {
       await closePool();
     } catch (err) {
       console.error('[Server] Gagal menutup pool database:', err);
     }
-    process.exit(0);
+    process.exit(signal === 'uncaughtException' ? 1 : 0);
   });
 
   setTimeout(() => {
@@ -1768,6 +1809,13 @@ const gracefulShutdown = async (signal) => {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// Last-resort net: log clearly, then exit so the platform restarts us
+// (state is already persisted per action and reloaded on boot).
+process.on('uncaughtException', (err) => {
+  console.error('[Fatal] Uncaught exception:', err);
+  gracefulShutdown('uncaughtException');
+});
+process.on('unhandledRejection', (err) => console.error('[UnhandledRejection]', err));
 
 startServer();
 
