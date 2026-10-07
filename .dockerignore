@@ -1,0 +1,20 @@
+# Keep the build context to code only: no deps, no build output, and never
+# the thesis documents or research data that live in this folder.
+**/node_modules
+**/dist
+.git
+.github
+.claude
+**/.env
+**/.env.*
+!**/.env.example
+*.docx
+*.pdf
+*.tmp
+~$*
+research
+Info
+Skripsi Kating
+docs
+ai-service
+**/__tests__
